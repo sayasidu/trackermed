@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Planos · TrackerMed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.plan-grid { display: grid; grid-template-columns: repeat(6, 1fr); border: 1px solid var(--line); background: var(--card); margin-top: 24px; }
+.plan-month { padding: 20px; border-right: 1px solid var(--line); min-height: 220px; display: flex; flex-direction: column; }
+.plan-month:last-child { border-right: none; }
+.plan-month.done { background: var(--paper); }
+.plan-month.current { background: var(--ink); color: var(--paper); }
+.plan-month .m { font-family: 'Fraunces', serif; font-size: 32px; letter-spacing: -0.04em; font-weight: 500; line-height: 1; }
+.plan-month .m small { display: block; font-family: 'Inter Tight', sans-serif; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-top: 4px; font-weight: 600; }
+.plan-month.current .m small { color: var(--acid); }
+.plan-month .topic { font-size: 13px; margin-top: 12px; padding: 4px 0; border-top: 1px dashed var(--line); }
+.plan-month.current .topic { border-color: var(--line-dark); }
+.plan-month .pct { font-family: 'Fraunces', serif; font-size: 20px; margin-top: auto; font-weight: 500; letter-spacing: -0.02em; }
+.plan-month.current .pct { color: var(--acid); font-style: italic; }
+.milestones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; }
+.milestone { background: var(--card); border: 1px solid var(--line); padding: 20px; display: flex; gap: 14px; align-items: flex-start; }
+.milestone .icon { width: 36px; height: 36px; background: var(--cobalt); color: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-size: 20px; flex-shrink: 0; font-style: italic; }
+.milestone h4 { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 500; }
+.milestone .date { font-size: 11px; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; margin-top: 2px; font-weight: 600; }
+.milestone p { font-size: 13px; color: var(--ink2); margin-top: 8px; }
+</style></head><body>
+<div class="app">
+<aside class="sidebar">
+<div class="logo">Tracker<em>Med</em></div>
+<a href="index.html" class="nav-item">Home</a>
+<a href="planos.html" class="nav-item active">Planos</a>
+<a href="disciplinas.html" class="nav-item">Disciplinas</a>
+<a href="plannerstudy.html" class="nav-item">Planejamento</a>
+<a href="revisoes.html" class="nav-item">Revisões</a>
+<a href="historico.html" class="nav-item">Histórico</a>
+<a href="dashboard.html" class="nav-item">Estatísticas</a>
+<a href="simulados.html" class="nav-item">Simulados</a>
+<div class="sidebar-foot">v0.1 · pessoal</div>
+</aside>
+<main class="main">
+<div class="topbar"><div class="crumb">Home <i>›</i> Planos</div><div class="topbar-right"><span class="pill">Residência USP 2026</span><button class="btn">+ Novo plano</button></div></div>
+<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap">
+<div><div class="kicker">Longo prazo</div><h1 class="page-title">Do <i>zero</i> à aprovação em 11 meses.</h1></div>
+<div style="text-align:right"><div class="kicker">Progresso geral</div><div style="font-family:'Fraunces',serif;font-size:64px;letter-spacing:-0.04em;line-height:1;font-weight:500;color:var(--cobalt)">47<span style="font-size:24px;color:var(--muted)">%</span></div></div>
+</div>
+<div class="section">
+<div class="section-head"><div class="section-title">Cronograma <i>mensal</i></div><div class="kicker">Jan — Nov 2026</div></div>
+<div class="plan-grid">
+<div class="plan-month done"><div class="m">Jan<small>base · 100%</small></div><div class="topic">Anatomia I</div><div class="topic">Bioquímica</div><div class="pct" style="color:var(--mint)">✓ concluído</div></div>
+<div class="plan-month done"><div class="m">Fev<small>base · 100%</small></div><div class="topic">Fisiologia</div><div class="topic">Histologia</div><div class="pct" style="color:var(--mint)">✓ concluído</div></div>
+<div class="plan-month done"><div class="m">Mar<small>aprofundar · 95%</small></div><div class="topic">Farmacologia I</div><div class="topic">Microbiologia</div><div class="pct" style="color:var(--mint)">✓ 95%</div></div>
+<div class="plan-month current"><div class="m">Abr<small>este mês · 62%</small></div><div class="topic">Morfofuncional II</div><div class="topic">Hematologia</div><div class="topic">Emergências</div><div class="pct">62%</div></div>
+<div class="plan-month"><div class="m">Mai<small>próximo</small></div><div class="topic">Cardiologia</div><div class="topic">Pneumologia</div><div class="pct">—</div></div>
+<div class="plan-month"><div class="m">Jun<small>revisão 1</small></div><div class="topic">Revisão geral</div><div class="topic">Simulados</div><div class="pct">—</div></div>
+</div>
+<div class="plan-grid" style="margin-top:0;border-top:none">
+<div class="plan-month"><div class="m">Jul<small>intensivo</small></div><div class="topic">Ginecologia</div><div class="topic">Obstetrícia</div><div class="pct">—</div></div>
+<div class="plan-month"><div class="m">Ago<small>intensivo</small></div><div class="topic">Pediatria</div><div class="topic">Psiquiatria</div><div class="pct">—</div></div>
+<div class="plan-month"><div class="m">Set<small>revisão 2</small></div><div class="topic">Saúde Coletiva</div><div class="topic">Bioética</div><div class="pct">—</div></div>
+<div class="plan-month"><div class="m">Out<small>simulados</small></div><div class="topic">2 simulados/sem</div><div class="topic">Revisão erros</div><div class="pct">—</div></div>
+<div class="plan-month"><div class="m">Nov<small>reta final</small></div><div class="topic">Provas anteriores</div><div class="topic">Flashcards</div><div class="pct">—</div></div>
+<div class="plan-month"><div class="m" style="color:var(--cobalt)">🎯<small style="color:var(--cobalt)">prova</small></div><div class="topic" style="font-family:'Fraunces',serif;font-size:18px;font-style:italic">15 Nov</div><div class="pct" style="color:var(--cobalt);font-style:italic">a caminho.</div></div>
+</div>
+</div>
+<div class="section">
+<div class="section-head"><div class="section-title"><i>Marcos</i> importantes</div></div>
+<div class="milestones">
+<div class="milestone"><div class="icon">1</div><div><h4>1º simulado completo</h4><div class="date">15 · Jun · 2026</div><p>Prova completa cronometrada pra medir o nível base.</p></div></div>
+<div class="milestone"><div class="icon">2</div><div><h4>Revisão intensiva</h4><div class="date">15 · Set · 2026</div><p>Repassar todos os tópicos marcados como "dificuldade" no edital.</p></div></div>
+<div class="milestone"><div class="icon">3</div><div><h4>Reta final</h4><div class="date">1 · Nov · 2026</div><p>Só flashcards + simulados. Zero conteúdo novo.</p></div></div>
+</div>
+</div>
+</main></div></body></html>
