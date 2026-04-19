@@ -1,621 +1,395 @@
 <!doctype html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>TrackerMed · Planejamento</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Planejamento · TrackerMed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
 <style>
-  /* planner-specific overrides */
-  .planner-main { padding: 28px 36px 48px; }
-  .planner-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
-  .planner-head h1 { font-family: 'Fraunces', serif; font-size: 42px; font-weight: 500; letter-spacing: -0.035em; line-height: 1; }
-  .planner-head h1 i { color: var(--muted); font-style: italic; }
-  .planner-kicker { font-size: 11px; letter-spacing: 0.2em; color: var(--muted); font-weight: 600; text-transform: uppercase; }
-  .ctrl-row { display: flex; gap: 10px; align-items: center; }
-  .ctrl { display: flex; border: 1px solid var(--line); background: var(--card); }
-  .ctrl button { background: transparent; border: none; padding: 9px 14px; font-size: 13px; cursor: pointer; font-family: inherit; color: var(--ink2); border-right: 1px solid var(--line); }
-  .ctrl button:last-child { border-right: none; }
-  .ctrl button.active { background: var(--ink); color: var(--paper); font-weight: 600; }
-  .ctrl button:hover:not(.active) { background: var(--paper); }
-  .add-btn { background: var(--cobalt); color: #fff; border: none; padding: 10px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
-  .add-btn:hover { opacity: 0.9; }
+.stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat-card { background: #fff; border: 1px solid #E0E0E0; padding: 18px 20px; }
+.stat-card.dark { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.stat-card .lbl { font-size: 10px; letter-spacing: 0.18em; color: #70757A; font-weight: 600; text-transform: uppercase; }
+.stat-card.dark .lbl { color: var(--acid); }
+.stat-card .val { font-family: 'Fraunces', serif; font-size: 42px; font-weight: 400; letter-spacing: -0.03em; line-height: 1; margin-top: 10px; color: var(--ink); }
+.stat-card.dark .val { color: var(--acid); }
+.stat-card .val.cobalt { color: var(--cobalt); }
+.stat-card .val sup { font-size: 16px; font-weight: 500; letter-spacing: 0; vertical-align: baseline; color: #70757A; }
+.stat-card .sub { font-size: 12px; color: #70757A; margin-top: 10px; }
+.stat-card.dark .sub { color: rgba(244,241,234,0.65); }
 
-  .stats-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
-  .stat { background: var(--card); border: 1px solid var(--line); padding: 16px 20px; }
-  .stat.dark { background: var(--ink); color: var(--paper); }
-  .stat .lbl { font-size: 10px; letter-spacing: 0.2em; color: var(--muted); font-weight: 600; text-transform: uppercase; }
-  .stat.dark .lbl { color: var(--acid); }
-  .stat .num { font-family: 'Fraunces', serif; font-size: 40px; font-weight: 500; letter-spacing: -0.035em; line-height: 1; margin-top: 8px; }
-  .stat .num span { font-size: 16px; color: var(--muted); }
-  .stat.dark .num span { color: rgba(244,241,234,0.6); }
-  .stat .sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
-  .stat.dark .sub { color: rgba(244,241,234,0.7); }
+.sugestoes { background: var(--card); border: 1px solid var(--line); padding: 22px 26px; margin-bottom: 24px; border-left: 4px solid var(--cobalt); }
+.sugestoes h3 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
+.sugestoes h3 i { color: var(--cobalt); font-style: italic; }
+.sugestoes .help { font-size: 13px; color: var(--ink2); margin-top: 4px; }
+.sug-lista { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+.sug-item { display: grid; grid-template-columns: 1fr auto auto; gap: 16px; align-items: center; padding: 12px 14px; background: var(--paper); border-left: 3px solid var(--cobalt); }
+.sug-item.urgente { border-left-color: var(--rose); background: #FFF2F2; }
+.sug-item .nome { font-weight: 600; font-size: 14px; }
+.sug-item .motivo { font-size: 11px; color: var(--muted); margin-top: 2px; letter-spacing: 0.02em; }
+.sug-item .horas { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; color: var(--cobalt); font-variant-numeric: tabular-nums; }
+.sug-item.urgente .horas { color: var(--rose); }
+.sug-item .btn-add { background: var(--ink); color: var(--paper); border: none; padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; letter-spacing: 0.02em; }
+.sug-item .btn-add:hover { background: var(--cobalt); }
 
-  .grid-wrap { border: 1px solid var(--line); background: var(--card); overflow: hidden; }
-  .grid-header { display: grid; grid-template-columns: 56px repeat(7, 1fr); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 3; background: var(--card); }
-  .grid-header .gh { padding: 12px 10px; border-left: 1px solid var(--line); position: relative; }
-  .grid-header .gh:first-child { border-left: none; }
-  .grid-header .gh.today { background: var(--ink); color: var(--paper); }
-  .gh .short { font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: var(--muted); }
-  .gh.today .short { color: var(--acid); }
-  .gh .num { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500; letter-spacing: -0.03em; line-height: 1; margin-top: 2px; }
-  .gh .today-chip { display: inline-block; font-size: 10px; background: var(--acid); color: var(--ink); padding: 2px 6px; font-weight: 700; letter-spacing: 0.05em; margin-left: 6px; vertical-align: middle; }
+.grade { background: #fff; border: 1px solid #E0E0E0; border-radius: 8px; overflow: hidden; }
+.grade-head { display: grid; grid-template-columns: 60px repeat(7, 1fr); border-bottom: 1px solid #E0E0E0; background: #fff; }
+.grade-head .gh-cell { padding: 10px 8px 8px; text-align: center; border-right: 1px solid #F1F1F1; }
+.grade-head .gh-cell:last-child { border-right: none; }
+.grade-head .gh-dia { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #70757A; font-weight: 500; }
+.grade-head .gh-num { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 400; color: #3C4043; letter-spacing: -0.02em; margin-top: 2px; line-height: 1; }
+.grade-head .gh-cell.hoje { background: var(--ink); }
+.grade-head .gh-cell.hoje .gh-dia { color: var(--acid); font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+.grade-head .gh-cell.hoje .gh-dia::after { content: 'HOJE'; background: var(--acid); color: var(--ink); font-size: 9px; padding: 2px 6px; letter-spacing: 0.1em; font-weight: 700; }
+.grade-head .gh-cell.hoje .gh-num { color: var(--paper); }
+.grade-body { display: grid; grid-template-columns: 60px repeat(7, 1fr); position: relative; }
+.hora-lbl { font-size: 10px; color: #70757A; padding: 0 8px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; position: relative; top: -7px; }
+.col-horas { border-right: 1px solid #E0E0E0; }
+.col-dia { border-right: 1px solid #F1F1F1; position: relative; }
+.col-dia:last-child { border-right: none; }
+.col-dia .hora-tick { height: 50px; border-bottom: 1px solid #F1F1F1; }
+.col-dia .hora-tick:nth-child(even) { border-bottom-style: dashed; border-bottom-color: #F5F5F5; }
+.col-dia.hoje { background: rgba(30,58,232,0.025); }
+.now-line { position: absolute; left: 0; right: 0; height: 2px; background: var(--rose); z-index: 5; pointer-events: none; }
+.now-line::before { content:''; position: absolute; left: -5px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--rose); }
+.bloco { position: absolute; left: 2px; right: 2px; border-radius: 4px; padding: 4px 8px; font-size: 12px; line-height: 1.2; overflow: hidden; cursor: pointer; transition: filter .12s, box-shadow .12s; z-index: 2; }
+.bloco:hover { filter: brightness(0.97); box-shadow: 0 2px 6px rgba(60,64,67,0.18); z-index: 4; }
+.bloco.aula { background: #DDE3FF; color: #1a3291; border-left: 3px solid var(--cobalt); }
+.bloco.aula .nome { font-weight: 600; font-size: 12px; }
+.bloco.aula .tempo { opacity: 0.8; font-size: 11px; margin-top: 1px; font-variant-numeric: tabular-nums; }
+.bloco.estudo { background: #FFF9C4; color: #6b5b00; border-left: 3px solid #C9A200; }
+.bloco.estudo .nome { font-weight: 600; font-size: 12px; }
+.bloco.estudo .tempo { opacity: 0.75; font-size: 11px; margin-top: 1px; font-variant-numeric: tabular-nums; }
+.bloco.concluido { opacity: 0.5; text-decoration: line-through; background: #E8F5E9; color: #2E7D32; border-left-color: #43A047; }
+.bloco .check { position: absolute; top: 3px; right: 6px; font-size: 10px; }
 
-  .grid-body { display: grid; grid-template-columns: 56px repeat(7, 1fr); }
-  .hour-col > div { height: 40px; border-bottom: 1px solid var(--line); font-size: 10px; color: var(--muted); padding: 0 8px 0 0; text-align: right; font-variant-numeric: tabular-nums; position: relative; }
-  .hour-col > div span { position: relative; top: -6px; background: var(--card); padding: 0 2px; }
-  .day-col { position: relative; border-left: 1px solid var(--line); }
-  .day-col.today { background: rgba(30,58,232,0.035); }
-  .hour-slot { height: 40px; border-bottom: 1px solid var(--line); cursor: pointer; transition: background .1s; }
-  .hour-slot:hover { background: rgba(30,58,232,0.08); }
-  .hour-slot.lunch { background: rgba(107,106,95,0.04); }
-  .hour-slot.lunch:hover { background: rgba(30,58,232,0.08); }
+.legenda { display: flex; gap: 16px; font-size: 11px; color: #70757A; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+.legenda b { width: 12px; height: 12px; display: inline-block; margin-right: 6px; vertical-align: -1px; border-radius: 2px; }
+.legenda .a b { background: #DDE3FF; border-left: 3px solid var(--cobalt); }
+.legenda .e b { background: #FFF9C4; border-left: 3px solid #C9A200; }
+.legenda .d b { background: #E8F5E9; border-left: 3px solid #43A047; }
 
-  .session-block { position: absolute; left: 3px; right: 3px; padding: 5px 8px; font-size: 10.5px; line-height: 1.2; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; gap: 2px; transition: all .1s; }
-  .session-block:hover { z-index: 4; box-shadow: 0 4px 12px rgba(10,19,48,0.15); }
-  .session-block .tagline { font-size: 8.5px; letter-spacing: 0.08em; font-weight: 700; display: flex; justify-content: space-between; line-height: 1.1; }
-  .session-block .title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
-  .session-block .recur { position: absolute; top: 4px; right: 6px; font-size: 9px; opacity: 0.6; }
+.empty-disc { background: var(--card); border: 2px dashed var(--line); padding: 40px 24px; text-align: center; margin: 24px 0; }
+.empty-disc h3 { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 500; letter-spacing: -0.02em; }
+.empty-disc p { color: var(--muted); margin-top: 6px; font-size: 14px; }
+.empty-disc a { display: inline-block; margin-top: 14px; background: var(--cobalt); color: #fff; padding: 10px 20px; font-size: 13px; font-weight: 600; text-decoration: none; }
 
-  .now-line { position: absolute; left: 0; right: 0; border-top: 2px solid var(--rose); z-index: 2; pointer-events: none; }
-  .now-line::before { content: ''; position: absolute; left: -4px; top: -5px; width: 8px; height: 8px; background: var(--rose); border-radius: 50%; }
+/* Modal adicionar horas */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(10,19,48,0.55); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.modal-backdrop.open { display: flex; }
+.modal-box { background: var(--card); border: 1px solid var(--line); width: 480px; max-width: 100%; padding: 30px; position: relative; }
+.modal-box h2 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
+.modal-box h2 i { color: var(--cobalt); font-style: italic; }
+.modal-sub { font-size: 13px; color: var(--muted); margin-top: 6px; margin-bottom: 18px; }
+.mbtn-close { position: absolute; right: 20px; top: 20px; background: transparent; border: none; font-size: 24px; cursor: pointer; color: var(--muted); }
+.mfield { margin-bottom: 14px; }
+.mfield label { display: block; font-size: 11px; letter-spacing: 0.12em; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 5px; }
+.mfield input, .mfield select { width: 100%; padding: 10px 12px; border: 1px solid var(--line); background: var(--paper); font-size: 14px; font-family: inherit; }
+.mfield.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.mactions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.mbtn-cancel { background: transparent; border: 1px solid var(--line); padding: 10px 18px; font-size: 13px; cursor: pointer; font-family: inherit; }
+.mbtn-save { background: var(--cobalt); color: #fff; border: none; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+</style></head><body>
+<div class="app">
+<aside class="sidebar">
+<div class="logo">Tracker<em>Med</em></div>
+<a href="index.html" class="nav-item">Home</a>
+<a href="planos.html" class="nav-item">Planos</a>
+<a href="disciplinas.html" class="nav-item">Disciplinas</a>
+<a href="plannerstudy.html" class="nav-item active">Planejamento</a>
+<a href="revisoes.html" class="nav-item">Revisões</a>
+<a href="historico.html" class="nav-item">Histórico</a>
+<a href="dashboard.html" class="nav-item">Estatísticas</a>
+<a href="simulados.html" class="nav-item">Simulados</a>
+<div class="sidebar-foot">v0.1 · pessoal</div>
+</aside>
+<main class="main">
+<div class="topbar">
+  <div class="crumb">Home <i>›</i> Planejamento</div>
+  <div class="topbar-right">
+    <span class="pill" id="semanaLbl">Semana de —</span>
+    <button class="btn-ghost" onclick="mudarSemana(-1)">‹ anterior</button>
+    <button class="btn-ghost" onclick="mudarSemana(0)">hoje</button>
+    <button class="btn-ghost" onclick="mudarSemana(1)">seguinte ›</button>
+  </div>
+</div>
 
-  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11px; margin-top: 16px; color: var(--ink2); }
-  .legend .sw { display: inline-flex; align-items: center; gap: 6px; }
-  .legend .sw i { width: 10px; height: 10px; font-style: normal; }
+<div class="stat-row">
+  <div class="stat-card"><div class="lbl">Horas planejadas</div><div class="val" id="statPlan">0<sup>h00m</sup></div><div class="sub" id="statPlanSub">na semana toda</div></div>
+  <div class="stat-card"><div class="lbl">Sessões</div><div class="val" id="statSess">0</div><div class="sub" id="statSessSub">0 feitas</div></div>
+  <div class="stat-card"><div class="lbl">Meta semanal</div><div class="val cobalt" id="statMeta">0<sup>h</sup></div><div class="sub" id="statMetaSub">0h faltando</div></div>
+  <div class="stat-card dark"><div class="lbl">Provas</div><div class="val" id="statProv">0</div><div class="sub" id="statProvSub">nos próximos 30d</div></div>
+</div>
 
-  /* empty state */
-  .empty-state { text-align: center; padding: 60px 20px; grid-column: 1 / -1; }
-  .empty-state h3 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; margin-bottom: 6px; }
-  .empty-state p { font-size: 13px; color: var(--muted); }
+<div id="sugContainer"></div>
+<div id="gradeContainer"></div>
+<div class="legenda"><span class="a"><b></b>Aula</span><span class="e"><b></b>Estudo</span><span class="d"><b></b>Feito</span><span>(clica num bloco pra marcar ✓ · clique-direito apaga)</span></div>
+</main></div>
 
-  /* Modal */
-  .modal-backdrop { position: fixed; inset: 0; background: rgba(10,19,48,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
-  .modal { background: var(--card); border: 1px solid var(--line); width: 440px; max-width: calc(100vw - 32px); max-height: calc(100vh - 32px); overflow-y: auto; padding: 28px; }
-  .modal h2 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; margin-bottom: 4px; }
-  .modal .modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
-  .field { margin-bottom: 14px; }
-  .field label { display: block; font-size: 11px; letter-spacing: 0.12em; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 5px; }
-  .field input[type="text"], .field input[type="number"], .field select, .field textarea { width: 100%; padding: 9px 11px; border: 1px solid var(--line); background: var(--paper); font-size: 13px; font-family: inherit; color: var(--ink); }
-  .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid var(--cobalt); outline-offset: -1px; border-color: var(--cobalt); }
-  .field.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .field.row > div label { display: block; }
-  .type-pills { display: flex; gap: 6px; flex-wrap: wrap; }
-  .type-pill { padding: 7px 14px; border: 1px solid var(--line); background: var(--paper); cursor: pointer; font-size: 12px; font-weight: 500; }
-  .type-pill.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-  .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink2); cursor: pointer; }
-  .checkbox-row input { width: 16px; height: 16px; accent-color: var(--cobalt); cursor: pointer; }
-  .modal-actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
-  .btn-delete { background: transparent; border: none; color: var(--rose); font-size: 12px; cursor: pointer; font-family: inherit; font-weight: 600; padding: 8px 0; }
-  .btn-group { display: flex; gap: 8px; }
-  .btn-cancel { background: transparent; border: 1px solid var(--line); padding: 9px 16px; font-size: 13px; cursor: pointer; font-family: inherit; }
-  .btn-save { background: var(--cobalt); color: #fff; border: none; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
-
-  /* overflow nudge */
-  @media (max-width: 1100px) {
-    .stats-strip { grid-template-columns: repeat(2, 1fr); }
-  }
-</style>
-</head>
-<body>
-<div id="root"></div>
-
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-
-<script type="text/babel">
-const { useState, useEffect, useMemo, useCallback } = React;
-
-// --- Constants
-const HOUR_START = 6;
-const HOUR_END = 23;
-const HOURS = Array.from({ length: HOUR_END - HOUR_START + 1 }, (_, i) => HOUR_START + i);
-const ROW_H = 40;
-const DAYS_SHORT = ['SEG','TER','QUA','QUI','SEX','SÁB','DOM'];
-
-const DISCIPLINAS_FALLBACK = [
-  'Morfofuncional', 'Emergências', 'Farmacologia', 'Hematológicas',
-  'Saúde Coletiva', 'Clínica Médica', 'Cardiologia', 'Pediatria',
-  'Ginecologia', 'Psiquiatria', 'Outro'
-];
-
-function loadDisciplinas() {
-  try {
-    const raw = localStorage.getItem('trackermed.disciplinas.v1');
-    if (!raw) return DISCIPLINAS_FALLBACK;
-    const arr = JSON.parse(raw);
-    if (!Array.isArray(arr) || arr.length === 0) return DISCIPLINAS_FALLBACK;
-    const nomes = arr.map(d => d && d.nome).filter(Boolean);
-    return nomes.length ? [...nomes, 'Outro'] : DISCIPLINAS_FALLBACK;
-  } catch { return DISCIPLINAS_FALLBACK; }
-}
-
-const DISC_COLOR = {
-  'Morfofuncional':  { color: '#1E3AE8', soft: '#DDE3FF' },
-  'Emergências':     { color: '#FF5B5B', soft: '#FFD9D9' },
-  'Farmacologia':    { color: '#8E5CF7', soft: '#E8DFFE' },
-  'Hematológicas':   { color: '#1FC28A', soft: '#CFF1E3' },
-  'Saúde Coletiva':  { color: '#FF8A4A', soft: '#FFE2D0' },
-  'Clínica Médica':  { color: '#3DB6E6', soft: '#D5ECF7' },
-  'Cardiologia':     { color: '#D94B7A', soft: '#FAD7E1' },
-  'Pediatria':       { color: '#F4A72F', soft: '#FBE8C6' },
-  'Ginecologia':     { color: '#A04FC5', soft: '#EAD5F5' },
-  'Psiquiatria':     { color: '#4A9E7F', soft: '#D4ECE1' },
-  'Outro':           { color: '#6B6A5F', soft: '#E4DFD2' },
-};
-
-const TYPE_CONFIG = {
-  estudo:   { label: 'Estudo',   icon: '📘' },
-  revisao:  { label: 'Revisão',  icon: '🔁' },
-  simulado: { label: 'Simulado', icon: '⚡' },
-};
-
-// --- Date helpers
-function startOfWeek(date) {
-  const d = new Date(date);
-  const dow = (d.getDay() + 6) % 7; // Monday=0
-  d.setDate(d.getDate() - dow);
-  d.setHours(0,0,0,0);
-  return d;
-}
-function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
-function sameYMD(a, b) { return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
-function isoDate(d) { return d.toISOString().split('T')[0]; }
-function formatRange(monday) {
-  const sun = addDays(monday, 6);
-  const mo = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-  if (monday.getMonth() === sun.getMonth()) {
-    return `${monday.getDate()} a ${sun.getDate()} de ${mo[monday.getMonth()]}`;
-  }
-  return `${monday.getDate()} ${mo[monday.getMonth()]} — ${sun.getDate()} ${mo[sun.getMonth()]}`;
-}
-function weekNum(d) {
-  const target = new Date(d.valueOf());
-  const dayNr = (d.getDay() + 6) % 7;
-  target.setDate(target.getDate() - dayNr + 3);
-  const firstThursday = target.valueOf();
-  target.setMonth(0, 1);
-  if (target.getDay() !== 4) target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
-  return 1 + Math.ceil((firstThursday - target) / 604800000);
-}
-function hoursToLabel(h) {
-  const hh = Math.floor(h);
-  const mm = Math.round((h - hh) * 60);
-  return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
-}
-
-// --- Storage
-const STORAGE_KEY = 'trackermed.planner.sessions.v1';
-
-function loadSessions() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw);
-  } catch { return []; }
-}
-function saveSessions(s) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
-}
-
-// --- Sidebar
-function Sidebar() {
-  const items = [
-    { name:'Home', href:'index.html' },
-    { name:'Planos', href:'planos.html' },
-    { name:'Disciplinas', href:'disciplinas.html' },
-    { name:'Planejamento', href:'plannerstudy.html', active:true },
-    { name:'Revisões', href:'revisoes.html' },
-    { name:'Histórico', href:'historico.html' },
-    { name:'Estatísticas', href:'dashboard.html' },
-    { name:'Simulados', href:'simulados.html' },
-  ];
-  return (
-    <aside className="sidebar">
-      <div className="logo">Tracker<em>Med</em></div>
-      {items.map(it => (
-        <a key={it.name} href={it.href} className={`nav-item ${it.active ? 'active' : ''}`}>
-          {it.name}
-        </a>
-      ))}
-      <div className="sidebar-foot">v0.1 · pessoal</div>
-    </aside>
-  );
-}
-
-// --- Session Modal
-function SessionModal({ session, isNew, disciplinas, onSave, onDelete, onCancel }) {
-  const [form, setForm] = useState(session);
-  const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
-  const opcoesDisc = disciplinas.includes(form.disc) ? disciplinas : [form.disc, ...disciplinas];
-
-  const save = () => {
-    if (form.endHour <= form.startHour) { alert('Horário final deve ser depois do início.'); return; }
-    if (!form.title.trim()) { alert('Dá um título pra sessão.'); return; }
-    onSave(form);
-  };
-
-  return (
-    <div className="modal-backdrop" onClick={onCancel}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
-        <h2>{isNew ? 'Nova sessão' : 'Editar sessão'}</h2>
-        <div className="modal-sub">
-          {DAYS_SHORT[form.dayIdx]} · {hoursToLabel(form.startHour)} — {hoursToLabel(form.endHour)}
-        </div>
-
-        <div className="field">
-          <label>Tipo</label>
-          <div className="type-pills">
-            {Object.entries(TYPE_CONFIG).map(([k, v]) => (
-              <div key={k}
-                   className={`type-pill ${form.type === k ? 'active' : ''}`}
-                   onClick={() => update('type', k)}>
-                {v.icon} {v.label}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="field">
-          <label>Disciplina</label>
-          <select value={form.disc} onChange={e => update('disc', e.target.value)}>
-            {opcoesDisc.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
-        </div>
-
-        <div className="field">
-          <label>Título / descrição</label>
-          <input type="text" value={form.title} onChange={e => update('title', e.target.value)}
-                 placeholder="Ex: Sistema cardiovascular — aula + questões" autoFocus />
-        </div>
-
-        <div className="field row">
-          <div>
-            <label>Início</label>
-            <select value={form.startHour} onChange={e => update('startHour', parseFloat(e.target.value))}>
-              {Array.from({length: (HOUR_END - HOUR_START) * 2 + 1}, (_, i) => HOUR_START + i * 0.5).map(h =>
-                <option key={h} value={h}>{hoursToLabel(h)}</option>
-              )}
-            </select>
-          </div>
-          <div>
-            <label>Fim</label>
-            <select value={form.endHour} onChange={e => update('endHour', parseFloat(e.target.value))}>
-              {Array.from({length: (HOUR_END - HOUR_START) * 2 + 1}, (_, i) => HOUR_START + i * 0.5 + 0.5).map(h =>
-                <option key={h} value={h}>{hoursToLabel(h)}</option>
-              )}
-            </select>
-          </div>
-        </div>
-
-        <div className="field row">
-          <div>
-            <label>Meta de questões</label>
-            <input type="number" min="0" value={form.goalQ || ''} onChange={e => update('goalQ', e.target.value ? parseInt(e.target.value) : 0)} placeholder="0" />
-          </div>
-          <div>
-            <label>Meta flashcards</label>
-            <input type="number" min="0" value={form.goalF || ''} onChange={e => update('goalF', e.target.value ? parseInt(e.target.value) : 0)} placeholder="0" />
-          </div>
-        </div>
-
-        <div className="field">
-          <label className="checkbox-row">
-            <input type="checkbox" checked={!!form.recurring} onChange={e => update('recurring', e.target.checked)} />
-            <span>🔁 Repetir toda semana</span>
-          </label>
-        </div>
-
-        <div className="modal-actions">
-          {!isNew ? (
-            <button className="btn-delete" onClick={() => { if (confirm('Apagar essa sessão?')) onDelete(form.id); }}>
-              Apagar
-            </button>
-          ) : <div />}
-          <div className="btn-group">
-            <button className="btn-cancel" onClick={onCancel}>Cancelar</button>
-            <button className="btn-save" onClick={save}>{isNew ? 'Criar' : 'Salvar'}</button>
-          </div>
-        </div>
+<!-- Modal adicionar bloco de estudo -->
+<div class="modal-backdrop" id="addModal" onclick="if(event.target===this) fecharAdd()">
+  <div class="modal-box">
+    <button class="mbtn-close" onclick="fecharAdd()">×</button>
+    <h2>Adicionar <i>estudo</i></h2>
+    <div class="modal-sub" id="addSub">Escolhe onde encaixar esse bloco na semana.</div>
+    <form onsubmit="event.preventDefault(); salvarBloco();">
+      <input type="hidden" id="aDisc">
+      <div class="mfield"><label>Dia</label>
+        <select id="aDia">
+          <option value="1">Segunda</option><option value="2">Terça</option><option value="3">Quarta</option>
+          <option value="4">Quinta</option><option value="5">Sexta</option><option value="6">Sábado</option><option value="0">Domingo</option>
+        </select>
       </div>
-    </div>
-  );
+      <div class="mfield row2">
+        <div><label>Início</label><input type="time" id="aIni" value="19:00"></div>
+        <div><label>Fim</label><input type="time" id="aFim" value="21:00"></div>
+      </div>
+      <div class="mactions">
+        <button type="button" class="mbtn-cancel" onclick="fecharAdd()">Cancelar</button>
+        <button type="submit" class="mbtn-save">Adicionar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const DISC_KEY = 'trackermed.disciplinas.v1';
+const PLAN_KEY = 'trackermed.plan.v1';
+const DIAS_LBL = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const DIAS_LONG = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const DIA_IDX = { dom:0, seg:1, ter:2, qua:3, qui:4, sex:5, sab:6 };
+const HORA_INI = 7, HORA_FIM = 23; // 7h → 23h, 16h cobertura
+
+function loadDisc() { try { return JSON.parse(localStorage.getItem(DISC_KEY) || '[]'); } catch { return []; } }
+function loadPlan() { try { return JSON.parse(localStorage.getItem(PLAN_KEY) || '{}'); } catch { return {}; } }
+function savePlan(p) { localStorage.setItem(PLAN_KEY, JSON.stringify(p)); }
+function weekKey(d) { const m=startOfWeek(d); return m.toISOString().slice(0,10); }
+function startOfWeek(d) { const x=new Date(d); x.setHours(0,0,0,0); const w=(x.getDay()+6)%7; x.setDate(x.getDate()-w); return x; }
+function uid() { return 'b-'+Date.now()+'-'+Math.random().toString(36).slice(2,6); }
+function parseTime(t) { const [h,m]=t.split(':').map(Number); return h+m/60; }
+function fmtDate(d) { return d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0'); }
+function addDays(d,n) { const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+
+let anchorDate = new Date();
+let editSlot = null;
+
+function mudarSemana(dir) {
+  if (dir === 0) anchorDate = new Date();
+  else anchorDate = addDays(startOfWeek(anchorDate), dir*7);
+  render();
 }
 
-// --- Session block on grid
-function SessionBlock({ s, onClick }) {
-  const d = DISC_COLOR[s.disc] || DISC_COLOR['Outro'];
-  const dur = s.endHour - s.startHour;
-  const top = (s.startHour - HOUR_START) * ROW_H;
-  const height = dur * ROW_H - 3;
-  const isMock = s.type === 'simulado';
-  const isReview = s.type === 'revisao';
-  const compact = dur <= 0.75;
-  const typeIcon = TYPE_CONFIG[s.type]?.icon || '';
-
-  return (
-    <div className="session-block"
-         onClick={e => { e.stopPropagation(); onClick(s); }}
-         style={{
-           top, height,
-           background: isReview ? '#fff' : d.soft,
-           borderLeft: `3px solid ${d.color}`,
-           border: isReview ? `1px dashed ${d.color}` : `1px solid ${d.color}`,
-           boxShadow: isMock ? `inset 0 -3px 0 #E6FF3D` : 'none',
-         }}>
-        <div className="tagline" style={{ color: d.color }}>
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.disc.toUpperCase()}</span>
-          <span style={{ color: '#6B6A5F', fontWeight: 500, flexShrink: 0, marginLeft: 4 }}>
-            {typeIcon} {dur}h
-          </span>
-        </div>
-        {!compact && <div className="title">{s.title}</div>}
-        {compact && <div className="title" style={{ whiteSpace: 'nowrap' }}>{s.title}</div>}
-        {s.recurring && <span className="recur">🔁</span>}
-    </div>
-  );
+function gerarSugestoes(discList, wkKey, plan) {
+  // Para cada disciplina em-curso: horas meta - horas já agendadas nesta semana
+  const blocos = (plan[wkKey] || []);
+  const sugestoes = [];
+  discList.filter(d => d.status === 'em-curso' || !d.status).forEach(d => {
+    const agendado = blocos.filter(b => b.discId === d.id).reduce((s,b) => s + (parseTime(b.fim)-parseTime(b.ini)), 0);
+    const falta = (d.metaHorasSemana || 0) - agendado;
+    if (falta <= 0.1) return;
+    // urgência: alguma prova em ≤14 dias?
+    const prox = (d.provas || []).map(p => {
+      if (!p.data) return Infinity;
+      return Math.round((new Date(p.data+'T12:00') - new Date().setHours(0,0,0,0))/86400000);
+    }).filter(x => x >= 0).sort((a,b)=>a-b)[0];
+    const urgente = prox !== undefined && prox <= 14;
+    let motivo;
+    if (urgente) motivo = `prova em ${prox}d · priorize`;
+    else if (agendado > 0) motivo = `${agendado.toFixed(1)}h já agendadas · faltam ${falta.toFixed(1)}h pra meta`;
+    else motivo = `meta de ${(d.metaHorasSemana||0).toFixed(1)}h/sem · nada agendado`;
+    sugestoes.push({ disc: d, falta, urgente, motivo });
+  });
+  sugestoes.sort((a,b) => (b.urgente?1:0)-(a.urgente?1:0) || b.falta-a.falta);
+  return sugestoes;
 }
 
-// --- Main planner
-function Planner() {
-  const [sessions, setSessions] = useState(loadSessions);
-  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
-  const [modal, setModal] = useState(null);
-  const [view, setView] = useState('week');
-  const [disciplinas, setDisciplinas] = useState(loadDisciplinas);
+function abrirAdd(discId, discNome, horasSug) {
+  editSlot = { discId };
+  document.getElementById('aDisc').value = discId;
+  document.getElementById('addSub').textContent = `${discNome} · ${horasSug.toFixed(1)}h sugeridas`;
+  const ini = 19, dur = Math.min(3, Math.max(1, Math.round(horasSug)));
+  document.getElementById('aIni').value = String(ini).padStart(2,'0')+':00';
+  document.getElementById('aFim').value = String(Math.min(23, ini+dur)).padStart(2,'0')+':00';
+  document.getElementById('aDia').value = ((new Date().getDay()+1)%7).toString();
+  document.getElementById('addModal').classList.add('open');
+}
+function fecharAdd() { document.getElementById('addModal').classList.remove('open'); editSlot = null; }
+function salvarBloco() {
+  const plan = loadPlan();
+  const wk = weekKey(anchorDate);
+  if (!plan[wk]) plan[wk] = [];
+  plan[wk].push({
+    id: uid(),
+    tipo: 'estudo',
+    discId: editSlot.discId,
+    dia: parseInt(document.getElementById('aDia').value),
+    ini: document.getElementById('aIni').value,
+    fim: document.getElementById('aFim').value,
+    feito: false
+  });
+  savePlan(plan);
+  fecharAdd();
+  render();
+}
 
-  useEffect(() => {
-    const onStorage = (e) => {
-      if (!e.key || e.key === 'trackermed.disciplinas.v1') setDisciplinas(loadDisciplinas());
-    };
-    const onFocus = () => setDisciplinas(loadDisciplinas());
-    window.addEventListener('storage', onStorage);
-    window.addEventListener('focus', onFocus);
-    return () => {
-      window.removeEventListener('storage', onStorage);
-      window.removeEventListener('focus', onFocus);
-    };
-  }, []);
+function toggleFeito(blocoId) {
+  const plan = loadPlan();
+  const wk = weekKey(anchorDate);
+  plan[wk] = (plan[wk]||[]).map(b => b.id === blocoId ? {...b, feito: !b.feito} : b);
+  savePlan(plan);
+  render();
+}
+function apagarBloco(blocoId) {
+  if (!confirm('Apagar esse bloco?')) return;
+  const plan = loadPlan();
+  const wk = weekKey(anchorDate);
+  plan[wk] = (plan[wk]||[]).filter(b => b.id !== blocoId);
+  savePlan(plan);
+  render();
+}
 
-  // Persist on change
-  useEffect(() => { saveSessions(sessions); }, [sessions]);
+function renderGrade(discList) {
+  const wkStart = startOfWeek(anchorDate);
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const horas = [];
+  for (let h = HORA_INI; h <= HORA_FIM; h++) horas.push(h);
 
-  // Live now-time for the red line
-  const [now, setNow] = useState(new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 60000);
-    return () => clearInterval(t);
-  }, []);
+  // Header
+  let head = `<div class="gh-cell"></div>`;
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(wkStart, i);
+    const isHoje = d.getTime() === hoje.getTime();
+    head += `<div class="gh-cell ${isHoje?'hoje':''}"><div class="gh-dia">${DIAS_LBL[d.getDay()]}</div><div class="gh-num">${d.getDate()}</div></div>`;
+  }
 
-  const today = new Date();
-  const days = useMemo(() => Array.from({length:7}, (_, i) => {
-    const d = addDays(weekStart, i);
-    return { date: d, short: DAYS_SHORT[i], num: d.getDate(), isToday: sameYMD(d, today) };
-  }), [weekStart]);
+  // Corpo
+  let body = '';
+  // coluna de horas
+  body += `<div class="col-horas">`;
+  horas.forEach(h => body += `<div style="height:50px"><div class="hora-lbl">${String(h).padStart(2,'0')}:00</div></div>`);
+  body += `</div>`;
 
-  // Stats: total hours planned this week
-  const weeklyHours = useMemo(() => {
-    return sessions.reduce((sum, s) => sum + (s.endHour - s.startHour), 0);
-  }, [sessions]);
-
-  const totalQuestions = useMemo(() => sessions.reduce((sum, s) => sum + (s.goalQ || 0), 0), [sessions]);
-  const totalFlashcards = useMemo(() => sessions.reduce((sum, s) => sum + (s.goalF || 0), 0), [sessions]);
-
-  const openNew = (dayIdx, startHour) => {
-    setModal({
-      isNew: true,
-      data: {
-        id: 'tmp-' + Date.now(),
-        dayIdx,
-        startHour,
-        endHour: Math.min(startHour + 1, HOUR_END + 0.5),
-        disc: disciplinas[0] || 'Outro',
-        title: '',
-        type: 'estudo',
-        goalQ: 0,
-        goalF: 0,
-        recurring: false,
+  // colunas dos dias
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(wkStart, i);
+    const isHoje = d.getTime() === hoje.getTime();
+    body += `<div class="col-dia ${isHoje?'hoje':''}" data-dia="${d.getDay()}">`;
+    horas.forEach(() => body += `<div class="hora-tick"></div>`);
+    // Now line (só na coluna de hoje)
+    if (isHoje) {
+      const now = new Date();
+      const nowH = now.getHours() + now.getMinutes()/60;
+      if (nowH >= HORA_INI && nowH <= HORA_FIM+1) {
+        const nowTop = (nowH - HORA_INI) * 50;
+        body += `<div class="now-line" style="top:${nowTop}px"></div>`;
       }
-    });
-  };
-  const openEdit = (s) => setModal({ isNew: false, data: { ...s } });
-
-  const handleSave = (form) => {
-    if (modal.isNew) {
-      setSessions(list => [...list, form]);
-    } else {
-      setSessions(list => list.map(x => x.id === form.id ? form : x));
     }
-    setModal(null);
-  };
-  const handleDelete = (id) => {
-    setSessions(list => list.filter(x => x.id !== id));
-    setModal(null);
-  };
 
-  const shiftWeek = (delta) => setWeekStart(w => addDays(w, delta * 7));
-  const goToday = () => setWeekStart(startOfWeek(new Date()));
+    // Aulas dessa coluna
+    discList.forEach(disc => {
+      (disc.aulas || []).forEach(a => {
+        if (DIA_IDX[a.dia] !== d.getDay()) return;
+        if (!a.inicio || !a.fim) return;
+        const ini = parseTime(a.inicio), fim = parseTime(a.fim);
+        if (fim <= HORA_INI || ini >= HORA_FIM+1) return;
+        const top = Math.max(0, ini - HORA_INI) * 50;
+        const h = (fim - ini) * 50;
+        body += `<div class="bloco aula" style="top:${top}px;height:${h}px" title="${disc.nome}">
+          <div class="nome">${disc.nome}</div>
+          <div class="tempo">${a.inicio}—${a.fim}</div>
+        </div>`;
+      });
+    });
 
-  // Days/sessions rendering
-  const sessionsByDay = useMemo(() => {
-    const byDay = Array.from({length:7}, () => []);
-    sessions.forEach(s => { if (s.dayIdx >= 0 && s.dayIdx < 7) byDay[s.dayIdx].push(s); });
-    return byDay;
-  }, [sessions]);
+    // Blocos de estudo dessa coluna
+    const wk = weekKey(anchorDate);
+    const blocos = (loadPlan()[wk] || []).filter(b => b.dia === d.getDay());
+    blocos.forEach(b => {
+      const disc = discList.find(x => x.id === b.discId);
+      const ini = parseTime(b.ini), fim = parseTime(b.fim);
+      if (fim <= HORA_INI || ini >= HORA_FIM+1) return;
+      const top = Math.max(0, ini - HORA_INI) * 50;
+      const h = (fim - ini) * 50;
+      body += `<div class="bloco estudo ${b.feito?'concluido':''}" style="top:${top}px;height:${h}px" onclick="toggleFeito('${b.id}')" oncontextmenu="event.preventDefault(); apagarBloco('${b.id}')" title="${disc?disc.nome:'estudo'} — clique: feito · clique-direito: apagar">
+        <div class="check">${b.feito?'✓':'•'}</div>
+        <div class="nome">${disc ? disc.nome : 'Estudo'}</div>
+        <div class="tempo">${b.ini}—${b.fim}</div>
+      </div>`;
+    });
 
-  return (
-    <>
-    <div className="app">
-      <Sidebar />
-      <main className="main planner-main">
-        <div className="topbar">
-          <div className="crumb">Home <i>›</i> Planejamento</div>
-          <div className="topbar-right">
-            <span className="pill">Semana {weekNum(weekStart)}</span>
-            <span style={{color:'var(--muted)', fontSize:12}}>
-              {sessions.length} sessões salvas · {weeklyHours.toFixed(1)}h planejadas
-            </span>
-          </div>
-        </div>
+    body += `</div>`;
+  }
 
-        <div className="planner-head">
-          <div>
-            <div className="planner-kicker">Planejamento semanal</div>
-            <h1>{formatRange(weekStart)} <i>· {weekStart.getFullYear()}</i></h1>
-          </div>
-          <div className="ctrl-row">
-            <div className="ctrl">
-              <button onClick={() => shiftWeek(-1)}>‹</button>
-              <button onClick={goToday}>Hoje</button>
-              <button onClick={() => shiftWeek(+1)}>›</button>
-            </div>
-            <div className="ctrl">
-              <button className={view==='week' ? 'active' : ''} onClick={() => setView('week')}>Semana</button>
-              <button className={view==='list' ? 'active' : ''} onClick={() => setView('list')}>Lista</button>
-            </div>
-            <button className="add-btn" onClick={() => openNew(0, 8)}>+ Nova sessão</button>
-          </div>
-        </div>
-
-        <div className="stats-strip">
-          <div className="stat">
-            <div className="lbl">Horas planejadas</div>
-            <div className="num">{Math.floor(weeklyHours)}<span>h {Math.round((weeklyHours % 1) * 60).toString().padStart(2,'0')}m</span></div>
-            <div className="sub">na semana toda</div>
-          </div>
-          <div className="stat">
-            <div className="lbl">Sessões</div>
-            <div className="num">{sessions.length}</div>
-            <div className="sub">{sessions.filter(s => s.recurring).length} recorrentes</div>
-          </div>
-          <div className="stat">
-            <div className="lbl">Meta de questões</div>
-            <div className="num" style={{color:'var(--cobalt)'}}>{totalQuestions}</div>
-            <div className="sub">{totalFlashcards} flashcards</div>
-          </div>
-          <div className="stat dark">
-            <div className="lbl">Simulados</div>
-            <div className="num" style={{color:'var(--acid)'}}>{sessions.filter(s => s.type === 'simulado').length}</div>
-            <div className="sub">esta semana</div>
-          </div>
-        </div>
-
-        {view === 'week' && (
-          <div className="grid-wrap">
-            <div className="grid-header">
-              <div />
-              {days.map((d, i) => (
-                <div key={i} className={`gh ${d.isToday ? 'today' : ''}`}>
-                  <div className="short">{d.short}</div>
-                  <div>
-                    <span className="num">{d.num}</span>
-                    {d.isToday && <span className="today-chip">HOJE</span>}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="grid-body">
-              <div className="hour-col">
-                {HOURS.map(h => (
-                  <div key={h}><span>{String(h).padStart(2,'0')}:00</span></div>
-                ))}
-              </div>
-              {days.map((d, di) => (
-                <div key={di} className={`day-col ${d.isToday ? 'today' : ''}`}>
-                  {HOURS.map((h, hi) => (
-                    <div key={hi}
-                         className={`hour-slot ${h >= 12 && h < 13 ? 'lunch' : ''}`}
-                         onClick={() => openNew(di, h)} />
-                  ))}
-                  {d.isToday && (() => {
-                    const nowH = now.getHours() + now.getMinutes() / 60;
-                    if (nowH < HOUR_START || nowH > HOUR_END + 1) return null;
-                    return <div className="now-line" style={{ top: (nowH - HOUR_START) * ROW_H }} />;
-                  })()}
-                  {sessionsByDay[di].map(s => <SessionBlock key={s.id} s={s} onClick={openEdit} />)}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {view === 'list' && (
-          <div style={{ background: 'var(--card)', border: '1px solid var(--line)' }}>
-            {sessions.length === 0 ? (
-              <div className="empty-state">
-                <h3>Nenhuma sessão ainda.</h3>
-                <p>Clica no botão "+ Nova sessão" ou num horário da grade.</p>
-              </div>
-            ) : (
-              <table>
-                <thead>
-                  <tr>
-                    <th>Dia</th><th>Horário</th><th>Disciplina</th><th>Título</th>
-                    <th>Tipo</th><th style={{textAlign:'right'}}>Duração</th><th style={{textAlign:'right'}}>Meta</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...sessions].sort((a,b) => a.dayIdx - b.dayIdx || a.startHour - b.startHour).map(s => {
-                    const d = DISC_COLOR[s.disc] || DISC_COLOR['Outro'];
-                    return (
-                      <tr key={s.id} onClick={() => openEdit(s)} style={{cursor:'pointer'}}>
-                        <td>{DAYS_SHORT[s.dayIdx]} {s.recurring && '🔁'}</td>
-                        <td>{hoursToLabel(s.startHour)}—{hoursToLabel(s.endHour)}</td>
-                        <td><span style={{padding:'2px 8px', background: d.soft, color: d.color, fontWeight:600, fontSize:11}}>{s.disc}</span></td>
-                        <td>{s.title}</td>
-                        <td>{TYPE_CONFIG[s.type]?.icon} {TYPE_CONFIG[s.type]?.label}</td>
-                        <td style={{textAlign:'right'}}>{(s.endHour - s.startHour).toFixed(1)}h</td>
-                        <td style={{textAlign:'right', fontSize:11, color:'var(--muted)'}}>
-                          {s.goalQ ? `${s.goalQ}q` : ''} {s.goalF ? `· ${s.goalF}f` : ''}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )}
-
-        {view === 'week' && sessions.length === 0 && (
-          <div style={{
-            textAlign:'center', padding:'24px', background:'var(--ink)', color:'var(--paper)',
-            marginTop:16, fontSize:14
-          }}>
-            <span style={{color:'var(--acid)', fontWeight:600}}>↑</span> Clica em qualquer hora na grade acima pra criar sua primeira sessão.
-          </div>
-        )}
-
-        <div className="legend">
-          {Object.entries(DISC_COLOR).filter(([k]) => k !== 'Outro').map(([name, d]) => (
-            <span key={name} className="sw"><i style={{background: d.color}} /> {name}</span>
-          ))}
-          <span className="sw"><i style={{border:`1px dashed #0A1330`, background:'#fff'}} /> Revisão (borda tracejada)</span>
-          <span className="sw"><i style={{background:'#E6FF3D'}} /> Simulado (barra ácida)</span>
-        </div>
-      </main>
-    </div>
-
-    {modal && (
-      <SessionModal
-        session={modal.data}
-        isNew={modal.isNew}
-        disciplinas={disciplinas}
-        onSave={handleSave}
-        onDelete={handleDelete}
-        onCancel={() => setModal(null)}
-      />
-    )}
-    </>
-  );
+  return `<div class="grade"><div class="grade-head">${head}</div><div class="grade-body" style="min-height:${horas.length*50}px">${body}</div></div>`;
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<Planner />);
+function render() {
+  const discList = loadDisc();
+  const plan = loadPlan();
+  const wk = weekKey(anchorDate);
+  const wkStart = startOfWeek(anchorDate);
+  const wkEnd = addDays(wkStart, 6);
+  document.getElementById('semanaLbl').textContent = `${fmtDate(wkStart)} — ${fmtDate(wkEnd)}`;
+
+  // Totais
+  let aulasTot = 0;
+  discList.forEach(d => (d.aulas||[]).forEach(a => {
+    if (a.inicio && a.fim) aulasTot += parseTime(a.fim) - parseTime(a.inicio);
+  }));
+  const metaTot = discList.filter(d => d.status === 'em-curso' || !d.status).reduce((s,d) => s + (d.metaHorasSemana||0), 0);
+  const blocos = plan[wk] || [];
+  const feitoTot = blocos.filter(b => b.feito).reduce((s,b) => s + (parseTime(b.fim) - parseTime(b.ini)), 0);
+  const estudoPlan = blocos.reduce((s,b) => s + (parseTime(b.fim) - parseTime(b.ini)), 0);
+  const planTot = estudoPlan + aulasTot;
+  const planH = Math.floor(planTot), planM = Math.round((planTot-planH)*60);
+  document.getElementById('statPlan').innerHTML = `${planH}<sup>h${String(planM).padStart(2,'0')}m</sup>`;
+  document.getElementById('statPlanSub').textContent = `${aulasTot.toFixed(1)}h aula + ${estudoPlan.toFixed(1)}h estudo`;
+  document.getElementById('statSess').textContent = blocos.length;
+  document.getElementById('statSessSub').textContent = `${blocos.filter(b=>b.feito).length} feitas · ${feitoTot.toFixed(1)}h`;
+  document.getElementById('statMeta').innerHTML = `${metaTot.toFixed(0)}<sup>h</sup>`;
+  const falta = Math.max(0, metaTot - estudoPlan);
+  document.getElementById('statMetaSub').textContent = falta < 0.1 ? 'meta batida ✓' : `${falta.toFixed(1)}h faltando`;
+  let nProvas = 0, menorDias = null;
+  discList.forEach(d => (d.provas||[]).forEach(p => {
+    if (!p.data) return;
+    const dd = Math.round((new Date(p.data+'T12:00') - new Date().setHours(0,0,0,0))/86400000);
+    if (dd >= 0 && dd <= 30) { nProvas++; if (menorDias===null || dd<menorDias) menorDias=dd; }
+  }));
+  document.getElementById('statProv').textContent = nProvas;
+  document.getElementById('statProvSub').textContent = nProvas===0 ? 'nos próximos 30d' : menorDias===0 ? 'a próxima é hoje' : `próxima em ${menorDias}d`;
+
+  // Empty state
+  if (discList.length === 0) {
+    document.getElementById('sugContainer').innerHTML = '';
+    document.getElementById('gradeContainer').innerHTML = `<div class="empty-disc">
+      <h3>Sem disciplinas cadastradas.</h3>
+      <p>Pra montar o planejamento, adicione primeiro suas matérias com horários de aula e meta de estudo.</p>
+      <a href="disciplinas.html">+ Ir para Disciplinas</a>
+    </div>`;
+    return;
+  }
+
+  // Sugestões
+  const sugestoes = gerarSugestoes(discList, wk, plan);
+  const sugHtml = sugestoes.length === 0
+    ? `<div class="sugestoes"><h3>Meta da semana <i>batida</i> 🎉</h3><div class="help">Todas as horas de estudo já estão agendadas. Dá pra estudar além da meta se quiser — adiciona blocos direto na grade.</div></div>`
+    : `<div class="sugestoes">
+        <h3>Sugestões <i>da semana</i></h3>
+        <div class="help">Baseado na meta semanal de cada matéria${sugestoes.some(s=>s.urgente)?' — <b style="color:var(--rose)">vermelho = prova próxima</b>':''}.</div>
+        <div class="sug-lista">${sugestoes.map(s => `
+          <div class="sug-item ${s.urgente?'urgente':''}">
+            <div>
+              <div class="nome">${s.disc.nome}</div>
+              <div class="motivo">${s.motivo}</div>
+            </div>
+            <div class="horas">${s.falta.toFixed(1)}h</div>
+            <button class="btn-add" onclick="abrirAdd('${s.disc.id}', ${JSON.stringify(s.disc.nome).replace(/"/g,'&quot;')}, ${s.falta})">+ encaixar</button>
+          </div>`).join('')}
+        </div>
+      </div>`;
+  document.getElementById('sugContainer').innerHTML = sugHtml;
+  document.getElementById('gradeContainer').innerHTML = renderGrade(discList);
+}
+
+render();
 </script>
-</body>
-</html>
+</body></html>
