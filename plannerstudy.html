@@ -52,9 +52,14 @@ const DISC = {
 
 function Sidebar() {
   const items = [
-    ['Home', false], ['Planos', false], ['Disciplinas', false], ['Edital', false],
-    ['Planejamento', true], ['Revisões', false], ['Histórico', false],
-    ['Estatísticas', false], ['Simulados', false],
+    ['Home', 'index.html', false],
+    ['Planos', 'planos.html', false],
+    ['Disciplinas', 'disciplinas.html', false],
+    ['Planejamento', 'plannerstudy.html', true],
+    ['Revisões', 'revisoes.html', false],
+    ['Histórico', 'historico.html', false],
+    ['Estatísticas', 'dashboard.html', false],
+    ['Simulados', 'simulados.html', false],
   ];
   return (
     <div style={{
@@ -68,16 +73,17 @@ function Sidebar() {
         </div>
         <div style={{ width: 6, height: 6, background: P.acid, borderRadius: '50%', alignSelf: 'center' }} />
       </div>
-      {items.map(([name, active]) => (
-        <div key={name} style={{
+      {items.map(([name, href, active]) => (
+        <a key={name} href={href} style={{
           padding: '11px 14px', borderRadius: 8, fontSize: 14, fontWeight: active ? 600 : 400,
           background: active ? P.cobalt : 'transparent',
           color: active ? '#fff' : 'rgba(232,230,220,0.72)',
           cursor: 'pointer', display: 'flex', justifyContent: 'space-between',
+          textDecoration: 'none',
         }}>
           <span>{name}</span>
           {active && <span style={{ color: P.acid }}>●</span>}
-        </div>
+        </a>
       ))}
       <div style={{ flex: 1 }} />
       <div style={{
