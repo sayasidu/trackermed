@@ -2,14 +2,103 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8" />
-<title>TrackerMed · Planejamento de Estudo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TrackerMed · Planejamento</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
 <style>
-  html, body { margin: 0; padding: 0; background: #f0eee9; font-family: "Inter Tight", -apple-system, sans-serif; }
-  * { box-sizing: border-box; }
-  body { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 24px; }
+  /* planner-specific overrides */
+  .planner-main { padding: 28px 36px 48px; }
+  .planner-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .planner-head h1 { font-family: 'Fraunces', serif; font-size: 42px; font-weight: 500; letter-spacing: -0.035em; line-height: 1; }
+  .planner-head h1 i { color: var(--muted); font-style: italic; }
+  .planner-kicker { font-size: 11px; letter-spacing: 0.2em; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+  .ctrl-row { display: flex; gap: 10px; align-items: center; }
+  .ctrl { display: flex; border: 1px solid var(--line); background: var(--card); }
+  .ctrl button { background: transparent; border: none; padding: 9px 14px; font-size: 13px; cursor: pointer; font-family: inherit; color: var(--ink2); border-right: 1px solid var(--line); }
+  .ctrl button:last-child { border-right: none; }
+  .ctrl button.active { background: var(--ink); color: var(--paper); font-weight: 600; }
+  .ctrl button:hover:not(.active) { background: var(--paper); }
+  .add-btn { background: var(--cobalt); color: #fff; border: none; padding: 10px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .add-btn:hover { opacity: 0.9; }
+
+  .stats-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat { background: var(--card); border: 1px solid var(--line); padding: 16px 20px; }
+  .stat.dark { background: var(--ink); color: var(--paper); }
+  .stat .lbl { font-size: 10px; letter-spacing: 0.2em; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+  .stat.dark .lbl { color: var(--acid); }
+  .stat .num { font-family: 'Fraunces', serif; font-size: 40px; font-weight: 500; letter-spacing: -0.035em; line-height: 1; margin-top: 8px; }
+  .stat .num span { font-size: 16px; color: var(--muted); }
+  .stat.dark .num span { color: rgba(244,241,234,0.6); }
+  .stat .sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .stat.dark .sub { color: rgba(244,241,234,0.7); }
+
+  .grid-wrap { border: 1px solid var(--line); background: var(--card); overflow: hidden; }
+  .grid-header { display: grid; grid-template-columns: 56px repeat(7, 1fr); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 3; background: var(--card); }
+  .grid-header .gh { padding: 12px 10px; border-left: 1px solid var(--line); position: relative; }
+  .grid-header .gh:first-child { border-left: none; }
+  .grid-header .gh.today { background: var(--ink); color: var(--paper); }
+  .gh .short { font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: var(--muted); }
+  .gh.today .short { color: var(--acid); }
+  .gh .num { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500; letter-spacing: -0.03em; line-height: 1; margin-top: 2px; }
+  .gh .today-chip { display: inline-block; font-size: 10px; background: var(--acid); color: var(--ink); padding: 2px 6px; font-weight: 700; letter-spacing: 0.05em; margin-left: 6px; vertical-align: middle; }
+
+  .grid-body { display: grid; grid-template-columns: 56px repeat(7, 1fr); }
+  .hour-col > div { height: 40px; border-bottom: 1px solid var(--line); font-size: 10px; color: var(--muted); padding: 0 8px 0 0; text-align: right; font-variant-numeric: tabular-nums; position: relative; }
+  .hour-col > div span { position: relative; top: -6px; background: var(--card); padding: 0 2px; }
+  .day-col { position: relative; border-left: 1px solid var(--line); }
+  .day-col.today { background: rgba(30,58,232,0.035); }
+  .hour-slot { height: 40px; border-bottom: 1px solid var(--line); cursor: pointer; transition: background .1s; }
+  .hour-slot:hover { background: rgba(30,58,232,0.08); }
+  .hour-slot.lunch { background: rgba(107,106,95,0.04); }
+  .hour-slot.lunch:hover { background: rgba(30,58,232,0.08); }
+
+  .session-block { position: absolute; left: 3px; right: 3px; padding: 5px 8px; font-size: 10.5px; line-height: 1.2; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; gap: 2px; transition: all .1s; }
+  .session-block:hover { z-index: 4; box-shadow: 0 4px 12px rgba(10,19,48,0.15); }
+  .session-block .tagline { font-size: 8.5px; letter-spacing: 0.08em; font-weight: 700; display: flex; justify-content: space-between; line-height: 1.1; }
+  .session-block .title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+  .session-block .recur { position: absolute; top: 4px; right: 6px; font-size: 9px; opacity: 0.6; }
+
+  .now-line { position: absolute; left: 0; right: 0; border-top: 2px solid var(--rose); z-index: 2; pointer-events: none; }
+  .now-line::before { content: ''; position: absolute; left: -4px; top: -5px; width: 8px; height: 8px; background: var(--rose); border-radius: 50%; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11px; margin-top: 16px; color: var(--ink2); }
+  .legend .sw { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .sw i { width: 10px; height: 10px; font-style: normal; }
+
+  /* empty state */
+  .empty-state { text-align: center; padding: 60px 20px; grid-column: 1 / -1; }
+  .empty-state h3 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; margin-bottom: 6px; }
+  .empty-state p { font-size: 13px; color: var(--muted); }
+
+  /* Modal */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(10,19,48,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
+  .modal { background: var(--card); border: 1px solid var(--line); width: 440px; max-width: calc(100vw - 32px); max-height: calc(100vh - 32px); overflow-y: auto; padding: 28px; }
+  .modal h2 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .modal .modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 11px; letter-spacing: 0.12em; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 5px; }
+  .field input[type="text"], .field input[type="number"], .field select, .field textarea { width: 100%; padding: 9px 11px; border: 1px solid var(--line); background: var(--paper); font-size: 13px; font-family: inherit; color: var(--ink); }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid var(--cobalt); outline-offset: -1px; border-color: var(--cobalt); }
+  .field.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .field.row > div label { display: block; }
+  .type-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .type-pill { padding: 7px 14px; border: 1px solid var(--line); background: var(--paper); cursor: pointer; font-size: 12px; font-weight: 500; }
+  .type-pill.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink2); cursor: pointer; }
+  .checkbox-row input { width: 16px; height: 16px; accent-color: var(--cobalt); cursor: pointer; }
+  .modal-actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+  .btn-delete { background: transparent; border: none; color: var(--rose); font-size: 12px; cursor: pointer; font-family: inherit; font-weight: 600; padding: 8px 0; }
+  .btn-group { display: flex; gap: 8px; }
+  .btn-cancel { background: transparent; border: 1px solid var(--line); padding: 9px 16px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .btn-save { background: var(--cobalt); color: #fff; border: none; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+
+  /* overflow nudge */
+  @media (max-width: 1100px) {
+    .stats-strip { grid-template-columns: repeat(2, 1fr); }
+  }
 </style>
 </head>
 <body>
@@ -20,389 +109,482 @@
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
 <script type="text/babel">
-const P = {
-  ink: '#0A1330',
-  ink2: '#2A3356',
-  paper: '#F4F1EA',
-  card: '#FFFFFF',
-  line: '#E4DFD2',
-  line2: '#CFC8B5',
-  cobalt: '#1E3AE8',
-  cobaltSoft: '#DDE3FF',
-  acid: '#E6FF3D',
-  rose: '#FF5B5B',
-  mint: '#1FC28A',
-  coral: '#FF8A4A',
-  violet: '#8E5CF7',
-  sky: '#3DB6E6',
-  muted: '#6B6A5F',
+const { useState, useEffect, useMemo, useCallback } = React;
+
+// --- Constants
+const HOUR_START = 6;
+const HOUR_END = 23;
+const HOURS = Array.from({ length: HOUR_END - HOUR_START + 1 }, (_, i) => HOUR_START + i);
+const ROW_H = 40;
+const DAYS_SHORT = ['SEG','TER','QUA','QUI','SEX','SÁB','DOM'];
+
+const DISCIPLINAS = [
+  'Morfofuncional', 'Emergências', 'Farmacologia', 'Hematológicas',
+  'Saúde Coletiva', 'Clínica Médica', 'Cardiologia', 'Pediatria',
+  'Ginecologia', 'Psiquiatria', 'Outro'
+];
+
+const DISC_COLOR = {
+  'Morfofuncional':  { color: '#1E3AE8', soft: '#DDE3FF' },
+  'Emergências':     { color: '#FF5B5B', soft: '#FFD9D9' },
+  'Farmacologia':    { color: '#8E5CF7', soft: '#E8DFFE' },
+  'Hematológicas':   { color: '#1FC28A', soft: '#CFF1E3' },
+  'Saúde Coletiva':  { color: '#FF8A4A', soft: '#FFE2D0' },
+  'Clínica Médica':  { color: '#3DB6E6', soft: '#D5ECF7' },
+  'Cardiologia':     { color: '#D94B7A', soft: '#FAD7E1' },
+  'Pediatria':       { color: '#F4A72F', soft: '#FBE8C6' },
+  'Ginecologia':     { color: '#A04FC5', soft: '#EAD5F5' },
+  'Psiquiatria':     { color: '#4A9E7F', soft: '#D4ECE1' },
+  'Outro':           { color: '#6B6A5F', soft: '#E4DFD2' },
 };
 
-// Discipline color map
-const DISC = {
-  'Morfofuncional':    { color: P.cobalt,  soft: '#DDE3FF' },
-  'Emergências':       { color: P.rose,    soft: '#FFD9D9' },
-  'Farmacologia':      { color: P.violet,  soft: '#E8DFFE' },
-  'Hematológicas':     { color: P.mint,    soft: '#CFF1E3' },
-  'Saúde Coletiva':    { color: P.coral,   soft: '#FFE2D0' },
-  'Clínica Médica':    { color: P.sky,     soft: '#D5ECF7' },
-  'Revisão':           { color: P.ink,     soft: '#E4DFD2' },
-  'Simulado':          { color: '#8C6F12', soft: P.acid },
+const TYPE_CONFIG = {
+  estudo:   { label: 'Estudo',   icon: '📘' },
+  revisao:  { label: 'Revisão',  icon: '🔁' },
+  simulado: { label: 'Simulado', icon: '⚡' },
 };
 
+// --- Date helpers
+function startOfWeek(date) {
+  const d = new Date(date);
+  const dow = (d.getDay() + 6) % 7; // Monday=0
+  d.setDate(d.getDate() - dow);
+  d.setHours(0,0,0,0);
+  return d;
+}
+function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+function sameYMD(a, b) { return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+function isoDate(d) { return d.toISOString().split('T')[0]; }
+function formatRange(monday) {
+  const sun = addDays(monday, 6);
+  const mo = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  if (monday.getMonth() === sun.getMonth()) {
+    return `${monday.getDate()} a ${sun.getDate()} de ${mo[monday.getMonth()]}`;
+  }
+  return `${monday.getDate()} ${mo[monday.getMonth()]} — ${sun.getDate()} ${mo[sun.getMonth()]}`;
+}
+function weekNum(d) {
+  const target = new Date(d.valueOf());
+  const dayNr = (d.getDay() + 6) % 7;
+  target.setDate(target.getDate() - dayNr + 3);
+  const firstThursday = target.valueOf();
+  target.setMonth(0, 1);
+  if (target.getDay() !== 4) target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+  return 1 + Math.ceil((firstThursday - target) / 604800000);
+}
+function hoursToLabel(h) {
+  const hh = Math.floor(h);
+  const mm = Math.round((h - hh) * 60);
+  return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+}
+
+// --- Storage
+const STORAGE_KEY = 'trackermed.planner.sessions.v1';
+
+function loadSessions() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch { return []; }
+}
+function saveSessions(s) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+}
+
+// --- Sidebar
 function Sidebar() {
   const items = [
-    ['Home', 'index.html', false],
-    ['Planos', 'planos.html', false],
-    ['Disciplinas', 'disciplinas.html', false],
-    ['Planejamento', 'plannerstudy.html', true],
-    ['Revisões', 'revisoes.html', false],
-    ['Histórico', 'historico.html', false],
-    ['Estatísticas', 'dashboard.html', false],
-    ['Simulados', 'simulados.html', false],
+    { name:'Home', href:'index.html' },
+    { name:'Planos', href:'planos.html' },
+    { name:'Disciplinas', href:'disciplinas.html' },
+    { name:'Planejamento', href:'plannerstudy.html', active:true },
+    { name:'Revisões', href:'revisoes.html' },
+    { name:'Histórico', href:'historico.html' },
+    { name:'Estatísticas', href:'dashboard.html' },
+    { name:'Simulados', href:'simulados.html' },
   ];
   return (
-    <div style={{
-      width: 232, background: P.ink, color: '#E8E6DC', padding: '28px 18px',
-      display: 'flex', flexDirection: 'column', gap: 2, height: '100%',
-      fontFamily: '"Inter Tight", sans-serif',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '0 8px 32px' }}>
-        <div style={{ fontFamily: '"Fraunces", serif', fontSize: 30, fontWeight: 600, letterSpacing: -1, color: P.paper }}>
-          Tracker<span style={{ color: P.acid, fontStyle: 'italic' }}>Med</span>
-        </div>
-        <div style={{ width: 6, height: 6, background: P.acid, borderRadius: '50%', alignSelf: 'center' }} />
-      </div>
-      {items.map(([name, href, active]) => (
-        <a key={name} href={href} style={{
-          padding: '11px 14px', borderRadius: 8, fontSize: 14, fontWeight: active ? 600 : 400,
-          background: active ? P.cobalt : 'transparent',
-          color: active ? '#fff' : 'rgba(232,230,220,0.72)',
-          cursor: 'pointer', display: 'flex', justifyContent: 'space-between',
-          textDecoration: 'none',
-        }}>
-          <span>{name}</span>
-          {active && <span style={{ color: P.acid }}>●</span>}
+    <aside className="sidebar">
+      <div className="logo">Tracker<em>Med</em></div>
+      {items.map(it => (
+        <a key={it.name} href={it.href} className={`nav-item ${it.active ? 'active' : ''}`}>
+          {it.name}
         </a>
       ))}
-      <div style={{ flex: 1 }} />
-      <div style={{
-        background: 'rgba(255,255,255,0.04)', padding: 14, borderRadius: 10,
-        border: '1px solid rgba(255,255,255,0.08)', fontSize: 12, lineHeight: 1.5,
-      }}>
-        <div style={{ color: P.acid, fontSize: 11, letterSpacing: 1, fontWeight: 600, marginBottom: 6 }}>SEMANA ATIVA</div>
-        <div style={{ color: '#E8E6DC' }}>Sem 16 · 20—26 abr<br /><span style={{ color: 'rgba(232,230,220,0.6)' }}>28h planejadas</span></div>
+      <div className="sidebar-foot">v0.1 · pessoal</div>
+    </aside>
+  );
+}
+
+// --- Session Modal
+function SessionModal({ session, isNew, onSave, onDelete, onCancel }) {
+  const [form, setForm] = useState(session);
+  const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const save = () => {
+    if (form.endHour <= form.startHour) { alert('Horário final deve ser depois do início.'); return; }
+    if (!form.title.trim()) { alert('Dá um título pra sessão.'); return; }
+    onSave(form);
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={onCancel}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <h2>{isNew ? 'Nova sessão' : 'Editar sessão'}</h2>
+        <div className="modal-sub">
+          {DAYS_SHORT[form.dayIdx]} · {hoursToLabel(form.startHour)} — {hoursToLabel(form.endHour)}
+        </div>
+
+        <div className="field">
+          <label>Tipo</label>
+          <div className="type-pills">
+            {Object.entries(TYPE_CONFIG).map(([k, v]) => (
+              <div key={k}
+                   className={`type-pill ${form.type === k ? 'active' : ''}`}
+                   onClick={() => update('type', k)}>
+                {v.icon} {v.label}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="field">
+          <label>Disciplina</label>
+          <select value={form.disc} onChange={e => update('disc', e.target.value)}>
+            {DISCIPLINAS.map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
+        </div>
+
+        <div className="field">
+          <label>Título / descrição</label>
+          <input type="text" value={form.title} onChange={e => update('title', e.target.value)}
+                 placeholder="Ex: Sistema cardiovascular — aula + questões" autoFocus />
+        </div>
+
+        <div className="field row">
+          <div>
+            <label>Início</label>
+            <select value={form.startHour} onChange={e => update('startHour', parseFloat(e.target.value))}>
+              {Array.from({length: (HOUR_END - HOUR_START) * 2 + 1}, (_, i) => HOUR_START + i * 0.5).map(h =>
+                <option key={h} value={h}>{hoursToLabel(h)}</option>
+              )}
+            </select>
+          </div>
+          <div>
+            <label>Fim</label>
+            <select value={form.endHour} onChange={e => update('endHour', parseFloat(e.target.value))}>
+              {Array.from({length: (HOUR_END - HOUR_START) * 2 + 1}, (_, i) => HOUR_START + i * 0.5 + 0.5).map(h =>
+                <option key={h} value={h}>{hoursToLabel(h)}</option>
+              )}
+            </select>
+          </div>
+        </div>
+
+        <div className="field row">
+          <div>
+            <label>Meta de questões</label>
+            <input type="number" min="0" value={form.goalQ || ''} onChange={e => update('goalQ', e.target.value ? parseInt(e.target.value) : 0)} placeholder="0" />
+          </div>
+          <div>
+            <label>Meta flashcards</label>
+            <input type="number" min="0" value={form.goalF || ''} onChange={e => update('goalF', e.target.value ? parseInt(e.target.value) : 0)} placeholder="0" />
+          </div>
+        </div>
+
+        <div className="field">
+          <label className="checkbox-row">
+            <input type="checkbox" checked={!!form.recurring} onChange={e => update('recurring', e.target.checked)} />
+            <span>🔁 Repetir toda semana</span>
+          </label>
+        </div>
+
+        <div className="modal-actions">
+          {!isNew ? (
+            <button className="btn-delete" onClick={() => { if (confirm('Apagar essa sessão?')) onDelete(form.id); }}>
+              Apagar
+            </button>
+          ) : <div />}
+          <div className="btn-group">
+            <button className="btn-cancel" onClick={onCancel}>Cancelar</button>
+            <button className="btn-save" onClick={save}>{isNew ? 'Criar' : 'Salvar'}</button>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// === Week schedule data ===
-const days = [
-  { short: 'SEG', num: 20, isToday: false },
-  { short: 'TER', num: 21, isToday: false },
-  { short: 'QUA', num: 22, isToday: true  },
-  { short: 'QUI', num: 23, isToday: false },
-  { short: 'SEX', num: 24, isToday: false },
-  { short: 'SÁB', num: 25, isToday: false },
-  { short: 'DOM', num: 26, isToday: false },
-];
+// --- Session block on grid
+function SessionBlock({ s, onClick }) {
+  const d = DISC_COLOR[s.disc] || DISC_COLOR['Outro'];
+  const dur = s.endHour - s.startHour;
+  const top = (s.startHour - HOUR_START) * ROW_H;
+  const height = dur * ROW_H - 3;
+  const isMock = s.type === 'simulado';
+  const isReview = s.type === 'revisao';
+  const compact = dur <= 0.75;
+  const typeIcon = TYPE_CONFIG[s.type]?.icon || '';
 
-// Sessions: dayIdx, startHour (0=06:00), durationHours, disc, label, type ('study'|'review'|'mock')
-const sessions = [
-  { d: 0, s: 0.5,  h: 2,   disc: 'Morfofuncional', label: 'Sistema cardio — aula + questões', type: 'study' },
-  { d: 0, s: 3,    h: 1,   disc: 'Revisão',        label: 'Revisão anki — SRS', type: 'review' },
-  { d: 0, s: 7,    h: 1.5, disc: 'Emergências',    label: 'Choque séptico · casos', type: 'study' },
-
-  { d: 1, s: 1,    h: 2,   disc: 'Farmacologia',   label: 'Antibióticos β-lactâmicos', type: 'study' },
-  { d: 1, s: 4,    h: 1,   disc: 'Revisão',        label: 'Flashcards · Hemato', type: 'review' },
-  { d: 1, s: 7.5,  h: 2,   disc: 'Hematológicas',  label: 'Leucemias agudas', type: 'study' },
-
-  { d: 2, s: 0.5,  h: 2.5, disc: 'Morfofuncional', label: 'Prova Morfofuncional II · REVISÃO', type: 'study' },
-  { d: 2, s: 4,    h: 1.5, disc: 'Emergências',    label: 'ECG · arritmias', type: 'study' },
-  { d: 2, s: 8,    h: 2,   disc: 'Simulado',       label: 'Simulado 60q cronometrado', type: 'mock' },
-
-  { d: 3, s: 1,    h: 2,   disc: 'Saúde Coletiva', label: 'Epidemiologia básica', type: 'study' },
-  { d: 3, s: 4.5,  h: 1,   disc: 'Revisão',        label: 'Erros do simulado', type: 'review' },
-  { d: 3, s: 7,    h: 2,   disc: 'Clínica Médica', label: 'Pneumonia comunitária', type: 'study' },
-
-  { d: 4, s: 0.5,  h: 2,   disc: 'Farmacologia',   label: 'Diuréticos · mecanismos', type: 'study' },
-  { d: 4, s: 4,    h: 1.5, disc: 'Hematológicas',  label: 'Anemias + ferro', type: 'study' },
-  { d: 4, s: 7,    h: 1,   disc: 'Revisão',        label: 'Anki diário', type: 'review' },
-
-  { d: 5, s: 2,    h: 3,   disc: 'Simulado',       label: 'Simulado completo · 80q', type: 'mock' },
-  { d: 5, s: 6,    h: 1.5, disc: 'Clínica Médica', label: 'Resolução comentada', type: 'review' },
-
-  { d: 6, s: 2,    h: 2,   disc: 'Revisão',        label: 'Revisão geral da semana', type: 'review' },
-];
-
-// Hours: 06:00 → 22:00 (17 hours)
-const HOUR_START = 6, HOUR_END = 22;
-const HOURS = Array.from({ length: HOUR_END - HOUR_START + 1 }, (_, i) => HOUR_START + i);
-const ROW_H = 40; // px per hour
-
-function WeekHeader() {
   return (
-    <div style={{
-      display: 'grid', gridTemplateColumns: '56px repeat(7, 1fr)',
-      borderBottom: `1px solid ${P.line}`, background: P.card,
-      position: 'sticky', top: 0, zIndex: 2,
-    }}>
-      <div />
-      {days.map(d => (
-        <div key={d.num} style={{
-          padding: '12px 10px',
-          borderLeft: `1px solid ${P.line}`,
-          background: d.isToday ? P.ink : P.card,
-          color: d.isToday ? P.paper : P.ink,
-          position: 'relative',
-        }}>
-          <div style={{ fontSize: 10, letterSpacing: 1.4, fontWeight: 600, color: d.isToday ? P.acid : P.muted }}>
-            {d.short}
+    <div className="session-block"
+         onClick={e => { e.stopPropagation(); onClick(s); }}
+         style={{
+           top, height,
+           background: isReview ? '#fff' : d.soft,
+           borderLeft: `3px solid ${d.color}`,
+           border: isReview ? `1px dashed ${d.color}` : `1px solid ${d.color}`,
+           boxShadow: isMock ? `inset 0 -3px 0 #E6FF3D` : 'none',
+         }}>
+        <div className="tagline" style={{ color: d.color }}>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.disc.toUpperCase()}</span>
+          <span style={{ color: '#6B6A5F', fontWeight: 500, flexShrink: 0, marginLeft: 4 }}>
+            {typeIcon} {dur}h
+          </span>
+        </div>
+        {!compact && <div className="title">{s.title}</div>}
+        {compact && <div className="title" style={{ whiteSpace: 'nowrap' }}>{s.title}</div>}
+        {s.recurring && <span className="recur">🔁</span>}
+    </div>
+  );
+}
+
+// --- Main planner
+function Planner() {
+  const [sessions, setSessions] = useState(loadSessions);
+  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
+  const [modal, setModal] = useState(null);
+  const [view, setView] = useState('week');
+
+  // Persist on change
+  useEffect(() => { saveSessions(sessions); }, [sessions]);
+
+  // Live now-time for the red line
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(t);
+  }, []);
+
+  const today = new Date();
+  const days = useMemo(() => Array.from({length:7}, (_, i) => {
+    const d = addDays(weekStart, i);
+    return { date: d, short: DAYS_SHORT[i], num: d.getDate(), isToday: sameYMD(d, today) };
+  }), [weekStart]);
+
+  // Stats: total hours planned this week
+  const weeklyHours = useMemo(() => {
+    return sessions.reduce((sum, s) => sum + (s.endHour - s.startHour), 0);
+  }, [sessions]);
+
+  const totalQuestions = useMemo(() => sessions.reduce((sum, s) => sum + (s.goalQ || 0), 0), [sessions]);
+  const totalFlashcards = useMemo(() => sessions.reduce((sum, s) => sum + (s.goalF || 0), 0), [sessions]);
+
+  const openNew = (dayIdx, startHour) => {
+    setModal({
+      isNew: true,
+      data: {
+        id: 'tmp-' + Date.now(),
+        dayIdx,
+        startHour,
+        endHour: Math.min(startHour + 1, HOUR_END + 0.5),
+        disc: DISCIPLINAS[0],
+        title: '',
+        type: 'estudo',
+        goalQ: 0,
+        goalF: 0,
+        recurring: false,
+      }
+    });
+  };
+  const openEdit = (s) => setModal({ isNew: false, data: { ...s } });
+
+  const handleSave = (form) => {
+    if (modal.isNew) {
+      setSessions(list => [...list, form]);
+    } else {
+      setSessions(list => list.map(x => x.id === form.id ? form : x));
+    }
+    setModal(null);
+  };
+  const handleDelete = (id) => {
+    setSessions(list => list.filter(x => x.id !== id));
+    setModal(null);
+  };
+
+  const shiftWeek = (delta) => setWeekStart(w => addDays(w, delta * 7));
+  const goToday = () => setWeekStart(startOfWeek(new Date()));
+
+  // Days/sessions rendering
+  const sessionsByDay = useMemo(() => {
+    const byDay = Array.from({length:7}, () => []);
+    sessions.forEach(s => { if (s.dayIdx >= 0 && s.dayIdx < 7) byDay[s.dayIdx].push(s); });
+    return byDay;
+  }, [sessions]);
+
+  return (
+    <>
+    <div className="app">
+      <Sidebar />
+      <main className="main planner-main">
+        <div className="topbar">
+          <div className="crumb">Home <i>›</i> Planejamento</div>
+          <div className="topbar-right">
+            <span className="pill">Semana {weekNum(weekStart)}</span>
+            <span style={{color:'var(--muted)', fontSize:12}}>
+              {sessions.length} sessões salvas · {weeklyHours.toFixed(1)}h planejadas
+            </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 2 }}>
-            <div style={{ fontFamily: '"Fraunces", serif', fontSize: 26, fontWeight: 500, letterSpacing: -1, lineHeight: 1 }}>
-              {d.num}
+        </div>
+
+        <div className="planner-head">
+          <div>
+            <div className="planner-kicker">Planejamento semanal</div>
+            <h1>{formatRange(weekStart)} <i>· {weekStart.getFullYear()}</i></h1>
+          </div>
+          <div className="ctrl-row">
+            <div className="ctrl">
+              <button onClick={() => shiftWeek(-1)}>‹</button>
+              <button onClick={goToday}>Hoje</button>
+              <button onClick={() => shiftWeek(+1)}>›</button>
             </div>
-            {d.isToday && (
-              <div style={{ fontSize: 10, background: P.acid, color: P.ink, padding: '2px 6px', fontWeight: 700, letterSpacing: 0.5 }}>
-                HOJE
+            <div className="ctrl">
+              <button className={view==='week' ? 'active' : ''} onClick={() => setView('week')}>Semana</button>
+              <button className={view==='list' ? 'active' : ''} onClick={() => setView('list')}>Lista</button>
+            </div>
+            <button className="add-btn" onClick={() => openNew(0, 8)}>+ Nova sessão</button>
+          </div>
+        </div>
+
+        <div className="stats-strip">
+          <div className="stat">
+            <div className="lbl">Horas planejadas</div>
+            <div className="num">{Math.floor(weeklyHours)}<span>h {Math.round((weeklyHours % 1) * 60).toString().padStart(2,'0')}m</span></div>
+            <div className="sub">na semana toda</div>
+          </div>
+          <div className="stat">
+            <div className="lbl">Sessões</div>
+            <div className="num">{sessions.length}</div>
+            <div className="sub">{sessions.filter(s => s.recurring).length} recorrentes</div>
+          </div>
+          <div className="stat">
+            <div className="lbl">Meta de questões</div>
+            <div className="num" style={{color:'var(--cobalt)'}}>{totalQuestions}</div>
+            <div className="sub">{totalFlashcards} flashcards</div>
+          </div>
+          <div className="stat dark">
+            <div className="lbl">Simulados</div>
+            <div className="num" style={{color:'var(--acid)'}}>{sessions.filter(s => s.type === 'simulado').length}</div>
+            <div className="sub">esta semana</div>
+          </div>
+        </div>
+
+        {view === 'week' && (
+          <div className="grid-wrap">
+            <div className="grid-header">
+              <div />
+              {days.map((d, i) => (
+                <div key={i} className={`gh ${d.isToday ? 'today' : ''}`}>
+                  <div className="short">{d.short}</div>
+                  <div>
+                    <span className="num">{d.num}</span>
+                    {d.isToday && <span className="today-chip">HOJE</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="grid-body">
+              <div className="hour-col">
+                {HOURS.map(h => (
+                  <div key={h}><span>{String(h).padStart(2,'0')}:00</span></div>
+                ))}
               </div>
+              {days.map((d, di) => (
+                <div key={di} className={`day-col ${d.isToday ? 'today' : ''}`}>
+                  {HOURS.map((h, hi) => (
+                    <div key={hi}
+                         className={`hour-slot ${h >= 12 && h < 13 ? 'lunch' : ''}`}
+                         onClick={() => openNew(di, h)} />
+                  ))}
+                  {d.isToday && (() => {
+                    const nowH = now.getHours() + now.getMinutes() / 60;
+                    if (nowH < HOUR_START || nowH > HOUR_END + 1) return null;
+                    return <div className="now-line" style={{ top: (nowH - HOUR_START) * ROW_H }} />;
+                  })()}
+                  {sessionsByDay[di].map(s => <SessionBlock key={s.id} s={s} onClick={openEdit} />)}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {view === 'list' && (
+          <div style={{ background: 'var(--card)', border: '1px solid var(--line)' }}>
+            {sessions.length === 0 ? (
+              <div className="empty-state">
+                <h3>Nenhuma sessão ainda.</h3>
+                <p>Clica no botão "+ Nova sessão" ou num horário da grade.</p>
+              </div>
+            ) : (
+              <table>
+                <thead>
+                  <tr>
+                    <th>Dia</th><th>Horário</th><th>Disciplina</th><th>Título</th>
+                    <th>Tipo</th><th style={{textAlign:'right'}}>Duração</th><th style={{textAlign:'right'}}>Meta</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...sessions].sort((a,b) => a.dayIdx - b.dayIdx || a.startHour - b.startHour).map(s => {
+                    const d = DISC_COLOR[s.disc] || DISC_COLOR['Outro'];
+                    return (
+                      <tr key={s.id} onClick={() => openEdit(s)} style={{cursor:'pointer'}}>
+                        <td>{DAYS_SHORT[s.dayIdx]} {s.recurring && '🔁'}</td>
+                        <td>{hoursToLabel(s.startHour)}—{hoursToLabel(s.endHour)}</td>
+                        <td><span style={{padding:'2px 8px', background: d.soft, color: d.color, fontWeight:600, fontSize:11}}>{s.disc}</span></td>
+                        <td>{s.title}</td>
+                        <td>{TYPE_CONFIG[s.type]?.icon} {TYPE_CONFIG[s.type]?.label}</td>
+                        <td style={{textAlign:'right'}}>{(s.endHour - s.startHour).toFixed(1)}h</td>
+                        <td style={{textAlign:'right', fontSize:11, color:'var(--muted)'}}>
+                          {s.goalQ ? `${s.goalQ}q` : ''} {s.goalF ? `· ${s.goalF}f` : ''}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             )}
           </div>
-        </div>
-      ))}
-    </div>
-  );
-}
+        )}
 
-function SessionBlock({ s }) {
-  const d = DISC[s.disc];
-  const top = s.s * ROW_H;
-  const height = s.h * ROW_H - 3;
-  const isMock = s.type === 'mock';
-  const isReview = s.type === 'review';
-  const compact = s.h <= 1;
-  return (
-    <div style={{
-      position: 'absolute', top, left: 3, right: 3, height,
-      background: isMock ? d.soft : isReview ? P.card : d.soft,
-      borderLeft: `3px solid ${d.color}`,
-      border: isReview ? `1px dashed ${d.color}` : undefined,
-      padding: compact ? '3px 7px' : '5px 8px',
-      fontSize: 10.5, lineHeight: 1.2,
-      overflow: 'hidden',
-      cursor: 'pointer',
-      boxShadow: isMock ? `inset 0 -3px 0 ${P.acid}` : 'none',
-      display: 'flex', flexDirection: 'column', gap: compact ? 0 : 2,
-    }}>
-      <div style={{ fontSize: 8.5, letterSpacing: 0.8, color: d.color, fontWeight: 700, display: 'flex', justifyContent: 'space-between', lineHeight: 1.1 }}>
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.disc.toUpperCase()}</span>
-        <span style={{ color: P.muted, fontWeight: 500, flexShrink: 0, marginLeft: 4 }}>{s.h}h</span>
-      </div>
-      <div style={{ color: P.ink, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: compact ? 'nowrap' : 'normal' }}>{s.label}</div>
-      {isMock && !compact && <div style={{ fontSize: 9, marginTop: 'auto', color: P.ink, fontWeight: 700, letterSpacing: 1 }}>⚡ SIMULADO</div>}
-    </div>
-  );
-}
-
-function WeekGrid() {
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: '56px repeat(7, 1fr)', background: P.card }}>
-      {/* Time column */}
-      <div>
-        {HOURS.map(h => (
-          <div key={h} style={{
-            height: ROW_H, borderBottom: `1px solid ${P.line}`,
-            fontSize: 10, color: P.muted, padding: '2px 8px 0',
-            fontFamily: '"Inter Tight", sans-serif', fontVariantNumeric: 'tabular-nums',
-            textAlign: 'right', position: 'relative',
+        {view === 'week' && sessions.length === 0 && (
+          <div style={{
+            textAlign:'center', padding:'24px', background:'var(--ink)', color:'var(--paper)',
+            marginTop:16, fontSize:14
           }}>
-            <span style={{ position: 'relative', top: -6, background: P.card, padding: '0 2px' }}>{String(h).padStart(2, '0')}:00</span>
+            <span style={{color:'var(--acid)', fontWeight:600}}>↑</span> Clica em qualquer hora na grade acima pra criar sua primeira sessão.
           </div>
-        ))}
-      </div>
-      {/* Day columns */}
-      {days.map((d, di) => (
-        <div key={di} style={{
-          position: 'relative',
-          borderLeft: `1px solid ${P.line}`,
-          background: d.isToday ? 'rgba(30,58,232,0.03)' : 'transparent',
-        }}>
-          {HOURS.map((h, i) => (
-            <div key={i} style={{
-              height: ROW_H,
-              borderBottom: `1px solid ${P.line}`,
-              background: (h >= 12 && h < 13) ? 'rgba(107,106,95,0.04)' : 'transparent',
-            }} />
+        )}
+
+        <div className="legend">
+          {Object.entries(DISC_COLOR).filter(([k]) => k !== 'Outro').map(([name, d]) => (
+            <span key={name} className="sw"><i style={{background: d.color}} /> {name}</span>
           ))}
-          {/* Now-line on today */}
-          {d.isToday && (
-            <div style={{
-              position: 'absolute', left: 0, right: 0, top: 3.2 * ROW_H + 20,
-              borderTop: `2px solid ${P.rose}`, zIndex: 1,
-            }}>
-              <div style={{
-                position: 'absolute', left: -4, top: -5, width: 8, height: 8,
-                background: P.rose, borderRadius: '50%',
-              }} />
-            </div>
-          )}
-          {sessions.filter(s => s.d === di).map((s, i) => <SessionBlock key={i} s={s} />)}
+          <span className="sw"><i style={{border:`1px dashed #0A1330`, background:'#fff'}} /> Revisão (borda tracejada)</span>
+          <span className="sw"><i style={{background:'#E6FF3D'}} /> Simulado (barra ácida)</span>
         </div>
-      ))}
+      </main>
     </div>
-  );
-}
 
-function GoalItem({ label, done, total, color }) {
-  const pct = Math.round((done / total) * 100);
-  return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6, lineHeight: 1.2 }}>
-        <span style={{ color: P.ink, fontWeight: 500 }}>{label}</span>
-        <span style={{ fontFamily: '"Fraunces", serif', color: P.ink2, fontVariantNumeric: 'tabular-nums' }}>
-          {done}<span style={{ color: P.muted }}>/{total}</span>
-        </span>
-      </div>
-      <div style={{ height: 4, background: P.line, position: 'relative' }}>
-        <div style={{ position: 'absolute', inset: 0, width: `${pct}%`, background: color }} />
-      </div>
-    </div>
-  );
-}
-
-function DisciplineLegend() {
-  const list = Object.entries(DISC).filter(([k]) => !['Revisão', 'Simulado'].includes(k));
-  return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', fontSize: 11 }}>
-      {list.map(([name, d]) => (
-        <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ width: 10, height: 10, background: d.color }} />
-          <span style={{ color: P.ink2 }}>{name}</span>
-        </div>
-      ))}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <div style={{ width: 10, height: 10, border: `1px dashed ${P.ink}`, background: P.card }} />
-        <span style={{ color: P.ink2 }}>Revisão</span>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <div style={{ width: 10, height: 10, background: P.acid }} />
-        <span style={{ color: P.ink2 }}>Simulado</span>
-      </div>
-    </div>
-  );
-}
-
-function Ring({ pct, size = 72, stroke = 9, color = P.cobalt }) {
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  return (
-    <svg width={size} height={size} style={{ display: 'block' }}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={P.line} strokeWidth={stroke} />
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
-        strokeDasharray={`${c * pct/100} ${c}`} strokeLinecap="round"
-        transform={`rotate(-90 ${size/2} ${size/2})`} />
-      <text x="50%" y="50%" textAnchor="middle" dy="5" fontFamily='"Fraunces", serif' fontSize="18" fill={P.ink}>
-        {pct}
-      </text>
-    </svg>
-  );
-}
-
-function Planner() {
-  return (
-    <div style={{
-      display: 'flex', width: 1280, minHeight: 860, background: P.paper, color: P.ink,
-      fontFamily: '"Inter Tight", sans-serif',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 6px 24px rgba(0,0,0,0.08)',
-    }}>
-      <Sidebar />
-      <div style={{ flex: 1, padding: '22px 28px', display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
-        {/* Top bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, flexWrap: 'nowrap' }}>
-          <div style={{ flexShrink: 0 }}>
-            <div style={{ fontSize: 11, letterSpacing: 1.4, color: P.muted, fontWeight: 600 }}>PLANEJAMENTO · SEMANA 16</div>
-            <div style={{ fontFamily: '"Fraunces", serif', fontSize: 40, fontWeight: 500, letterSpacing: -1.5, lineHeight: 1, marginTop: 4 }}>
-              20 <i style={{ color: P.muted }}>a</i> 26 de abril
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <div style={{ display: 'flex', border: `1px solid ${P.line2}`, background: P.card }}>
-              <button style={{ background: 'transparent', border: 'none', padding: '9px 12px', fontSize: 13, cursor: 'pointer', borderRight: `1px solid ${P.line2}` }}>‹</button>
-              <button style={{ background: 'transparent', border: 'none', padding: '9px 14px', fontSize: 13, cursor: 'pointer', color: P.muted, borderRight: `1px solid ${P.line2}` }}>Hoje</button>
-              <button style={{ background: 'transparent', border: 'none', padding: '9px 12px', fontSize: 13, cursor: 'pointer' }}>›</button>
-            </div>
-            <div style={{ display: 'flex', border: `1px solid ${P.line2}`, background: P.card, fontSize: 13 }}>
-              <button style={{ background: P.ink, color: P.paper, border: 'none', padding: '9px 14px', fontWeight: 600, cursor: 'pointer' }}>Semana</button>
-              <button style={{ background: 'transparent', border: 'none', padding: '9px 14px', cursor: 'pointer', borderLeft: `1px solid ${P.line2}`, color: P.muted }}>Mês</button>
-              <button style={{ background: 'transparent', border: 'none', padding: '9px 14px', cursor: 'pointer', borderLeft: `1px solid ${P.line2}`, color: P.muted }}>Lista</button>
-            </div>
-            <button style={{ background: P.cobalt, color: '#fff', border: 'none', padding: '10px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0 }}>
-              + Nova sessão
-            </button>
-          </div>
-        </div>
-
-        {/* Goal strip + exam countdown */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr 0.9fr', gap: 12 }}>
-          <div style={{ background: P.card, border: `1px solid ${P.line}`, padding: '16px 20px' }}>
-            <div style={{ fontSize: 10, letterSpacing: 1.4, color: P.muted, fontWeight: 600, marginBottom: 12 }}>META DA SEMANA</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-              <Ring pct={54} color={P.cobalt} />
-              <div>
-                <div style={{ fontFamily: '"Fraunces", serif', fontSize: 28, letterSpacing: -1, lineHeight: 1 }}>
-                  15h<span style={{ fontSize: 16, color: P.muted }}>12m</span>
-                  <span style={{ color: P.muted, margin: '0 6px' }}>/</span>
-                  <span style={{ color: P.muted, fontSize: 20 }}>28h</span>
-                </div>
-                <div style={{ fontSize: 11, color: P.ink2, marginTop: 6 }}>
-                  <b style={{ color: P.mint }}>no ritmo</b> · faltam 12h48 até domingo
-                </div>
-              </div>
-            </div>
-          </div>
-          <div style={{ background: P.card, border: `1px solid ${P.line}`, padding: '16px 20px' }}>
-            <div style={{ fontSize: 10, letterSpacing: 1.4, color: P.muted, fontWeight: 600, marginBottom: 10 }}>METAS POR BLOCO</div>
-            <GoalItem label="Questões resolvidas" done={168} total={300} color={P.cobalt} />
-            <GoalItem label="Flashcards revisados" done={420} total={500} color={P.mint} />
-            <div style={{ fontSize: 11, color: P.muted }}>+ 2 simulados na semana</div>
-          </div>
-          <div style={{ background: P.card, border: `1px solid ${P.line}`, padding: '16px 20px' }}>
-            <div style={{ fontSize: 10, letterSpacing: 1.4, color: P.muted, fontWeight: 600, marginBottom: 10 }}>COBERTURA EDITAL</div>
-            <GoalItem label="Morfofuncional" done={18} total={22} color={DISC['Morfofuncional'].color} />
-            <GoalItem label="Emergências" done={14} total={20} color={DISC['Emergências'].color} />
-            <GoalItem label="Farmacologia" done={9} total={18} color={DISC['Farmacologia'].color} />
-          </div>
-          <div style={{ background: P.ink, color: P.paper, padding: '16px 20px', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ fontSize: 10, letterSpacing: 1.4, color: P.acid, fontWeight: 600 }}>PRÓXIMA PROVA</div>
-            <div style={{ fontFamily: '"Fraunces", serif', fontSize: 16, fontWeight: 500, marginTop: 6, lineHeight: 1.2 }}>
-              Morfofuncional II
-            </div>
-            <div style={{ fontSize: 11, color: 'rgba(244,241,234,0.6)' }}>ter. 28 abr · 08h</div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 10 }}>
-              <div style={{ fontFamily: '"Fraunces", serif', fontStyle: 'italic', fontSize: 56, color: P.acid, lineHeight: 0.9, letterSpacing: -2 }}>6</div>
-              <div style={{ fontSize: 10, color: 'rgba(244,241,234,0.7)', paddingBottom: 6 }}>dias</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Week calendar */}
-        <div style={{ border: `1px solid ${P.line}`, background: P.card, overflow: 'hidden' }}>
-          <WeekHeader />
-          <WeekGrid />
-        </div>
-
-        {/* Legend row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
-          <DisciplineLegend />
-          <div style={{ fontSize: 11, color: P.muted, fontFamily: '"Inter Tight", sans-serif' }}>
-            <span style={{ display: 'inline-block', width: 10, height: 2, background: P.rose, verticalAlign: 'middle', marginRight: 5 }} />
-            agora · 09:12
-          </div>
-        </div>
-      </div>
-    </div>
+    {modal && (
+      <SessionModal
+        session={modal.data}
+        isNew={modal.isNew}
+        onSave={handleSave}
+        onDelete={handleDelete}
+        onCancel={() => setModal(null)}
+      />
+    )}
+    </>
   );
 }
 
