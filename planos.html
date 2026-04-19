@@ -23,6 +23,35 @@
 .milestone h4 { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 500; }
 .milestone .date { font-size: 11px; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; margin-top: 2px; font-weight: 600; }
 .milestone p { font-size: 13px; color: var(--ink2); margin-top: 8px; }
+
+/* Modal */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(10,19,48,0.55); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.modal-backdrop.open { display: flex; }
+.modal-box { background: var(--card); border: 1px solid var(--line); width: 520px; max-width: 100%; max-height: 90vh; overflow-y: auto; padding: 32px; }
+.modal-box h2 { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 500; letter-spacing: -0.025em; line-height: 1.1; }
+.modal-box h2 i { color: var(--cobalt); }
+.modal-sub { font-size: 13px; color: var(--muted); margin-top: 6px; margin-bottom: 24px; }
+.mfield { margin-bottom: 18px; }
+.mfield label { display: block; font-size: 11px; letter-spacing: 0.15em; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 7px; }
+.mfield input[type="text"], .mfield input[type="date"], .mfield select, .mfield textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); background: var(--paper); font-size: 14px; font-family: inherit; color: var(--ink); }
+.mfield input:focus, .mfield select:focus, .mfield textarea:focus { outline: 2px solid var(--cobalt); outline-offset: -1px; border-color: var(--cobalt); }
+.mfield textarea { min-height: 70px; resize: vertical; }
+.mfield.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.type-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.type-choice label { cursor: pointer; padding: 16px; border: 1.5px solid var(--line); background: var(--paper); transition: all .15s; display: flex; flex-direction: column; gap: 4px; }
+.type-choice label:hover { border-color: var(--ink2); }
+.type-choice input { position: absolute; opacity: 0; }
+.type-choice label:has(input:checked) { border-color: var(--cobalt); background: #DDE3FF; }
+.type-choice .t-icon { font-size: 22px; }
+.type-choice .t-title { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 500; }
+.type-choice .t-desc { font-size: 11px; color: var(--muted); }
+.conditional { display: none; }
+.conditional.show { display: block; }
+.mhelp { font-size: 11px; color: var(--muted); margin-top: 5px; font-style: italic; }
+.mactions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+.mbtn-cancel { background: transparent; border: 1px solid var(--line); padding: 10px 18px; font-size: 13px; cursor: pointer; font-family: inherit; }
+.mbtn-save { background: var(--cobalt); color: #fff; border: none; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.mbtn-close { position: absolute; right: 24px; top: 24px; background: transparent; border: none; font-size: 22px; cursor: pointer; color: var(--muted); }
 </style></head><body>
 <div class="app">
 <aside class="sidebar">
@@ -38,7 +67,7 @@
 <div class="sidebar-foot">v0.1 · pessoal</div>
 </aside>
 <main class="main">
-<div class="topbar"><div class="crumb">Home <i>›</i> Planos</div><div class="topbar-right"><span class="pill">Residência USP 2026</span><button class="btn">+ Novo plano</button></div></div>
+<div class="topbar"><div class="crumb">Home <i>›</i> Planos</div><div class="topbar-right"><span class="pill">Residência USP 2026</span><button class="btn" onclick="document.getElementById('newPlanModal').classList.add('open')">+ Novo plano</button></div></div>
 <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap">
 <div><div class="kicker">Longo prazo</div><h1 class="page-title">Do <i>zero</i> à aprovação em 11 meses.</h1></div>
 <div style="text-align:right"><div class="kicker">Progresso geral</div><div style="font-family:'Fraunces',serif;font-size:64px;letter-spacing:-0.04em;line-height:1;font-weight:500;color:var(--cobalt)">47<span style="font-size:24px;color:var(--muted)">%</span></div></div>
@@ -70,4 +99,135 @@
 <div class="milestone"><div class="icon">3</div><div><h4>Reta final</h4><div class="date">1 · Nov · 2026</div><p>Só flashcards + simulados. Zero conteúdo novo.</p></div></div>
 </div>
 </div>
-</main></div></body></html>
+</main></div>
+
+<!-- Modal: Novo plano -->
+<div class="modal-backdrop" id="newPlanModal" onclick="if(event.target===this) this.classList.remove('open')">
+  <div class="modal-box" style="position:relative">
+    <button class="mbtn-close" onclick="document.getElementById('newPlanModal').classList.remove('open')">×</button>
+    <h2>Novo <i>plano</i> de estudo</h2>
+    <div class="modal-sub">Pra qual objetivo esse plano vai servir?</div>
+
+    <form id="newPlanForm" onsubmit="event.preventDefault(); salvarPlano();">
+      <div class="mfield">
+        <label>Tipo de plano</label>
+        <div class="type-choice">
+          <label>
+            <input type="radio" name="tipo" value="semestre" checked onchange="toggleTipo()">
+            <div class="t-icon">🎓</div>
+            <div class="t-title">Semestre</div>
+            <div class="t-desc">Graduação em andamento — acompanha as disciplinas do semestre.</div>
+          </label>
+          <label>
+            <input type="radio" name="tipo" value="residencia" onchange="toggleTipo()">
+            <div class="t-icon">🏥</div>
+            <div class="t-title">Residência</div>
+            <div class="t-desc">Preparação pra prova de residência — cronograma de meses até a prova.</div>
+          </label>
+        </div>
+      </div>
+
+      <div class="mfield">
+        <label>Nome do plano</label>
+        <input type="text" id="planoNome" placeholder="Ex: 6º Semestre — 2026.1" required>
+      </div>
+
+      <!-- Campos condicionais: SEMESTRE -->
+      <div class="conditional show" id="camposSemestre">
+        <div class="mfield row2">
+          <div>
+            <label>Início do semestre</label>
+            <input type="date" id="semInicio">
+          </div>
+          <div>
+            <label>Fim do semestre</label>
+            <input type="date" id="semFim">
+          </div>
+        </div>
+
+        <div class="mfield">
+          <label>Matérias do semestre</label>
+          <textarea id="semMaterias" placeholder="Uma por linha. Ex:&#10;Morfofuncional II&#10;Saúde Coletiva&#10;Emergências"></textarea>
+          <div class="mhelp">Coloca uma matéria por linha — vão aparecer no seu cronograma.</div>
+        </div>
+
+        <div class="mfield">
+          <label>Instituição / curso</label>
+          <input type="text" id="semInst" placeholder="Ex: USP · Medicina">
+        </div>
+      </div>
+
+      <!-- Campos condicionais: RESIDÊNCIA -->
+      <div class="conditional" id="camposResidencia">
+        <div class="mfield row2">
+          <div>
+            <label>Data da prova</label>
+            <input type="date" id="resData">
+          </div>
+          <div>
+            <label>Início do plano</label>
+            <input type="date" id="resInicio">
+          </div>
+        </div>
+
+        <div class="mfield">
+          <label>Instituição alvo</label>
+          <input type="text" id="resInst" placeholder="Ex: USP · UNIFESP · SUS-SP">
+        </div>
+
+        <div class="mfield">
+          <label>Grandes áreas do edital</label>
+          <textarea id="resMaterias" placeholder="Uma por linha. Ex:&#10;Clínica Médica&#10;Cirurgia&#10;Pediatria&#10;Gineco-Obstetrícia&#10;Saúde Coletiva"></textarea>
+        </div>
+      </div>
+
+      <div class="mactions">
+        <button type="button" class="mbtn-cancel" onclick="document.getElementById('newPlanModal').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="mbtn-save">Criar plano</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function toggleTipo() {
+  const tipo = document.querySelector('input[name="tipo"]:checked').value;
+  document.getElementById('camposSemestre').classList.toggle('show', tipo === 'semestre');
+  document.getElementById('camposResidencia').classList.toggle('show', tipo === 'residencia');
+}
+
+function salvarPlano() {
+  const tipo = document.querySelector('input[name="tipo"]:checked').value;
+  const nome = document.getElementById('planoNome').value.trim();
+  let dados = { tipo, nome, criadoEm: new Date().toISOString() };
+
+  if (tipo === 'semestre') {
+    const materias = document.getElementById('semMaterias').value.split('\n').map(x => x.trim()).filter(Boolean);
+    dados = { ...dados,
+      inicio: document.getElementById('semInicio').value,
+      fim: document.getElementById('semFim').value,
+      materias,
+      instituicao: document.getElementById('semInst').value.trim()
+    };
+  } else {
+    const materias = document.getElementById('resMaterias').value.split('\n').map(x => x.trim()).filter(Boolean);
+    dados = { ...dados,
+      dataProva: document.getElementById('resData').value,
+      inicio: document.getElementById('resInicio').value,
+      instituicao: document.getElementById('resInst').value.trim(),
+      materias
+    };
+  }
+
+  const planos = JSON.parse(localStorage.getItem('trackermed.planos.v1') || '[]');
+  planos.push(dados);
+  localStorage.setItem('trackermed.planos.v1', JSON.stringify(planos));
+
+  alert(`Plano "${nome}" criado! (${tipo === 'semestre' ? 'semestre' : 'residência'})\n\nEm breve o cronograma abaixo vai se adaptar automaticamente ao seu plano.`);
+  document.getElementById('newPlanModal').classList.remove('open');
+  document.getElementById('newPlanForm').reset();
+  toggleTipo();
+}
+</script>
+
+</body></html>
