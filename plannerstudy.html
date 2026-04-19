@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>TrackerMed · Planejamento de Estudo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #f0eee9; font-family: "Inter Tight", -apple-system, sans-serif; }
+  * { box-sizing: border-box; }
+  body { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 24px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel">
+const P = {
+  ink: '#0A1330',
+  ink2: '#2A3356',
+  paper: '#F4F1EA',
+  card: '#FFFFFF',
+  line: '#E4DFD2',
+  line2: '#CFC8B5',
+  cobalt: '#1E3AE8',
+  cobaltSoft: '#DDE3FF',
+  acid: '#E6FF3D',
+  rose: '#FF5B5B',
+  mint: '#1FC28A',
+  coral: '#FF8A4A',
+  violet: '#8E5CF7',
+  sky: '#3DB6E6',
+  muted: '#6B6A5F',
+};
+
+// Discipline color map
+const DISC = {
+  'Morfofuncional':    { color: P.cobalt,  soft: '#DDE3FF' },
+  'Emergências':       { color: P.rose,    soft: '#FFD9D9' },
+  'Farmacologia':      { color: P.violet,  soft: '#E8DFFE' },
+  'Hematológicas':     { color: P.mint,    soft: '#CFF1E3' },
+  'Saúde Coletiva':    { color: P.coral,   soft: '#FFE2D0' },
+  'Clínica Médica':    { color: P.sky,     soft: '#D5ECF7' },
+  'Revisão':           { color: P.ink,     soft: '#E4DFD2' },
+  'Simulado':          { color: '#8C6F12', soft: P.acid },
+};
+
+function Sidebar() {
+  const items = [
+    ['Home', false], ['Planos', false], ['Disciplinas', false], ['Edital', false],
+    ['Planejamento', true], ['Revisões', false], ['Histórico', false],
+    ['Estatísticas', false], ['Simulados', false],
+  ];
+  return (
+    <div style={{
+      width: 232, background: P.ink, color: '#E8E6DC', padding: '28px 18px',
+      display: 'flex', flexDirection: 'column', gap: 2, height: '100%',
+      fontFamily: '"Inter Tight", sans-serif',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '0 8px 32px' }}>
+        <div style={{ fontFamily: '"Fraunces", serif', fontSize: 30, fontWeight: 600, letterSpacing: -1, color: P.paper }}>
+          Tracker<span style={{ color: P.acid, fontStyle: 'italic' }}>Med</span>
+        </div>
+        <div style={{ width: 6, height: 6, background: P.acid, borderRadius: '50%', alignSelf: 'center' }} />
+      </div>
+      {items.map(([name, active]) => (
+        <div key={name} style={{
+          padding: '11px 14px', borderRadius: 8, fontSize: 14, fontWeight: active ? 600 : 400,
+          background: active ? P.cobalt : 'transparent',
+          color: active ? '#fff' : 'rgba(232,230,220,0.72)',
+          cursor: 'pointer', display: 'flex', justifyContent: 'space-between',
+        }}>
+          <span>{name}</span>
+          {active && <span style={{ color: P.acid }}>●</span>}
+        </div>
+      ))}
+      <div style={{ flex: 1 }} />
+      <div style={{
+        background: 'rgba(255,255,255,0.04)', padding: 14, borderRadius: 10,
+        border: '1px solid rgba(255,255,255,0.08)', fontSize: 12, lineHeight: 1.5,
+      }}>
+        <div style={{ color: P.acid, fontSize: 11, letterSpacing: 1, fontWeight: 600, marginBottom: 6 }}>SEMANA ATIVA</div>
+        <div style={{ color: '#E8E6DC' }}>Sem 16 · 20—26 abr<br /><span style={{ color: 'rgba(232,230,220,0.6)' }}>28h planejadas</span></div>
+      </div>
+    </div>
+  );
+}
+
+// === Week schedule data ===
+const days = [
+  { short: 'SEG', num: 20, isToday: false },
+  { short: 'TER', num: 21, isToday: false },
+  { short: 'QUA', num: 22, isToday: true  },
+  { short: 'QUI', num: 23, isToday: false },
+  { short: 'SEX', num: 24, isToday: false },
+  { short: 'SÁB', num: 25, isToday: false },
+  { short: 'DOM', num: 26, isToday: false },
+];
+
+// Sessions: dayIdx, startHour (0=06:00), durationHours, disc, label, type ('study'|'review'|'mock')
+const sessions = [
+  { d: 0, s: 0.5,  h: 2,   disc: 'Morfofuncional', label: 'Sistema cardio — aula + questões', type: 'study' },
+  { d: 0, s: 3,    h: 1,   disc: 'Revisão',        label: 'Revisão anki — SRS', type: 'review' },
+  { d: 0, s: 7,    h: 1.5, disc: 'Emergências',    label: 'Choque séptico · casos', type: 'study' },
+
+  { d: 1, s: 1,    h: 2,   disc: 'Farmacologia',   label: 'Antibióticos β-lactâmicos', type: 'study' },
+  { d: 1, s: 4,    h: 1,   disc: 'Revisão',        label: 'Flashcards · Hemato', type: 'review' },
+  { d: 1, s: 7.5,  h: 2,   disc: 'Hematológicas',  label: 'Leucemias agudas', type: 'study' },
+
+  { d: 2, s: 0.5,  h: 2.5, disc: 'Morfofuncional', label: 'Prova Morfofuncional II · REVISÃO', type: 'study' },
+  { d: 2, s: 4,    h: 1.5, disc: 'Emergências',    label: 'ECG · arritmias', type: 'study' },
+  { d: 2, s: 8,    h: 2,   disc: 'Simulado',       label: 'Simulado 60q cronometrado', type: 'mock' },
+
+  { d: 3, s: 1,    h: 2,   disc: 'Saúde Coletiva', label: 'Epidemiologia básica', type: 'study' },
+  { d: 3, s: 4.5,  h: 1,   disc: 'Revisão',        label: 'Erros do simulado', type: 'review' },
+  { d: 3, s: 7,    h: 2,   disc: 'Clínica Médica', label: 'Pneumonia comunitária', type: 'study' },
+
+  { d: 4, s: 0.5,  h: 2,   disc: 'Farmacologia',   label: 'Diuréticos · mecanismos', type: 'study' },
+  { d: 4, s: 4,    h: 1.5, disc: 'Hematológicas',  label: 'Anemias + ferro', type: 'study' },
+  { d: 4, s: 7,    h: 1,   disc: 'Revisão',        label: 'Anki diário', type: 'review' },
+
+  { d: 5, s: 2,    h: 3,   disc: 'Simulado',       label: 'Simulado completo · 80q', type: 'mock' },
+  { d: 5, s: 6,    h: 1.5, disc: 'Clínica Médica', label: 'Resolução comentada', type: 'review' },
+
+  { d: 6, s: 2,    h: 2,   disc: 'Revisão',        label: 'Revisão geral da semana', type: 'review' },
+];
+
+// Hours: 06:00 → 22:00 (17 hours)
+const HOUR_START = 6, HOUR_END = 22;
+const HOURS = Array.from({ length: HOUR_END - HOUR_START + 1 }, (_, i) => HOUR_START + i);
+const ROW_H = 40; // px per hour
+
+function WeekHeader() {
+  return (
+    <div style={{
+      display: 'grid', gridTemplateColumns: '56px repeat(7, 1fr)',
+      borderBottom: `1px solid ${P.line}`, background: P.card,
+      position: 'sticky', top: 0, zIndex: 2,
+    }}>
+      <div />
+      {days.map(d => (
+        <div key={d.num} style={{
+          padding: '12px 10px',
+          borderLeft: `1px solid ${P.line}`,
+          background: d.isToday ? P.ink : P.card,
+          color: d.isToday ? P.paper : P.ink,
+          position: 'relative',
+        }}>
+          <div style={{ fontSize: 10, letterSpacing: 1.4, fontWeight: 600, color: d.isToday ? P.acid : P.muted }}>
+            {d.short}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 2 }}>
+            <div style={{ fontFamily: '"Fraunces", serif', fontSize: 26, fontWeight: 500, letterSpacing: -1, lineHeight: 1 }}>
+              {d.num}
+            </div>
+            {d.isToday && (
+              <div style={{ fontSize: 10, background: P.acid, color: P.ink, padding: '2px 6px', fontWeight: 700, letterSpacing: 0.5 }}>
+                HOJE
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SessionBlock({ s }) {
+  const d = DISC[s.disc];
+  const top = s.s * ROW_H;
+  const height = s.h * ROW_H - 3;
+  const isMock = s.type === 'mock';
+  const isReview = s.type === 'review';
+  const compact = s.h <= 1;
+  return (
+    <div style={{
+      position: 'absolute', top, left: 3, right: 3, height,
+      background: isMock ? d.soft : isReview ? P.card : d.soft,
+      borderLeft: `3px solid ${d.color}`,
+      border: isReview ? `1px dashed ${d.color}` : undefined,
+      padding: compact ? '3px 7px' : '5px 8px',
+      fontSize: 10.5, lineHeight: 1.2,
+      overflow: 'hidden',
+      cursor: 'pointer',
+      boxShadow: isMock ? `inset 0 -3px 0 ${P.acid}` : 'none',
+      display: 'flex', flexDirection: 'column', gap: compact ? 0 : 2,
+    }}>
+      <div style={{ fontSize: 8.5, letterSpacing: 0.8, color: d.color, fontWeight: 700, display: 'flex', justifyContent: 'space-between', lineHeight: 1.1 }}>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.disc.toUpperCase()}</span>
+        <span style={{ color: P.muted, fontWeight: 500, flexShrink: 0, marginLeft: 4 }}>{s.h}h</span>
+      </div>
+      <div style={{ color: P.ink, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: compact ? 'nowrap' : 'normal' }}>{s.label}</div>
+      {isMock && !compact && <div style={{ fontSize: 9, marginTop: 'auto', color: P.ink, fontWeight: 700, letterSpacing: 1 }}>⚡ SIMULADO</div>}
+    </div>
+  );
+}
+
+function WeekGrid() {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '56px repeat(7, 1fr)', background: P.card }}>
+      {/* Time column */}
+      <div>
+        {HOURS.map(h => (
+          <div key={h} style={{
+            height: ROW_H, borderBottom: `1px solid ${P.line}`,
+            fontSize: 10, color: P.muted, padding: '2px 8px 0',
+            fontFamily: '"Inter Tight", sans-serif', fontVariantNumeric: 'tabular-nums',
+            textAlign: 'right', position: 'relative',
+          }}>
+            <span style={{ position: 'relative', top: -6, background: P.card, padding: '0 2px' }}>{String(h).padStart(2, '0')}:00</span>
+          </div>
+        ))}
+      </div>
+      {/* Day columns */}
+      {days.map((d, di) => (
+        <div key={di} style={{
+          position: 'relative',
+          borderLeft: `1px solid ${P.line}`,
+          background: d.isToday ? 'rgba(30,58,232,0.03)' : 'transparent',
+        }}>
+          {HOURS.map((h, i) => (
+            <div key={i} style={{
+              height: ROW_H,
+              borderBottom: `1px solid ${P.line}`,
+              background: (h >= 12 && h < 13) ? 'rgba(107,106,95,0.04)' : 'transparent',
+            }} />
+          ))}
+          {/* Now-line on today */}
+          {d.isToday && (
+            <div style={{
+              position: 'absolute', left: 0, right: 0, top: 3.2 * ROW_H + 20,
+              borderTop: `2px solid ${P.rose}`, zIndex: 1,
+            }}>
+              <div style={{
+                position: 'absolute', left: -4, top: -5, width: 8, height: 8,
+                background: P.rose, borderRadius: '50%',
+              }} />
+            </div>
+          )}
+          {sessions.filter(s => s.d === di).map((s, i) => <SessionBlock key={i} s={s} />)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function GoalItem({ label, done, total, color }) {
+  const pct = Math.round((done / total) * 100);
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6, lineHeight: 1.2 }}>
+        <span style={{ color: P.ink, fontWeight: 500 }}>{label}</span>
+        <span style={{ fontFamily: '"Fraunces", serif', color: P.ink2, fontVariantNumeric: 'tabular-nums' }}>
+          {done}<span style={{ color: P.muted }}>/{total}</span>
+        </span>
+      </div>
+      <div style={{ height: 4, background: P.line, position: 'relative' }}>
+        <div style={{ position: 'absolute', inset: 0, width: `${pct}%`, background: color }} />
+      </div>
+    </div>
+  );
+}
+
+function DisciplineLegend() {
+  const list = Object.entries(DISC).filter(([k]) => !['Revisão', 'Simulado'].includes(k));
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', fontSize: 11 }}>
+      {list.map(([name, d]) => (
+        <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ width: 10, height: 10, background: d.color }} />
+          <span style={{ color: P.ink2 }}>{name}</span>
+        </div>
+      ))}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ width: 10, height: 10, border: `1px dashed ${P.ink}`, background: P.card }} />
+        <span style={{ color: P.ink2 }}>Revisão</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ width: 10, height: 10, background: P.acid }} />
+        <span style={{ color: P.ink2 }}>Simulado</span>
+      </div>
+    </div>
+  );
+}
+
+function Ring({ pct, size = 72, stroke = 9, color = P.cobalt }) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  return (
+    <svg width={size} height={size} style={{ display: 'block' }}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={P.line} strokeWidth={stroke} />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
+        strokeDasharray={`${c * pct/100} ${c}`} strokeLinecap="round"
+        transform={`rotate(-90 ${size/2} ${size/2})`} />
+      <text x="50%" y="50%" textAnchor="middle" dy="5" fontFamily='"Fraunces", serif' fontSize="18" fill={P.ink}>
+        {pct}
+      </text>
+    </svg>
+  );
+}
+
+function Planner() {
+  return (
+    <div style={{
+      display: 'flex', width: 1280, minHeight: 860, background: P.paper, color: P.ink,
+      fontFamily: '"Inter Tight", sans-serif',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 6px 24px rgba(0,0,0,0.08)',
+    }}>
+      <Sidebar />
+      <div style={{ flex: 1, padding: '22px 28px', display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
+        {/* Top bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, flexWrap: 'nowrap' }}>
+          <div style={{ flexShrink: 0 }}>
+            <div style={{ fontSize: 11, letterSpacing: 1.4, color: P.muted, fontWeight: 600 }}>PLANEJAMENTO · SEMANA 16</div>
+            <div style={{ fontFamily: '"Fraunces", serif', fontSize: 40, fontWeight: 500, letterSpacing: -1.5, lineHeight: 1, marginTop: 4 }}>
+              20 <i style={{ color: P.muted }}>a</i> 26 de abril
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <div style={{ display: 'flex', border: `1px solid ${P.line2}`, background: P.card }}>
+              <button style={{ background: 'transparent', border: 'none', padding: '9px 12px', fontSize: 13, cursor: 'pointer', borderRight: `1px solid ${P.line2}` }}>‹</button>
+              <button style={{ background: 'transparent', border: 'none', padding: '9px 14px', fontSize: 13, cursor: 'pointer', color: P.muted, borderRight: `1px solid ${P.line2}` }}>Hoje</button>
+              <button style={{ background: 'transparent', border: 'none', padding: '9px 12px', fontSize: 13, cursor: 'pointer' }}>›</button>
+            </div>
+            <div style={{ display: 'flex', border: `1px solid ${P.line2}`, background: P.card, fontSize: 13 }}>
+              <button style={{ background: P.ink, color: P.paper, border: 'none', padding: '9px 14px', fontWeight: 600, cursor: 'pointer' }}>Semana</button>
+              <button style={{ background: 'transparent', border: 'none', padding: '9px 14px', cursor: 'pointer', borderLeft: `1px solid ${P.line2}`, color: P.muted }}>Mês</button>
+              <button style={{ background: 'transparent', border: 'none', padding: '9px 14px', cursor: 'pointer', borderLeft: `1px solid ${P.line2}`, color: P.muted }}>Lista</button>
+            </div>
+            <button style={{ background: P.cobalt, color: '#fff', border: 'none', padding: '10px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0 }}>
+              + Nova sessão
+            </button>
+          </div>
+        </div>
+
+        {/* Goal strip + exam countdown */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr 0.9fr', gap: 12 }}>
+          <div style={{ background: P.card, border: `1px solid ${P.line}`, padding: '16px 20px' }}>
+            <div style={{ fontSize: 10, letterSpacing: 1.4, color: P.muted, fontWeight: 600, marginBottom: 12 }}>META DA SEMANA</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+              <Ring pct={54} color={P.cobalt} />
+              <div>
+                <div style={{ fontFamily: '"Fraunces", serif', fontSize: 28, letterSpacing: -1, lineHeight: 1 }}>
+                  15h<span style={{ fontSize: 16, color: P.muted }}>12m</span>
+                  <span style={{ color: P.muted, margin: '0 6px' }}>/</span>
+                  <span style={{ color: P.muted, fontSize: 20 }}>28h</span>
+                </div>
+                <div style={{ fontSize: 11, color: P.ink2, marginTop: 6 }}>
+                  <b style={{ color: P.mint }}>no ritmo</b> · faltam 12h48 até domingo
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style={{ background: P.card, border: `1px solid ${P.line}`, padding: '16px 20px' }}>
+            <div style={{ fontSize: 10, letterSpacing: 1.4, color: P.muted, fontWeight: 600, marginBottom: 10 }}>METAS POR BLOCO</div>
+            <GoalItem label="Questões resolvidas" done={168} total={300} color={P.cobalt} />
+            <GoalItem label="Flashcards revisados" done={420} total={500} color={P.mint} />
+            <div style={{ fontSize: 11, color: P.muted }}>+ 2 simulados na semana</div>
+          </div>
+          <div style={{ background: P.card, border: `1px solid ${P.line}`, padding: '16px 20px' }}>
+            <div style={{ fontSize: 10, letterSpacing: 1.4, color: P.muted, fontWeight: 600, marginBottom: 10 }}>COBERTURA EDITAL</div>
+            <GoalItem label="Morfofuncional" done={18} total={22} color={DISC['Morfofuncional'].color} />
+            <GoalItem label="Emergências" done={14} total={20} color={DISC['Emergências'].color} />
+            <GoalItem label="Farmacologia" done={9} total={18} color={DISC['Farmacologia'].color} />
+          </div>
+          <div style={{ background: P.ink, color: P.paper, padding: '16px 20px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ fontSize: 10, letterSpacing: 1.4, color: P.acid, fontWeight: 600 }}>PRÓXIMA PROVA</div>
+            <div style={{ fontFamily: '"Fraunces", serif', fontSize: 16, fontWeight: 500, marginTop: 6, lineHeight: 1.2 }}>
+              Morfofuncional II
+            </div>
+            <div style={{ fontSize: 11, color: 'rgba(244,241,234,0.6)' }}>ter. 28 abr · 08h</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 10 }}>
+              <div style={{ fontFamily: '"Fraunces", serif', fontStyle: 'italic', fontSize: 56, color: P.acid, lineHeight: 0.9, letterSpacing: -2 }}>6</div>
+              <div style={{ fontSize: 10, color: 'rgba(244,241,234,0.7)', paddingBottom: 6 }}>dias</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Week calendar */}
+        <div style={{ border: `1px solid ${P.line}`, background: P.card, overflow: 'hidden' }}>
+          <WeekHeader />
+          <WeekGrid />
+        </div>
+
+        {/* Legend row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
+          <DisciplineLegend />
+          <div style={{ fontSize: 11, color: P.muted, fontFamily: '"Inter Tight", sans-serif' }}>
+            <span style={{ display: 'inline-block', width: 10, height: 2, background: P.rose, verticalAlign: 'middle', marginRight: 5 }} />
+            agora · 09:12
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Planner />);
+</script>
+</body>
+</html>
