@@ -118,11 +118,22 @@ const HOURS = Array.from({ length: HOUR_END - HOUR_START + 1 }, (_, i) => HOUR_S
 const ROW_H = 40;
 const DAYS_SHORT = ['SEG','TER','QUA','QUI','SEX','SÁB','DOM'];
 
-const DISCIPLINAS = [
+const DISCIPLINAS_FALLBACK = [
   'Morfofuncional', 'Emergências', 'Farmacologia', 'Hematológicas',
   'Saúde Coletiva', 'Clínica Médica', 'Cardiologia', 'Pediatria',
   'Ginecologia', 'Psiquiatria', 'Outro'
 ];
+
+function loadDisciplinas() {
+  try {
+    const raw = localStorage.getItem('trackermed.disciplinas.v1');
+    if (!raw) return DISCIPLINAS_FALLBACK;
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr) || arr.length === 0) return DISCIPLINAS_FALLBACK;
+    const nomes = arr.map(d => d && d.nome).filter(Boolean);
+    return nomes.length ? [...nomes, 'Outro'] : DISCIPLINAS_FALLBACK;
+  } catch { return DISCIPLINAS_FALLBACK; }
+}
 
 const DISC_COLOR = {
   'Morfofuncional':  { color: '#1E3AE8', soft: '#DDE3FF' },
@@ -218,9 +229,10 @@ function Sidebar() {
 }
 
 // --- Session Modal
-function SessionModal({ session, isNew, onSave, onDelete, onCancel }) {
+function SessionModal({ session, isNew, disciplinas, onSave, onDelete, onCancel }) {
   const [form, setForm] = useState(session);
   const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const opcoesDisc = disciplinas.includes(form.disc) ? disciplinas : [form.disc, ...disciplinas];
 
   const save = () => {
     if (form.endHour <= form.startHour) { alert('Horário final deve ser depois do início.'); return; }
@@ -252,7 +264,7 @@ function SessionModal({ session, isNew, onSave, onDelete, onCancel }) {
         <div className="field">
           <label>Disciplina</label>
           <select value={form.disc} onChange={e => update('disc', e.target.value)}>
-            {DISCIPLINAS.map(d => <option key={d} value={d}>{d}</option>)}
+            {opcoesDisc.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
         </div>
 
@@ -355,6 +367,20 @@ function Planner() {
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
   const [modal, setModal] = useState(null);
   const [view, setView] = useState('week');
+  const [disciplinas, setDisciplinas] = useState(loadDisciplinas);
+
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (!e.key || e.key === 'trackermed.disciplinas.v1') setDisciplinas(loadDisciplinas());
+    };
+    const onFocus = () => setDisciplinas(loadDisciplinas());
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, []);
 
   // Persist on change
   useEffect(() => { saveSessions(sessions); }, [sessions]);
@@ -388,7 +414,7 @@ function Planner() {
         dayIdx,
         startHour,
         endHour: Math.min(startHour + 1, HOUR_END + 0.5),
-        disc: DISCIPLINAS[0],
+        disc: disciplinas[0] || 'Outro',
         title: '',
         type: 'estudo',
         goalQ: 0,
@@ -579,6 +605,7 @@ function Planner() {
       <SessionModal
         session={modal.data}
         isNew={modal.isNew}
+        disciplinas={disciplinas}
         onSave={handleSave}
         onDelete={handleDelete}
         onCancel={() => setModal(null)}

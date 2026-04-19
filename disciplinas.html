@@ -38,6 +38,13 @@
 .dyn-remove { background: transparent; border: none; color: var(--rose); font-size: 18px; cursor: pointer; padding: 4px 8px; }
 .dyn-add { background: transparent; border: 1px dashed var(--cobalt); color: var(--cobalt); padding: 8px 14px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 4px; font-family: inherit; letter-spacing: 0.05em; }
 .dyn-add:hover { background: var(--cobalt); color: #fff; }
+.disc-card .card-actions { display: flex; gap: 6px; }
+.disc-card .icon-btn { background: transparent; border: 1px solid var(--line); width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink2); font-size: 12px; font-family: inherit; padding: 0; }
+.disc-card .icon-btn:hover { border-color: var(--ink); color: var(--ink); }
+.disc-card .icon-btn.danger:hover { border-color: var(--rose); color: var(--rose); }
+.disc-empty { grid-column: 1 / -1; text-align: center; padding: 60px 20px; border: 1px dashed var(--line); background: var(--card); }
+.disc-empty h3 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; margin-bottom: 6px; }
+.disc-empty p { font-size: 13px; color: var(--muted); }
 .hr-target-box { display: flex; align-items: baseline; gap: 10px; background: var(--ink); color: var(--paper); padding: 14px 18px; margin-bottom: 18px; }
 .hr-target-box .hr-num { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; letter-spacing: -0.03em; color: var(--acid); }
 .hr-target-box label { color: var(--paper); margin: 0 !important; font-size: 11px !important; }
@@ -59,28 +66,19 @@
 <div class="sidebar-foot">v0.1 · pessoal</div>
 </aside>
 <main class="main">
-<div class="topbar"><div class="crumb">Home <i>›</i> Disciplinas</div><div class="topbar-right"><span class="pill">8 disciplinas ativas</span><button class="btn" onclick="document.getElementById('newDiscModal').classList.add('open')">+ Nova disciplina</button></div></div>
+<div class="topbar"><div class="crumb">Home <i>›</i> Disciplinas</div><div class="topbar-right"><span class="pill" id="discCountPill">0 disciplinas</span><button class="btn" onclick="abrirNovaDisciplina()">+ Nova disciplina</button></div></div>
 <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px">
 <div><div class="kicker">Matérias</div><h1 class="page-title">Suas <i>disciplinas</i>.</h1><p class="page-lede">Horas estudadas, acurácia média e progresso por tópico.</p></div>
-<div style="display:flex;gap:24px;text-align:right"><div><div class="kicker">Total horas</div><div style="font-family:'Fraunces',serif;font-size:36px;letter-spacing:-0.03em;font-weight:500">248<span style="font-size:16px;color:var(--muted)">h</span></div></div><div><div class="kicker">Acurácia média</div><div style="font-family:'Fraunces',serif;font-size:36px;letter-spacing:-0.03em;font-weight:500;color:var(--mint)">82%</div></div></div>
+<div style="display:flex;gap:24px;text-align:right"><div><div class="kicker">Meta semanal</div><div id="statMeta" style="font-family:'Fraunces',serif;font-size:36px;letter-spacing:-0.03em;font-weight:500">0<span style="font-size:16px;color:var(--muted)">h</span></div></div><div><div class="kicker">Provas</div><div id="statProvas" style="font-family:'Fraunces',serif;font-size:36px;letter-spacing:-0.03em;font-weight:500;color:var(--cobalt)">0</div></div></div>
 </div>
-<div class="section"><div class="disc-grid">
-<div class="disc-card"><div class="head"><h3>Morfofuncional II</h3><span class="tag cobalt">em curso</span></div><div style="display:flex;gap:18px;align-items:baseline"><div class="disc-num">90<span>%</span></div><div style="font-size:12px;color:var(--muted)">42h · 184 questões</div></div><div class="progress"><i style="width:90%"></i></div><div class="disc-row"><span>Acurácia</span><b style="color:var(--mint)">88%</b></div><div class="disc-row"><span>Última sessão</span><b>hoje</b></div></div>
-<div class="disc-card"><div class="head"><h3>Emergências</h3><span class="tag mint">forte</span></div><div style="display:flex;gap:18px;align-items:baseline"><div class="disc-num mint">91<span>%</span></div><div style="font-size:12px;color:var(--muted)">38h · 212 questões</div></div><div class="progress mint"><i style="width:91%"></i></div><div class="disc-row"><span>Acurácia</span><b style="color:var(--mint)">92%</b></div><div class="disc-row"><span>Última sessão</span><b>ontem</b></div></div>
-<div class="disc-card"><div class="head"><h3>Farmacologia</h3><span class="tag rose">atenção</span></div><div style="display:flex;gap:18px;align-items:baseline"><div class="disc-num rose">69<span>%</span></div><div style="font-size:12px;color:var(--muted)">28h · 96 questões</div></div><div class="progress rose"><i style="width:69%"></i></div><div class="disc-row"><span>Acurácia</span><b style="color:var(--rose)">64%</b></div><div class="disc-row"><span>Última sessão</span><b>3 dias atrás</b></div></div>
-<div class="disc-card"><div class="head"><h3>Hematológicas</h3><span class="tag cobalt">em curso</span></div><div style="display:flex;gap:18px;align-items:baseline"><div class="disc-num">81<span>%</span></div><div style="font-size:12px;color:var(--muted)">32h · 148 questões</div></div><div class="progress"><i style="width:81%"></i></div><div class="disc-row"><span>Acurácia</span><b>79%</b></div><div class="disc-row"><span>Última sessão</span><b>ontem</b></div></div>
-<div class="disc-card"><div class="head"><h3>Saúde Coletiva</h3><span class="tag cobalt">em curso</span></div><div style="display:flex;gap:18px;align-items:baseline"><div class="disc-num">82<span>%</span></div><div style="font-size:12px;color:var(--muted)">36h · 172 questões</div></div><div class="progress"><i style="width:82%"></i></div><div class="disc-row"><span>Acurácia</span><b>84%</b></div><div class="disc-row"><span>Última sessão</span><b>2 dias atrás</b></div></div>
-<div class="disc-card"><div class="head"><h3>Cardiologia</h3><span class="tag amber">começar</span></div><div style="display:flex;gap:18px;align-items:baseline"><div class="disc-num amber">24<span>%</span></div><div style="font-size:12px;color:var(--muted)">8h · 32 questões</div></div><div class="progress amber"><i style="width:24%"></i></div><div class="disc-row"><span>Acurácia</span><b style="color:var(--amber)">71%</b></div><div class="disc-row"><span>Última sessão</span><b>1 semana</b></div></div>
-<div class="disc-card"><div class="head"><h3>Psiquiatria</h3><span class="tag ghost">planejada</span></div><div style="display:flex;gap:18px;align-items:baseline"><div class="disc-num" style="color:var(--muted)">0<span>%</span></div><div style="font-size:12px;color:var(--muted)">inicia em ago</div></div><div class="progress"><i style="width:0%"></i></div><div class="disc-row"><span>Acurácia</span><b>—</b></div><div class="disc-row"><span>Última sessão</span><b>—</b></div></div>
-<div class="disc-card"><div class="head"><h3>Pediatria</h3><span class="tag ghost">planejada</span></div><div style="display:flex;gap:18px;align-items:baseline"><div class="disc-num" style="color:var(--muted)">0<span>%</span></div><div style="font-size:12px;color:var(--muted)">inicia em ago</div></div><div class="progress"><i style="width:0%"></i></div><div class="disc-row"><span>Acurácia</span><b>—</b></div><div class="disc-row"><span>Última sessão</span><b>—</b></div></div>
-</div></div>
+<div class="section"><div class="disc-grid" id="discGrid"></div></div>
 </main></div>
 
 <!-- Modal: Nova disciplina -->
 <div class="modal-backdrop" id="newDiscModal" onclick="if(event.target===this) this.classList.remove('open')">
   <div class="modal-box">
     <button class="mbtn-close" onclick="document.getElementById('newDiscModal').classList.remove('open')">×</button>
-    <h2>Nova <i>disciplina</i></h2>
+    <h2 id="modalTitulo">Nova <i>disciplina</i></h2>
     <div class="modal-sub">Cadastra aulas, meta de horas e provas pra organizar seu semestre.</div>
 
     <form id="newDiscForm" onsubmit="event.preventDefault(); salvarDisciplina();">
@@ -137,7 +135,7 @@
 
       <div class="mactions">
         <button type="button" class="mbtn-cancel" onclick="document.getElementById('newDiscModal').classList.remove('open')">Cancelar</button>
-        <button type="submit" class="mbtn-save">Criar disciplina</button>
+        <button type="submit" class="mbtn-save" id="btnSalvar">Criar disciplina</button>
       </div>
     </form>
   </div>
@@ -148,67 +146,196 @@ const DIAS_SEMANA = [
   {v:'seg', l:'Segunda'}, {v:'ter', l:'Terça'}, {v:'qua', l:'Quarta'},
   {v:'qui', l:'Quinta'},  {v:'sex', l:'Sexta'},  {v:'sab', l:'Sábado'}
 ];
+const STATUS_LABEL = { 'em-curso':'em curso', 'planejada':'planejada', 'concluida':'concluída', 'trancada':'trancada' };
+const STATUS_TAG   = { 'em-curso':'cobalt',   'planejada':'ghost',     'concluida':'mint',       'trancada':'rose' };
 
-function addAula() {
+let editIndex = null;
+
+function lerDisciplinas() {
+  try { return JSON.parse(localStorage.getItem('trackermed.disciplinas.v1') || '[]'); }
+  catch { return []; }
+}
+function gravarDisciplinas(lista) {
+  localStorage.setItem('trackermed.disciplinas.v1', JSON.stringify(lista));
+}
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function diaLabel(v) { return (DIAS_SEMANA.find(d => d.v === v) || {l:v}).l; }
+
+function renderDisciplinas() {
+  const lista = lerDisciplinas();
+  const grid = document.getElementById('discGrid');
+  const pill = document.getElementById('discCountPill');
+  const metaEl = document.getElementById('statMeta');
+  const provasEl = document.getElementById('statProvas');
+
+  const totalMeta = lista.reduce((s, d) => s + (parseFloat(d.metaHorasSemana) || 0), 0);
+  const totalProvas = lista.reduce((s, d) => s + (Array.isArray(d.provas) ? d.provas.length : 0), 0);
+
+  pill.textContent = `${lista.length} ${lista.length === 1 ? 'disciplina' : 'disciplinas'}`;
+  metaEl.innerHTML = `${totalMeta % 1 === 0 ? totalMeta : totalMeta.toFixed(1)}<span style="font-size:16px;color:var(--muted)">h</span>`;
+  provasEl.textContent = totalProvas;
+
+  if (lista.length === 0) {
+    grid.innerHTML = `
+      <div class="disc-empty">
+        <h3>Nenhuma disciplina ainda.</h3>
+        <p>Clica em <b>+ Nova disciplina</b> pra cadastrar a primeira.</p>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = lista.map((d, i) => {
+    const tag = STATUS_TAG[d.status] || 'ghost';
+    const label = STATUS_LABEL[d.status] || d.status || '—';
+    const aulas = Array.isArray(d.aulas) ? d.aulas.length : 0;
+    const provas = Array.isArray(d.provas) ? d.provas.length : 0;
+    const meta = parseFloat(d.metaHorasSemana) || 0;
+    const codigo = d.codigo ? `<span style="font-size:11px;color:var(--muted);letter-spacing:0.08em">${escapeHtml(d.codigo)}</span>` : '';
+    const prof = d.prof ? `<div style="font-size:12px;color:var(--ink2)">${escapeHtml(d.prof)}</div>` : '';
+    return `
+      <div class="disc-card">
+        <div class="head">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <h3>${escapeHtml(d.nome || '(sem nome)')}</h3>
+            ${codigo}
+          </div>
+          <span class="tag ${tag}">${escapeHtml(label)}</span>
+        </div>
+        ${prof}
+        <div style="display:flex;gap:18px;align-items:baseline">
+          <div class="disc-num">${meta % 1 === 0 ? meta : meta.toFixed(1)}<span>h/sem</span></div>
+          <div style="font-size:12px;color:var(--muted)">${aulas} aula(s) · ${provas} prova(s)</div>
+        </div>
+        <div class="disc-row"><span>Aulas semanais</span><b>${aulas}</b></div>
+        <div class="disc-row"><span>Provas agendadas</span><b>${provas}</b></div>
+        <div class="card-actions" style="margin-top:4px">
+          <button type="button" class="icon-btn" title="Editar" onclick="editarDisciplina(${i})">✎</button>
+          <button type="button" class="icon-btn danger" title="Apagar" onclick="apagarDisciplina(${i})">×</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function apagarDisciplina(i) {
+  const lista = lerDisciplinas();
+  if (!lista[i]) return;
+  if (!confirm(`Apagar "${lista[i].nome || 'disciplina'}"?`)) return;
+  lista.splice(i, 1);
+  gravarDisciplinas(lista);
+  renderDisciplinas();
+}
+
+function abrirNovaDisciplina() {
+  editIndex = null;
+  document.getElementById('newDiscForm').reset();
+  document.getElementById('aulasList').innerHTML = '';
+  document.getElementById('provasList').innerHTML = '';
+  addAula(); addProva();
+  document.getElementById('dMetaHoras').value = 5;
+  document.getElementById('modalTitulo').innerHTML = 'Nova <i>disciplina</i>';
+  document.getElementById('btnSalvar').textContent = 'Criar disciplina';
+  document.getElementById('newDiscModal').classList.add('open');
+}
+
+function editarDisciplina(i) {
+  const lista = lerDisciplinas();
+  const d = lista[i];
+  if (!d) return;
+  editIndex = i;
+
+  document.getElementById('newDiscForm').reset();
+  document.getElementById('dNome').value = d.nome || '';
+  document.getElementById('dCodigo').value = d.codigo || '';
+  document.getElementById('dProf').value = d.prof || '';
+  document.getElementById('dStatus').value = d.status || 'em-curso';
+  document.getElementById('dMetaHoras').value = d.metaHorasSemana ?? 0;
+
+  document.getElementById('aulasList').innerHTML = '';
+  (d.aulas || []).forEach(a => addAula(a));
+  if ((d.aulas || []).length === 0) addAula();
+
+  document.getElementById('provasList').innerHTML = '';
+  (d.provas || []).forEach(p => addProva(p));
+  if ((d.provas || []).length === 0) addProva();
+
+  document.getElementById('modalTitulo').innerHTML = 'Editar <i>disciplina</i>';
+  document.getElementById('btnSalvar').textContent = 'Salvar alterações';
+  document.getElementById('newDiscModal').classList.add('open');
+}
+
+function addAula(a) {
   const div = document.createElement('div');
   div.className = 'dyn-row';
+  const sel = a && a.dia ? a.dia : 'seg';
+  const ini = a && a.inicio ? a.inicio : '08:00';
+  const fim = a && a.fim ? a.fim : '10:00';
   div.innerHTML = `
-    <select class="aula-dia">${DIAS_SEMANA.map(d=>`<option value="${d.v}">${d.l}</option>`).join('')}</select>
-    <input type="time" class="aula-inicio" value="08:00">
-    <input type="time" class="aula-fim" value="10:00">
+    <select class="aula-dia">${DIAS_SEMANA.map(d=>`<option value="${d.v}" ${d.v===sel?'selected':''}>${d.l}</option>`).join('')}</select>
+    <input type="time" class="aula-inicio" value="${ini}">
+    <input type="time" class="aula-fim" value="${fim}">
     <button type="button" class="dyn-remove" onclick="this.parentElement.remove()">×</button>
   `;
   document.getElementById('aulasList').appendChild(div);
 }
 
-function addProva() {
+function addProva(p) {
   const div = document.createElement('div');
   div.className = 'dyn-row-prova';
+  const nome = p && p.nome ? escapeHtml(p.nome) : '';
+  const data = p && p.data ? p.data : '';
   div.innerHTML = `
-    <input type="text" class="prova-nome" placeholder="Ex: P1 — Sistema cardiovascular">
-    <input type="date" class="prova-data">
+    <input type="text" class="prova-nome" placeholder="Ex: P1 — Sistema cardiovascular" value="${nome}">
+    <input type="date" class="prova-data" value="${data}">
     <button type="button" class="dyn-remove" onclick="this.parentElement.remove()">×</button>
   `;
   document.getElementById('provasList').appendChild(div);
 }
 
-// start with one of each
-addAula();
-addProva();
-
 function salvarDisciplina() {
+  const nome = document.getElementById('dNome').value.trim();
+  if (!nome) { alert('Dá um nome pra disciplina.'); return; }
+
   const aulas = [...document.querySelectorAll('#aulasList .dyn-row')].map(r => ({
     dia: r.querySelector('.aula-dia').value,
     inicio: r.querySelector('.aula-inicio').value,
     fim: r.querySelector('.aula-fim').value
-  }));
+  })).filter(a => a.inicio && a.fim);
+
   const provas = [...document.querySelectorAll('#provasList .dyn-row-prova')].map(r => ({
     nome: r.querySelector('.prova-nome').value.trim(),
     data: r.querySelector('.prova-data').value
   })).filter(p => p.nome && p.data);
 
+  const lista = lerDisciplinas();
+  const existente = editIndex !== null ? lista[editIndex] : null;
   const disc = {
-    nome: document.getElementById('dNome').value.trim(),
+    nome,
     codigo: document.getElementById('dCodigo').value.trim(),
     prof: document.getElementById('dProf').value.trim(),
     status: document.getElementById('dStatus').value,
     metaHorasSemana: parseFloat(document.getElementById('dMetaHoras').value) || 0,
     aulas, provas,
-    criadoEm: new Date().toISOString()
+    criadoEm: existente?.criadoEm || new Date().toISOString(),
+    atualizadoEm: new Date().toISOString()
   };
 
-  const lista = JSON.parse(localStorage.getItem('trackermed.disciplinas.v1') || '[]');
-  lista.push(disc);
-  localStorage.setItem('trackermed.disciplinas.v1', JSON.stringify(lista));
+  if (editIndex !== null) {
+    lista[editIndex] = disc;
+  } else {
+    lista.push(disc);
+  }
+  gravarDisciplinas(lista);
 
-  alert(`Disciplina "${disc.nome}" criada!\n\n${aulas.length} horário(s) de aula\n${provas.length} prova(s) registrada(s)\n${disc.metaHorasSemana}h/semana de estudo`);
-
+  editIndex = null;
   document.getElementById('newDiscModal').classList.remove('open');
-  document.getElementById('newDiscForm').reset();
-  document.getElementById('aulasList').innerHTML = '';
-  document.getElementById('provasList').innerHTML = '';
-  addAula(); addProva();
+  renderDisciplinas();
 }
+
+renderDisciplinas();
 </script>
 
 </body></html>
