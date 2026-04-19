@@ -6,51 +6,63 @@
 <link rel="stylesheet" href="app.css">
 <style>
 .disc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; }
-.disc-card { background: var(--card); border: 1px solid var(--line); padding: 24px; display: flex; flex-direction: column; gap: 14px; transition: all .2s; cursor: pointer; }
-.disc-card:hover { border-color: var(--ink); transform: translateY(-2px); box-shadow: 0 16px 32px rgba(10,19,48,0.06); }
-.disc-card .head { display: flex; justify-content: space-between; align-items: flex-start; }
+.disc-card { background: var(--card); border: 1px solid var(--line); padding: 22px; display: flex; flex-direction: column; gap: 10px; transition: all .15s; position: relative; }
+.disc-card:hover { border-color: var(--ink); box-shadow: 0 10px 24px rgba(10,19,48,0.06); }
+.disc-card .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
 .disc-card h3 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
-.disc-num { font-family: 'Fraunces', serif; font-size: 40px; letter-spacing: -0.04em; line-height: 1; color: var(--cobalt); font-weight: 500; }
-.disc-num.mint { color: var(--mint); } .disc-num.rose { color: var(--rose); } .disc-num.amber { color: var(--amber); }
-.disc-num span { font-size: 16px; color: var(--muted); }
-.disc-row { display: flex; justify-content: space-between; font-size: 12px; padding-top: 10px; border-top: 1px dashed var(--line); }
-.disc-row b { font-variant-numeric: tabular-nums; }
+.disc-card .codigo { font-size: 11px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+.disc-card .prof { font-size: 12px; color: var(--ink2); margin-top: -4px; }
+.disc-card .aulas { background: var(--paper); padding: 10px 12px; font-size: 12px; border-left: 2px solid var(--cobalt); }
+.disc-card .aulas .aula-line { display: flex; justify-content: space-between; padding: 2px 0; font-variant-numeric: tabular-nums; }
+.disc-card .aulas .aula-line b { color: var(--cobalt); font-weight: 600; }
+.disc-card .meta-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 500; color: var(--ink); }
+.disc-card .meta-h span { font-size: 11px; color: var(--muted); font-family: 'Inter Tight', sans-serif; letter-spacing: 0.08em; text-transform: uppercase; }
+.disc-card .provas-box { border-top: 1px dashed var(--line); padding-top: 10px; font-size: 12px; }
+.disc-card .prova-line { display: flex; justify-content: space-between; padding: 3px 0; color: var(--ink2); }
+.disc-card .prova-line b { font-variant-numeric: tabular-nums; color: var(--rose); }
+.disc-card .actions { position: absolute; top: 14px; right: 14px; display: flex; gap: 4px; opacity: 0; transition: opacity .1s; }
+.disc-card:hover .actions { opacity: 1; }
+.disc-card .actions button { background: var(--card); border: 1px solid var(--line); width: 28px; height: 28px; cursor: pointer; font-size: 13px; color: var(--ink2); }
+.disc-card .actions button:hover { border-color: var(--ink); }
+.disc-card .actions button.del:hover { color: var(--rose); border-color: var(--rose); }
+.empty { text-align: center; padding: 60px 20px; background: var(--card); border: 2px dashed var(--line); margin-top: 24px; }
+.empty h3 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
+.empty p { color: var(--muted); margin-top: 8px; font-size: 14px; }
+.empty button { margin-top: 18px; background: var(--cobalt); color: #fff; border: none; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.top-stats { display: flex; gap: 28px; text-align: right; }
+.top-stats .val { font-family: 'Fraunces', serif; font-size: 36px; letter-spacing: -0.03em; font-weight: 500; line-height: 1; }
 
 /* Modal */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(10,19,48,0.55); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
 .modal-backdrop.open { display: flex; }
 .modal-box { background: var(--card); border: 1px solid var(--line); width: 580px; max-width: 100%; max-height: 92vh; overflow-y: auto; padding: 32px; position: relative; }
-.modal-box h2 { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 500; letter-spacing: -0.025em; line-height: 1.1; }
+.modal-box h2 { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.1; }
 .modal-box h2 i { color: var(--cobalt); font-style: italic; }
-.modal-sub { font-size: 13px; color: var(--muted); margin-top: 6px; margin-bottom: 24px; }
-.mbtn-close { position: absolute; right: 24px; top: 24px; background: transparent; border: none; font-size: 22px; cursor: pointer; color: var(--muted); }
-.mfield { margin-bottom: 18px; }
-.mfield label { display: block; font-size: 11px; letter-spacing: 0.15em; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 7px; }
-.mfield input[type="text"], .mfield input[type="date"], .mfield input[type="time"], .mfield input[type="number"], .mfield select, .mfield textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); background: var(--paper); font-size: 14px; font-family: inherit; color: var(--ink); }
-.mfield input:focus, .mfield select:focus, .mfield textarea:focus { outline: 2px solid var(--cobalt); outline-offset: -1px; border-color: var(--cobalt); }
+.modal-sub { font-size: 13px; color: var(--muted); margin-top: 6px; margin-bottom: 20px; }
+.mbtn-close { position: absolute; right: 20px; top: 20px; background: transparent; border: none; font-size: 24px; cursor: pointer; color: var(--muted); }
+.mfield { margin-bottom: 16px; }
+.mfield label { display: block; font-size: 11px; letter-spacing: 0.13em; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 6px; }
+.mfield input, .mfield select, .mfield textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); background: var(--paper); font-size: 14px; font-family: inherit; color: var(--ink); }
+.mfield input:focus, .mfield select:focus { outline: 2px solid var(--cobalt); outline-offset: -1px; border-color: var(--cobalt); }
 .mfield.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.mhelp { font-size: 11px; color: var(--muted); margin-top: 5px; font-style: italic; }
-.section-group { background: var(--paper); padding: 18px; margin-bottom: 18px; border-left: 3px solid var(--cobalt); }
-.section-group h4 { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 500; margin-bottom: 12px; letter-spacing: -0.01em; }
-.dyn-row { display: grid; grid-template-columns: 1fr 100px 100px auto; gap: 8px; margin-bottom: 8px; align-items: center; }
-.dyn-row-prova { display: grid; grid-template-columns: 1fr 140px auto; gap: 8px; margin-bottom: 8px; align-items: center; }
-.dyn-row input, .dyn-row select, .dyn-row-prova input { padding: 8px 10px !important; font-size: 13px !important; border: 1px solid var(--line); background: var(--card); font-family: inherit; }
-.dyn-remove { background: transparent; border: none; color: var(--rose); font-size: 18px; cursor: pointer; padding: 4px 8px; }
-.dyn-add { background: transparent; border: 1px dashed var(--cobalt); color: var(--cobalt); padding: 8px 14px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 4px; font-family: inherit; letter-spacing: 0.05em; }
-.dyn-add:hover { background: var(--cobalt); color: #fff; }
-.disc-card .card-actions { display: flex; gap: 6px; }
-.disc-card .icon-btn { background: transparent; border: 1px solid var(--line); width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink2); font-size: 12px; font-family: inherit; padding: 0; }
-.disc-card .icon-btn:hover { border-color: var(--ink); color: var(--ink); }
-.disc-card .icon-btn.danger:hover { border-color: var(--rose); color: var(--rose); }
-.disc-empty { grid-column: 1 / -1; text-align: center; padding: 60px 20px; border: 1px dashed var(--line); background: var(--card); }
-.disc-empty h3 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; margin-bottom: 6px; }
-.disc-empty p { font-size: 13px; color: var(--muted); }
-.hr-target-box { display: flex; align-items: baseline; gap: 10px; background: var(--ink); color: var(--paper); padding: 14px 18px; margin-bottom: 18px; }
-.hr-target-box .hr-num { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; letter-spacing: -0.03em; color: var(--acid); }
-.hr-target-box label { color: var(--paper); margin: 0 !important; font-size: 11px !important; }
-.mactions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+.section-group { background: var(--paper); padding: 16px; margin-bottom: 16px; border-left: 3px solid var(--cobalt); }
+.section-group.rose { border-left-color: var(--rose); }
+.section-group h4 { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 500; margin-bottom: 10px; }
+.section-group .sg-help { font-size: 11px; color: var(--ink2); margin-bottom: 10px; margin-top: -4px; }
+.dyn-row { display: grid; grid-template-columns: 1fr 100px 100px 28px; gap: 6px; margin-bottom: 6px; align-items: center; }
+.dyn-row-prova { display: grid; grid-template-columns: 1fr 140px 28px; gap: 6px; margin-bottom: 6px; align-items: center; }
+.dyn-row input, .dyn-row select, .dyn-row-prova input { padding: 7px 9px !important; font-size: 13px !important; border: 1px solid var(--line); background: var(--card); font-family: inherit; }
+.dyn-remove { background: transparent; border: none; color: var(--muted); font-size: 18px; cursor: pointer; }
+.dyn-remove:hover { color: var(--rose); }
+.dyn-add { background: transparent; border: 1px dashed var(--cobalt); color: var(--cobalt); padding: 7px 12px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 4px; font-family: inherit; letter-spacing: 0.05em; }
+.hr-box { display: flex; align-items: center; gap: 14px; background: var(--ink); color: var(--paper); padding: 14px 16px; margin-bottom: 16px; }
+.hr-box label { color: var(--acid); margin: 0 !important; font-size: 11px !important; flex: 1; }
+.hr-box .sub-hint { font-size: 11px; color: rgba(244,241,234,0.6); margin-top: 2px; display: block; letter-spacing: 0; text-transform: none; font-weight: 400; }
+.hr-box input { width: 70px; background: transparent; border: 1px solid rgba(244,241,234,0.2); color: var(--acid); font-family: 'Fraunces', serif; font-size: 22px; padding: 6px 10px; text-align: right; }
+.mactions { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
 .mbtn-cancel { background: transparent; border: 1px solid var(--line); padding: 10px 18px; font-size: 13px; cursor: pointer; font-family: inherit; }
 .mbtn-save { background: var(--cobalt); color: #fff; border: none; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.mbtn-delete { background: transparent; border: none; color: var(--rose); padding: 10px 0; font-size: 12px; cursor: pointer; font-family: inherit; font-weight: 600; }
 </style></head><body>
 <div class="app">
 <aside class="sidebar">
@@ -66,276 +78,249 @@
 <div class="sidebar-foot">v0.1 · pessoal</div>
 </aside>
 <main class="main">
-<div class="topbar"><div class="crumb">Home <i>›</i> Disciplinas</div><div class="topbar-right"><span class="pill" id="discCountPill">0 disciplinas</span><button class="btn" onclick="abrirNovaDisciplina()">+ Nova disciplina</button></div></div>
-<div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px">
-<div><div class="kicker">Matérias</div><h1 class="page-title">Suas <i>disciplinas</i>.</h1><p class="page-lede">Horas estudadas, acurácia média e progresso por tópico.</p></div>
-<div style="display:flex;gap:24px;text-align:right"><div><div class="kicker">Meta semanal</div><div id="statMeta" style="font-family:'Fraunces',serif;font-size:36px;letter-spacing:-0.03em;font-weight:500">0<span style="font-size:16px;color:var(--muted)">h</span></div></div><div><div class="kicker">Provas</div><div id="statProvas" style="font-family:'Fraunces',serif;font-size:36px;letter-spacing:-0.03em;font-weight:500;color:var(--cobalt)">0</div></div></div>
+<div class="topbar">
+  <div class="crumb">Home <i>›</i> Disciplinas</div>
+  <div class="topbar-right">
+    <span class="pill" id="statusPill">0 disciplinas</span>
+    <button class="btn" onclick="abrirNova()">+ Nova disciplina</button>
+  </div>
 </div>
-<div class="section"><div class="disc-grid" id="discGrid"></div></div>
+<div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px">
+  <div>
+    <div class="kicker">Matérias</div>
+    <h1 class="page-title">Suas <i>disciplinas</i>.</h1>
+    <p class="page-lede">Cadastra as matérias que você está cursando — aulas, metas de estudo e provas.</p>
+  </div>
+  <div class="top-stats">
+    <div><div class="kicker">Total aulas/sem</div><div class="val" id="statAulas">0<span style="font-size:16px;color:var(--muted)">h</span></div></div>
+    <div><div class="kicker">Meta estudo</div><div class="val" style="color:var(--cobalt)" id="statMeta">0<span style="font-size:16px;color:var(--muted)">h</span></div></div>
+  </div>
+</div>
+<div class="section" id="listaContainer">
+  <!-- rendered by JS -->
+</div>
 </main></div>
 
-<!-- Modal: Nova disciplina -->
-<div class="modal-backdrop" id="newDiscModal" onclick="if(event.target===this) this.classList.remove('open')">
+<!-- Modal -->
+<div class="modal-backdrop" id="newDiscModal" onclick="if(event.target===this) fechar()">
   <div class="modal-box">
-    <button class="mbtn-close" onclick="document.getElementById('newDiscModal').classList.remove('open')">×</button>
-    <h2 id="modalTitulo">Nova <i>disciplina</i></h2>
+    <button class="mbtn-close" onclick="fechar()">×</button>
+    <h2 id="modalTitle">Nova <i>disciplina</i></h2>
     <div class="modal-sub">Cadastra aulas, meta de horas e provas pra organizar seu semestre.</div>
 
-    <form id="newDiscForm" onsubmit="event.preventDefault(); salvarDisciplina();">
-
+    <form id="discForm" onsubmit="event.preventDefault(); salvar();">
+      <input type="hidden" id="dId">
       <div class="mfield row2">
-        <div>
-          <label>Nome da disciplina</label>
-          <input type="text" id="dNome" placeholder="Ex: Morfofuncional II" required>
-        </div>
-        <div>
-          <label>Código (opcional)</label>
-          <input type="text" id="dCodigo" placeholder="Ex: MED0214">
-        </div>
+        <div><label>Nome</label><input type="text" id="dNome" placeholder="Ex: Morfofuncional II" required></div>
+        <div><label>Código (opcional)</label><input type="text" id="dCodigo" placeholder="Ex: MED0214"></div>
       </div>
-
       <div class="mfield row2">
-        <div>
-          <label>Professor</label>
-          <input type="text" id="dProf" placeholder="Ex: Prof. Marina Santos">
-        </div>
-        <div>
-          <label>Status</label>
-          <select id="dStatus">
-            <option value="em-curso">Em curso</option>
-            <option value="planejada">Planejada</option>
-            <option value="concluida">Concluída</option>
-            <option value="trancada">Trancada</option>
-          </select>
-        </div>
+        <div><label>Professor</label><input type="text" id="dProf" placeholder="Ex: Prof. Marina Santos"></div>
+        <div><label>Status</label><select id="dStatus">
+          <option value="em-curso">Em curso</option>
+          <option value="planejada">Planejada</option>
+          <option value="concluida">Concluída</option>
+          <option value="trancada">Trancada</option>
+        </select></div>
       </div>
 
       <div class="section-group">
         <h4>📚 Horários das aulas</h4>
-        <div class="mhelp" style="margin-top:-6px;margin-bottom:10px;font-style:normal;color:var(--ink2)">Adiciona cada bloco fixo de aula semanal.</div>
+        <div class="sg-help">Adiciona cada bloco fixo de aula semanal.</div>
         <div id="aulasList"></div>
         <button type="button" class="dyn-add" onclick="addAula()">+ adicionar horário</button>
       </div>
 
-      <div class="hr-target-box">
-        <div style="flex:1">
-          <label>Meta de horas de estudo por semana</label>
-          <div style="font-size:11px;color:rgba(244,241,234,0.6);margin-top:3px">Fora do horário de aula — estudo pessoal, questões, revisão</div>
-        </div>
-        <input type="number" id="dMetaHoras" min="0" step="0.5" value="5" style="width:70px;background:transparent;border:1px solid rgba(244,241,234,0.2);color:var(--acid);font-family:'Fraunces',serif;font-size:22px;padding:6px 10px;text-align:right">
+      <div class="hr-box">
+        <label>Meta de horas de estudo / semana
+          <span class="sub-hint">Fora da aula — estudo pessoal, questões, revisão</span>
+        </label>
+        <input type="number" id="dMetaHoras" min="0" step="0.5" value="5">
         <span style="color:var(--acid);font-weight:600">h</span>
       </div>
 
-      <div class="section-group" style="border-left-color:var(--rose)">
+      <div class="section-group rose">
         <h4>📝 Provas registradas</h4>
-        <div class="mhelp" style="margin-top:-6px;margin-bottom:10px;font-style:normal;color:var(--ink2)">Datas das provas já agendadas. Aparecem no cronograma automaticamente.</div>
+        <div class="sg-help">Datas já agendadas. Aparecem no cronograma automaticamente.</div>
         <div id="provasList"></div>
         <button type="button" class="dyn-add" onclick="addProva()">+ adicionar prova</button>
       </div>
 
       <div class="mactions">
-        <button type="button" class="mbtn-cancel" onclick="document.getElementById('newDiscModal').classList.remove('open')">Cancelar</button>
-        <button type="submit" class="mbtn-save" id="btnSalvar">Criar disciplina</button>
+        <button type="button" class="mbtn-delete" id="btnDel" onclick="apagar()" style="display:none">Apagar disciplina</button>
+        <div style="display:flex;gap:10px;margin-left:auto">
+          <button type="button" class="mbtn-cancel" onclick="fechar()">Cancelar</button>
+          <button type="submit" class="mbtn-save" id="btnSave">Criar disciplina</button>
+        </div>
       </div>
     </form>
   </div>
 </div>
 
 <script>
-const DIAS_SEMANA = [
-  {v:'seg', l:'Segunda'}, {v:'ter', l:'Terça'}, {v:'qua', l:'Quarta'},
-  {v:'qui', l:'Quinta'},  {v:'sex', l:'Sexta'},  {v:'sab', l:'Sábado'}
-];
-const STATUS_LABEL = { 'em-curso':'em curso', 'planejada':'planejada', 'concluida':'concluída', 'trancada':'trancada' };
-const STATUS_TAG   = { 'em-curso':'cobalt',   'planejada':'ghost',     'concluida':'mint',       'trancada':'rose' };
+const KEY = 'trackermed.disciplinas.v1';
+const DIAS = [['seg','Seg'],['ter','Ter'],['qua','Qua'],['qui','Qui'],['sex','Sex'],['sab','Sáb']];
+const DIA_FULL = {seg:'Segunda', ter:'Terça', qua:'Quarta', qui:'Quinta', sex:'Sexta', sab:'Sábado', dom:'Domingo'};
 
-let editIndex = null;
+function load() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } }
+function save(list) { localStorage.setItem(KEY, JSON.stringify(list)); }
+function uid() { return 'd-' + Date.now() + '-' + Math.random().toString(36).slice(2,6); }
 
-function lerDisciplinas() {
-  try { return JSON.parse(localStorage.getItem('trackermed.disciplinas.v1') || '[]'); }
-  catch { return []; }
+function addAula(pre = {}) {
+  const div = document.createElement('div');
+  div.className = 'dyn-row';
+  div.innerHTML = `
+    <select class="aula-dia">${DIAS.map(([v,l])=>`<option value="${v}"${pre.dia===v?' selected':''}>${DIA_FULL[v]}</option>`).join('')}</select>
+    <input type="time" class="aula-inicio" value="${pre.inicio||'08:00'}">
+    <input type="time" class="aula-fim" value="${pre.fim||'10:00'}">
+    <button type="button" class="dyn-remove" onclick="this.parentElement.remove()">×</button>`;
+  document.getElementById('aulasList').appendChild(div);
 }
-function gravarDisciplinas(lista) {
-  localStorage.setItem('trackermed.disciplinas.v1', JSON.stringify(lista));
-}
-
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-function diaLabel(v) { return (DIAS_SEMANA.find(d => d.v === v) || {l:v}).l; }
-
-function renderDisciplinas() {
-  const lista = lerDisciplinas();
-  const grid = document.getElementById('discGrid');
-  const pill = document.getElementById('discCountPill');
-  const metaEl = document.getElementById('statMeta');
-  const provasEl = document.getElementById('statProvas');
-
-  const totalMeta = lista.reduce((s, d) => s + (parseFloat(d.metaHorasSemana) || 0), 0);
-  const totalProvas = lista.reduce((s, d) => s + (Array.isArray(d.provas) ? d.provas.length : 0), 0);
-
-  pill.textContent = `${lista.length} ${lista.length === 1 ? 'disciplina' : 'disciplinas'}`;
-  metaEl.innerHTML = `${totalMeta % 1 === 0 ? totalMeta : totalMeta.toFixed(1)}<span style="font-size:16px;color:var(--muted)">h</span>`;
-  provasEl.textContent = totalProvas;
-
-  if (lista.length === 0) {
-    grid.innerHTML = `
-      <div class="disc-empty">
-        <h3>Nenhuma disciplina ainda.</h3>
-        <p>Clica em <b>+ Nova disciplina</b> pra cadastrar a primeira.</p>
-      </div>`;
-    return;
-  }
-
-  grid.innerHTML = lista.map((d, i) => {
-    const tag = STATUS_TAG[d.status] || 'ghost';
-    const label = STATUS_LABEL[d.status] || d.status || '—';
-    const aulas = Array.isArray(d.aulas) ? d.aulas.length : 0;
-    const provas = Array.isArray(d.provas) ? d.provas.length : 0;
-    const meta = parseFloat(d.metaHorasSemana) || 0;
-    const codigo = d.codigo ? `<span style="font-size:11px;color:var(--muted);letter-spacing:0.08em">${escapeHtml(d.codigo)}</span>` : '';
-    const prof = d.prof ? `<div style="font-size:12px;color:var(--ink2)">${escapeHtml(d.prof)}</div>` : '';
-    return `
-      <div class="disc-card">
-        <div class="head">
-          <div style="display:flex;flex-direction:column;gap:4px">
-            <h3>${escapeHtml(d.nome || '(sem nome)')}</h3>
-            ${codigo}
-          </div>
-          <span class="tag ${tag}">${escapeHtml(label)}</span>
-        </div>
-        ${prof}
-        <div style="display:flex;gap:18px;align-items:baseline">
-          <div class="disc-num">${meta % 1 === 0 ? meta : meta.toFixed(1)}<span>h/sem</span></div>
-          <div style="font-size:12px;color:var(--muted)">${aulas} aula(s) · ${provas} prova(s)</div>
-        </div>
-        <div class="disc-row"><span>Aulas semanais</span><b>${aulas}</b></div>
-        <div class="disc-row"><span>Provas agendadas</span><b>${provas}</b></div>
-        <div class="card-actions" style="margin-top:4px">
-          <button type="button" class="icon-btn" title="Editar" onclick="editarDisciplina(${i})">✎</button>
-          <button type="button" class="icon-btn danger" title="Apagar" onclick="apagarDisciplina(${i})">×</button>
-        </div>
-      </div>`;
-  }).join('');
+function addProva(pre = {}) {
+  const div = document.createElement('div');
+  div.className = 'dyn-row-prova';
+  div.innerHTML = `
+    <input type="text" class="prova-nome" placeholder="Ex: P1 — Sistema cardio" value="${(pre.nome||'').replace(/"/g,'&quot;')}">
+    <input type="date" class="prova-data" value="${pre.data||''}">
+    <button type="button" class="dyn-remove" onclick="this.parentElement.remove()">×</button>`;
+  document.getElementById('provasList').appendChild(div);
 }
 
-function apagarDisciplina(i) {
-  const lista = lerDisciplinas();
-  if (!lista[i]) return;
-  if (!confirm(`Apagar "${lista[i].nome || 'disciplina'}"?`)) return;
-  lista.splice(i, 1);
-  gravarDisciplinas(lista);
-  renderDisciplinas();
-}
-
-function abrirNovaDisciplina() {
-  editIndex = null;
-  document.getElementById('newDiscForm').reset();
+let editingId = null;
+function abrirNova() {
+  editingId = null;
+  document.getElementById('modalTitle').innerHTML = 'Nova <i>disciplina</i>';
+  document.getElementById('btnSave').textContent = 'Criar disciplina';
+  document.getElementById('btnDel').style.display = 'none';
+  document.getElementById('discForm').reset();
   document.getElementById('aulasList').innerHTML = '';
   document.getElementById('provasList').innerHTML = '';
-  addAula(); addProva();
   document.getElementById('dMetaHoras').value = 5;
-  document.getElementById('modalTitulo').innerHTML = 'Nova <i>disciplina</i>';
-  document.getElementById('btnSalvar').textContent = 'Criar disciplina';
+  addAula();
+  addProva();
   document.getElementById('newDiscModal').classList.add('open');
 }
 
-function editarDisciplina(i) {
-  const lista = lerDisciplinas();
-  const d = lista[i];
+function abrirEdit(id) {
+  const d = load().find(x => x.id === id);
   if (!d) return;
-  editIndex = i;
-
-  document.getElementById('newDiscForm').reset();
+  editingId = id;
+  document.getElementById('modalTitle').innerHTML = 'Editar <i>disciplina</i>';
+  document.getElementById('btnSave').textContent = 'Salvar';
+  document.getElementById('btnDel').style.display = 'block';
+  document.getElementById('dId').value = id;
   document.getElementById('dNome').value = d.nome || '';
   document.getElementById('dCodigo').value = d.codigo || '';
   document.getElementById('dProf').value = d.prof || '';
   document.getElementById('dStatus').value = d.status || 'em-curso';
-  document.getElementById('dMetaHoras').value = d.metaHorasSemana ?? 0;
-
+  document.getElementById('dMetaHoras').value = d.metaHorasSemana || 0;
   document.getElementById('aulasList').innerHTML = '';
-  (d.aulas || []).forEach(a => addAula(a));
-  if ((d.aulas || []).length === 0) addAula();
-
   document.getElementById('provasList').innerHTML = '';
+  (d.aulas || []).forEach(a => addAula(a));
   (d.provas || []).forEach(p => addProva(p));
-  if ((d.provas || []).length === 0) addProva();
-
-  document.getElementById('modalTitulo').innerHTML = 'Editar <i>disciplina</i>';
-  document.getElementById('btnSalvar').textContent = 'Salvar alterações';
+  if (!d.aulas?.length) addAula();
+  if (!d.provas?.length) addProva();
   document.getElementById('newDiscModal').classList.add('open');
 }
 
-function addAula(a) {
-  const div = document.createElement('div');
-  div.className = 'dyn-row';
-  const sel = a && a.dia ? a.dia : 'seg';
-  const ini = a && a.inicio ? a.inicio : '08:00';
-  const fim = a && a.fim ? a.fim : '10:00';
-  div.innerHTML = `
-    <select class="aula-dia">${DIAS_SEMANA.map(d=>`<option value="${d.v}" ${d.v===sel?'selected':''}>${d.l}</option>`).join('')}</select>
-    <input type="time" class="aula-inicio" value="${ini}">
-    <input type="time" class="aula-fim" value="${fim}">
-    <button type="button" class="dyn-remove" onclick="this.parentElement.remove()">×</button>
-  `;
-  document.getElementById('aulasList').appendChild(div);
-}
+function fechar() { document.getElementById('newDiscModal').classList.remove('open'); }
 
-function addProva(p) {
-  const div = document.createElement('div');
-  div.className = 'dyn-row-prova';
-  const nome = p && p.nome ? escapeHtml(p.nome) : '';
-  const data = p && p.data ? p.data : '';
-  div.innerHTML = `
-    <input type="text" class="prova-nome" placeholder="Ex: P1 — Sistema cardiovascular" value="${nome}">
-    <input type="date" class="prova-data" value="${data}">
-    <button type="button" class="dyn-remove" onclick="this.parentElement.remove()">×</button>
-  `;
-  document.getElementById('provasList').appendChild(div);
-}
-
-function salvarDisciplina() {
-  const nome = document.getElementById('dNome').value.trim();
-  if (!nome) { alert('Dá um nome pra disciplina.'); return; }
-
+function salvar() {
   const aulas = [...document.querySelectorAll('#aulasList .dyn-row')].map(r => ({
     dia: r.querySelector('.aula-dia').value,
     inicio: r.querySelector('.aula-inicio').value,
     fim: r.querySelector('.aula-fim').value
   })).filter(a => a.inicio && a.fim);
-
   const provas = [...document.querySelectorAll('#provasList .dyn-row-prova')].map(r => ({
     nome: r.querySelector('.prova-nome').value.trim(),
     data: r.querySelector('.prova-data').value
   })).filter(p => p.nome && p.data);
 
-  const lista = lerDisciplinas();
-  const existente = editIndex !== null ? lista[editIndex] : null;
   const disc = {
-    nome,
+    id: editingId || uid(),
+    nome: document.getElementById('dNome').value.trim(),
     codigo: document.getElementById('dCodigo').value.trim(),
     prof: document.getElementById('dProf').value.trim(),
     status: document.getElementById('dStatus').value,
     metaHorasSemana: parseFloat(document.getElementById('dMetaHoras').value) || 0,
-    aulas, provas,
-    criadoEm: existente?.criadoEm || new Date().toISOString(),
-    atualizadoEm: new Date().toISOString()
+    aulas, provas
   };
-
-  if (editIndex !== null) {
-    lista[editIndex] = disc;
-  } else {
-    lista.push(disc);
-  }
-  gravarDisciplinas(lista);
-
-  editIndex = null;
-  document.getElementById('newDiscModal').classList.remove('open');
-  renderDisciplinas();
+  let list = load();
+  if (editingId) list = list.map(x => x.id === editingId ? disc : x);
+  else list.push(disc);
+  save(list);
+  fechar();
+  render();
 }
 
-renderDisciplinas();
-</script>
+function apagar() {
+  if (!editingId) return;
+  if (!confirm('Apagar essa disciplina?')) return;
+  save(load().filter(x => x.id !== editingId));
+  fechar();
+  render();
+}
 
+function STATUS_CHIP(s) {
+  const m = {'em-curso':['cobalt','em curso'],'planejada':['ghost','planejada'],'concluida':['mint','concluída'],'trancada':['rose','trancada']};
+  const [c,l] = m[s] || ['ghost', s];
+  return `<span class="tag ${c}">${l}</span>`;
+}
+function horasDaAula(a) { const [h1,m1]=a.inicio.split(':').map(Number); const [h2,m2]=a.fim.split(':').map(Number); return (h2+m2/60)-(h1+m1/60); }
+function fmtData(d) { if(!d) return ''; const [y,m,dd]=d.split('-'); return `${dd}/${m}/${y.slice(2)}`; }
+function diasAte(d) { if(!d) return null; const t=new Date(d+'T12:00'); const n=new Date(); n.setHours(0,0,0,0); return Math.round((t-n)/86400000); }
+
+function render() {
+  const list = load();
+  const cont = document.getElementById('listaContainer');
+  document.getElementById('statusPill').textContent = `${list.length} disciplina${list.length!==1?'s':''}`;
+  const aulasTotal = list.reduce((s,d)=>s + (d.aulas||[]).reduce((a,au)=>a+horasDaAula(au),0), 0);
+  const metaTotal = list.reduce((s,d)=>s+(d.metaHorasSemana||0), 0);
+  document.getElementById('statAulas').innerHTML = `${aulasTotal.toFixed(1)}<span style="font-size:16px;color:var(--muted)">h</span>`;
+  document.getElementById('statMeta').innerHTML = `${metaTotal.toFixed(1)}<span style="font-size:16px;color:var(--muted)">h</span>`;
+
+  if (list.length === 0) {
+    cont.innerHTML = `<div class="empty">
+      <h3>Nenhuma disciplina cadastrada.</h3>
+      <p>Adiciona as matérias que você está cursando agora.</p>
+      <button onclick="abrirNova()">+ Adicionar primeira disciplina</button>
+    </div>`;
+    return;
+  }
+
+  cont.innerHTML = `<div class="disc-grid">${list.map(d => {
+    const aulas = (d.aulas||[]).map(a => {
+      const dia = DIAS.find(([v])=>v===a.dia)?.[1] || a.dia;
+      return `<div class="aula-line"><span><b>${dia}</b></span><span>${a.inicio}—${a.fim}</span></div>`;
+    }).join('') || `<div style="color:var(--muted);font-size:12px;font-style:italic">Sem aulas cadastradas</div>`;
+    const provas = (d.provas||[]).sort((a,b)=>(a.data||'').localeCompare(b.data||'')).slice(0,3).map(p => {
+      const diff = diasAte(p.data);
+      const badge = diff===null?'':diff<0?'passou':diff===0?'hoje':diff+'d';
+      return `<div class="prova-line"><span>${p.nome}</span><b>${fmtData(p.data)} <span style="color:var(--muted);font-weight:500;font-size:11px">· ${badge}</span></b></div>`;
+    }).join('') || `<div style="color:var(--muted);font-size:12px;font-style:italic">Sem provas</div>`;
+
+    return `<div class="disc-card">
+      <div class="actions">
+        <button onclick="abrirEdit('${d.id}')" title="Editar">✎</button>
+        <button class="del" onclick="if(confirm('Apagar ${(d.nome||'').replace(/'/g,'\\\'')}?')){ save(load().filter(x=>x.id!=='${d.id}')); render(); }" title="Apagar">×</button>
+      </div>
+      <div class="head">
+        <div>
+          ${d.codigo ? `<div class="codigo">${d.codigo}</div>`:''}
+          <h3>${d.nome}</h3>
+          ${d.prof ? `<div class="prof">${d.prof}</div>`:''}
+        </div>
+        ${STATUS_CHIP(d.status)}
+      </div>
+      <div class="aulas">${aulas}</div>
+      <div>
+        <div class="meta-h">${(d.metaHorasSemana||0).toFixed(1)}h <span>meta semanal</span></div>
+      </div>
+      <div class="provas-box">${provas}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+render();
+</script>
 </body></html>
