@@ -256,7 +256,8 @@ function salvar() {
 
 function apagar() {
   if (!editingId) return;
-  if (!confirm('Apagar essa disciplina?')) return;
+  const d = load().find(x => x.id === editingId);
+  if (!confirm(`Apagar ${d?.nome || 'essa disciplina'}?`)) return;
   save(load().filter(x => x.id !== editingId));
   fechar();
   render();
