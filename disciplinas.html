@@ -285,13 +285,16 @@ function apagarCard(id) {
   render();
 }
 
-document.addEventListener('click', function (e) {
-  const card = e.target.closest('.disc-card[data-id]');
-  if (!card) return;
-  const id = card.dataset.id;
-  if (e.target.closest('button.del')) return apagarCard(id);
-  abrirEdit(id);
-});
+function bindCardHandlers(cont) {
+  cont.querySelectorAll('.disc-card[data-id]').forEach(card => {
+    const id = card.dataset.id;
+    card.addEventListener('click', () => abrirEdit(id));
+    const pen = card.querySelector('.actions button:not(.del)');
+    if (pen) pen.addEventListener('click', e => { e.stopPropagation(); abrirEdit(id); });
+    const del = card.querySelector('.actions button.del');
+    if (del) del.addEventListener('click', e => { e.stopPropagation(); apagarCard(id); });
+  });
+}
 
 function render() {
   const list = load();
@@ -351,6 +354,7 @@ function render() {
       <div class="provas-box">${provas}</div>
     </div>`;
   }).join('')}</div>`;
+  bindCardHandlers(cont);
 }
 
 render();
