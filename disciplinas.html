@@ -58,6 +58,22 @@
 .hr-box label { color: var(--acid); margin: 0 !important; font-size: 11px !important; flex: 1; }
 .hr-box .sub-hint { font-size: 11px; color: rgba(244,241,234,0.6); margin-top: 2px; display: block; letter-spacing: 0; text-transform: none; font-weight: 400; }
 .hr-box input { width: 70px; background: transparent; border: 1px solid rgba(244,241,234,0.2); color: var(--acid); font-family: 'Fraunces', serif; font-size: 22px; padding: 6px 10px; text-align: right; }
+.hr-dual { display: grid; grid-template-columns: 1fr 1fr; background: var(--ink); color: var(--paper); margin-bottom: 16px; }
+.hr-dual .hr-side { padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+.hr-dual .hr-side + .hr-side { border-left: 1px solid rgba(244,241,234,0.08); }
+.hr-dual label { color: var(--acid); font-size: 11px !important; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; margin: 0 !important; }
+.hr-dual .sub-hint { font-size: 11px; color: rgba(244,241,234,0.55); letter-spacing: 0; text-transform: none; font-weight: 400; }
+.hr-dual .meta-input { display: flex; align-items: center; gap: 8px; margin-top: auto; }
+.hr-dual .meta-input input { flex: 1; width: auto; background: transparent; border: 1px solid rgba(244,241,234,0.2); color: var(--acid); font-family: 'Fraunces', serif; font-size: 22px; padding: 6px 10px; text-align: right; }
+.hr-dual .prio-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: auto; }
+.hr-dual .prio-chip { background: rgba(244,241,234,0.06); border: 1px solid rgba(244,241,234,0.14); color: rgba(244,241,234,0.72); padding: 6px 10px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; text-transform: uppercase; font-family: inherit; }
+.hr-dual .prio-chip:hover { color: var(--paper); border-color: rgba(244,241,234,0.3); }
+.hr-dual .prio-chip.active { background: var(--acid); color: var(--ink); border-color: var(--acid); }
+.color-picker { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.color-swatch { width: 30px; height: 30px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; transition: transform .12s, box-shadow .12s; }
+.color-swatch:hover { transform: scale(1.1); }
+.color-swatch.active { border-color: var(--card); box-shadow: 0 0 0 2px var(--ink); }
+.disc-card .cor-bar { position: absolute; top: 0; left: 0; right: 0; height: 4px; }
 .mactions { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
 .mbtn-cancel { background: transparent; border: 1px solid var(--line); padding: 10px 18px; font-size: 13px; cursor: pointer; font-family: inherit; }
 .mbtn-save { background: var(--cobalt); color: #fff; border: none; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
@@ -142,14 +158,10 @@
           <option value="trancada">Trancada</option>
         </select></div>
       </div>
-      <div class="mfield row2">
-        <div><label>Prioridade</label><select id="dPrioridade">
-          <option value="muito-alta">Muito alta (60 min/dia)</option>
-          <option value="alta">Alta (45 min/dia)</option>
-          <option value="media" selected>Média (25 min/dia)</option>
-          <option value="baixa">Baixa (15 min/dia)</option>
-        </select></div>
-        <div></div>
+      <div class="mfield">
+        <label>Cor da disciplina</label>
+        <div class="color-picker" id="dCorPicker"></div>
+        <input type="hidden" id="dCor">
       </div>
 
       <div class="section-group">
@@ -159,12 +171,21 @@
         <button type="button" class="dyn-add" onclick="addAula()">+ adicionar horário</button>
       </div>
 
-      <div class="hr-box">
-        <label>Meta de horas de estudo / semana
-          <span class="sub-hint">Fora da aula — estudo pessoal, questões, revisão</span>
-        </label>
-        <input type="number" id="dMetaHoras" min="0" step="0.5" value="5">
-        <span style="color:var(--acid);font-weight:600">h</span>
+      <div class="hr-dual">
+        <div class="hr-side">
+          <label>Meta de estudo / semana</label>
+          <span class="sub-hint">Fora da aula — estudo pessoal, questões</span>
+          <div class="meta-input">
+            <input type="number" id="dMetaHoras" min="0" step="0.5" value="5">
+            <span style="color:var(--acid);font-weight:600">h</span>
+          </div>
+        </div>
+        <div class="hr-side">
+          <label>Prioridade</label>
+          <span class="sub-hint">Define intensidade sugerida de estudo</span>
+          <div class="prio-chips" id="dPrioChips"></div>
+          <input type="hidden" id="dPrioridade" value="media">
+        </div>
       </div>
 
       <div class="section-group rose">
@@ -189,6 +210,18 @@
 const KEY = 'trackermed.disciplinas.v1';
 const DIAS = [['seg','Seg'],['ter','Ter'],['qua','Qua'],['qui','Qui'],['sex','Sex'],['sab','Sáb'],['dom','Dom']];
 const DIA_FULL = {seg:'Segunda', ter:'Terça', qua:'Quarta', qui:'Quinta', sex:'Sexta', sab:'Sábado', dom:'Domingo'};
+const CORES = ['#1E3AE8','#FF5B5B','#1FC28A','#F4A72F','#7C3AED','#0D9488','#EC4899','#0A1330'];
+const PRIOS = [
+  { v:'muito-alta', l:'Muito alta', h:'60min/dia' },
+  { v:'alta',       l:'Alta',       h:'45min/dia' },
+  { v:'media',      l:'Média',      h:'25min/dia' },
+  { v:'baixa',      l:'Baixa',      h:'15min/dia' }
+];
+function corPadrao(nome) {
+  const s = String(nome || '');
+  let h = 0; for (let i = 0; i < s.length; i++) h = (h*31 + s.charCodeAt(i)) >>> 0;
+  return CORES[h % CORES.length];
+}
 
 function load() {
   try {
@@ -223,6 +256,31 @@ function addProva(pre = {}) {
   document.getElementById('provasList').appendChild(div);
 }
 
+function renderColorPicker(selected) {
+  const el = document.getElementById('dCorPicker');
+  el.innerHTML = CORES.map(c => `<div class="color-swatch${c===selected?' active':''}" data-cor="${c}" style="background:${c}"></div>`).join('');
+  document.getElementById('dCor').value = selected;
+  el.onclick = (e) => {
+    const sw = e.target.closest('.color-swatch');
+    if (!sw) return;
+    const cor = sw.dataset.cor;
+    document.getElementById('dCor').value = cor;
+    el.querySelectorAll('.color-swatch').forEach(x => x.classList.toggle('active', x.dataset.cor === cor));
+  };
+}
+function renderPrioChips(selected) {
+  const el = document.getElementById('dPrioChips');
+  el.innerHTML = PRIOS.map(p => `<button type="button" class="prio-chip${p.v===selected?' active':''}" data-prio="${p.v}" title="${p.h}">${p.l}</button>`).join('');
+  document.getElementById('dPrioridade').value = selected;
+  el.onclick = (e) => {
+    const chip = e.target.closest('.prio-chip');
+    if (!chip) return;
+    const v = chip.dataset.prio;
+    document.getElementById('dPrioridade').value = v;
+    el.querySelectorAll('.prio-chip').forEach(x => x.classList.toggle('active', x.dataset.prio === v));
+  };
+}
+
 let editingId = null;
 function abrirNova() {
   editingId = null;
@@ -233,7 +291,8 @@ function abrirNova() {
   document.getElementById('aulasList').innerHTML = '';
   document.getElementById('provasList').innerHTML = '';
   document.getElementById('dMetaHoras').value = 5;
-  document.getElementById('dPrioridade').value = 'media';
+  renderPrioChips('media');
+  renderColorPicker(CORES[load().length % CORES.length]);
   addAula();
   addProva();
   document.getElementById('newDiscModal').classList.add('open');
@@ -251,8 +310,9 @@ function abrirEdit(id) {
   document.getElementById('dCodigo').value = d.codigo || '';
   document.getElementById('dProf').value = d.prof || '';
   document.getElementById('dStatus').value = d.status || 'em-curso';
-  document.getElementById('dPrioridade').value = d.prioridade || 'media';
   document.getElementById('dMetaHoras').value = d.metaHorasSemana || 0;
+  renderPrioChips(d.prioridade || 'media');
+  renderColorPicker(d.cor || corPadrao(d.nome));
   document.getElementById('aulasList').innerHTML = '';
   document.getElementById('provasList').innerHTML = '';
   (d.aulas || []).forEach(a => addAula(a));
@@ -294,13 +354,15 @@ function salvar() {
     data: r.querySelector('.prova-data').value
   })).filter(p => p.nome && p.data);
 
+  const nome = document.getElementById('dNome').value.trim();
   const disc = {
     id: editingId || uid(),
-    nome: document.getElementById('dNome').value.trim(),
+    nome,
     codigo: document.getElementById('dCodigo').value.trim(),
     prof: document.getElementById('dProf').value.trim(),
     status: document.getElementById('dStatus').value,
-    prioridade: document.getElementById('dPrioridade').value,
+    prioridade: document.getElementById('dPrioridade').value || 'media',
+    cor: document.getElementById('dCor').value || corPadrao(nome),
     metaHorasSemana: parseFloat(document.getElementById('dMetaHoras').value) || 0,
     aulas, provas
   };
@@ -377,7 +439,9 @@ function render() {
       return `<div class="prova-line"><span>${esc(p.nome)}</span><b>${fmtData(p.data)} <span style="color:var(--muted);font-weight:500;font-size:11px">· ${esc(badge)}</span></b></div>`;
     }).join('') || `<div style="color:var(--muted);font-size:12px;font-style:italic">Sem provas</div>`;
 
+    const cor = d.cor || corPadrao(d.nome);
     return `<div class="disc-card" data-id="${esc(d.id)}" data-action="edit">
+      <div class="cor-bar" style="background:${esc(cor)}"></div>
       <div class="actions">
         <button type="button" data-id="${esc(d.id)}" data-action="edit" title="Editar">✎</button>
         <button type="button" class="del" data-id="${esc(d.id)}" data-action="del" title="Apagar">×</button>
