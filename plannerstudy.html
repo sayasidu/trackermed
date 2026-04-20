@@ -117,6 +117,21 @@
 .mbtn-save { background: var(--cobalt); color: #fff; border: none; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
 
 .sugestoes { background: var(--card); border: 1px solid var(--line); padding: 22px 26px; margin-bottom: 24px; border-left: 4px solid var(--cobalt); }
+
+.avail-setup { background: #fff; border: 1px solid #E0E0E0; padding: 20px 24px; margin-bottom: 20px; }
+.avail-setup h3 { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
+.avail-setup h3 i { color: var(--cobalt); font-style: italic; }
+.avail-setup .help { font-size: 12px; color: #70757A; margin-top: 4px; margin-bottom: 14px; }
+.avail-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.avail-day { display: flex; flex-direction: column; gap: 4px; }
+.avail-day label { font-size: 10px; letter-spacing: 0.12em; color: #70757A; font-weight: 600; text-transform: uppercase; text-align: center; }
+.avail-day input { width: 100%; padding: 8px 10px; border: 1px solid var(--line); background: var(--paper); font-size: 14px; font-family: inherit; text-align: center; font-variant-numeric: tabular-nums; }
+.avail-day input:focus { outline: none; border-color: var(--cobalt); }
+.avail-day.hoje label { color: var(--cobalt); }
+.avail-total { margin-top: 14px; font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.avail-total b { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; margin: 0 4px; }
+.avail-warn { color: var(--rose); font-weight: 600; }
+.avail-ok { color: #2E7D32; font-weight: 600; }
 </style></head><body>
 <div class="app">
 <aside class="sidebar">
@@ -148,6 +163,16 @@
   <div class="stat-card"><div class="lbl">Sessões</div><div class="val" id="statSess">0</div><div class="sub" id="statSessSub">0 feitas</div></div>
   <div class="stat-card"><div class="lbl">Meta semanal</div><div class="val cobalt" id="statMeta">0<sup>h</sup></div><div class="sub" id="statMetaSub">0h faltando</div></div>
   <div class="stat-card dark"><div class="lbl">Provas</div><div class="val" id="statProv">0</div><div class="sub" id="statProvSub">nos próximos 30d</div></div>
+</div>
+
+<div class="avail-setup">
+  <h3>Suas <i>horas</i> por dia</h3>
+  <div class="help">Quantas horas você consegue estudar em cada dia da semana? Usamos isso pra checar se a meta das disciplinas cabe na sua rotina.</div>
+  <div class="avail-grid" id="availGrid"></div>
+  <div class="avail-total">
+    <span>Total disponível: <b id="availTot">0h</b> por semana</span>
+    <span id="availStatus"></span>
+  </div>
 </div>
 
 <div id="sugContainer"></div>
@@ -184,14 +209,25 @@
 <script>
 const DISC_KEY = 'trackermed.disciplinas.v1';
 const PLAN_KEY = 'trackermed.plan.v1';
+const AVAIL_KEY = 'trackermed.avail.v1';
 const DIAS_LBL = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const DIAS_LONG = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 const DIA_IDX = { dom:0, seg:1, ter:2, qua:3, qui:4, sex:5, sab:6 };
 const HORA_INI = 7, HORA_FIM = 23; // 7h → 23h, 16h cobertura
+// Ordem exibida na UI: Seg → Dom (getDay: 1..6, 0)
+const DIAS_ORDEM = [1,2,3,4,5,6,0];
+
+let anchorDate = new Date();
+let editSlot = null;
 
 function loadDisc() { try { return JSON.parse(localStorage.getItem(DISC_KEY) || '[]'); } catch { return []; } }
 function loadPlan() { try { return JSON.parse(localStorage.getItem(PLAN_KEY) || '{}'); } catch { return {}; } }
 function savePlan(p) { localStorage.setItem(PLAN_KEY, JSON.stringify(p)); }
+function loadAvail() {
+  try { const a = JSON.parse(localStorage.getItem(AVAIL_KEY) || 'null'); if (a) return a; } catch {}
+  return { 0:0, 1:2, 2:2, 3:2, 4:2, 5:2, 6:3 };
+}
+function saveAvail(a) { localStorage.setItem(AVAIL_KEY, JSON.stringify(a)); }
 function weekKey(d) { const m=startOfWeek(d); return m.toISOString().slice(0,10); }
 function startOfWeek(d) { const x=new Date(d); x.setHours(0,0,0,0); const w=(x.getDay()+6)%7; x.setDate(x.getDate()-w); return x; }
 function uid() { return 'b-'+Date.now()+'-'+Math.random().toString(36).slice(2,6); }
@@ -236,7 +272,7 @@ function abrirAdd(discId, discNome, horasSug) {
   const ini = 19, dur = Math.min(3, Math.max(1, Math.round(horasSug)));
   document.getElementById('aIni').value = String(ini).padStart(2,'0')+':00';
   document.getElementById('aFim').value = String(Math.min(23, ini+dur)).padStart(2,'0')+':00';
-  document.getElementById('aDia').value = ((new Date().getDay()+1)%7).toString();
+  document.getElementById('aDia').value = new Date().getDay().toString();
   document.getElementById('addModal').classList.add('open');
 }
 function fecharAdd() { document.getElementById('addModal').classList.remove('open'); editSlot = null; }
@@ -349,6 +385,36 @@ function renderGrade(discList) {
   return `<div class="grade"><div class="grade-head">${head}</div><div class="grade-body" style="min-height:${horas.length*50}px">${body}</div></div>`;
 }
 
+function renderAvail(metaTot) {
+  const avail = loadAvail();
+  const hojeDia = new Date().getDay();
+  const grid = document.getElementById('availGrid');
+  grid.innerHTML = DIAS_ORDEM.map(d => `
+    <div class="avail-day ${d===hojeDia?'hoje':''}">
+      <label>${DIAS_LBL[d]}</label>
+      <input type="number" min="0" max="24" step="0.5" data-dia="${d}" value="${avail[d] ?? 0}">
+    </div>`).join('');
+  grid.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const a = loadAvail();
+      const v = parseFloat(inp.value);
+      a[inp.dataset.dia] = isNaN(v) || v < 0 ? 0 : Math.min(24, v);
+      saveAvail(a);
+      render();
+    });
+  });
+  const total = DIAS_ORDEM.reduce((s,d) => s + (parseFloat(avail[d]) || 0), 0);
+  document.getElementById('availTot').textContent = `${total.toFixed(1)}h`;
+  const status = document.getElementById('availStatus');
+  if (metaTot <= 0) {
+    status.innerHTML = '';
+  } else if (total + 0.05 < metaTot) {
+    status.innerHTML = `<span class="avail-warn">Meta de ${metaTot.toFixed(1)}h não cabe · faltam ${(metaTot-total).toFixed(1)}h</span>`;
+  } else {
+    status.innerHTML = `<span class="avail-ok">Cabe a meta de ${metaTot.toFixed(1)}h · sobram ${(total-metaTot).toFixed(1)}h</span>`;
+  }
+}
+
 function render() {
   const discList = loadDisc();
   const plan = loadPlan();
@@ -363,6 +429,7 @@ function render() {
     if (a.inicio && a.fim) aulasTot += parseTime(a.fim) - parseTime(a.inicio);
   }));
   const metaTot = discList.filter(d => d.status === 'em-curso' || !d.status).reduce((s,d) => s + (d.metaHorasSemana||0), 0);
+  renderAvail(metaTot);
   const blocos = plan[wk] || [];
   const feitoTot = blocos.filter(b => b.feito).reduce((s,b) => s + (parseTime(b.fim) - parseTime(b.ini)), 0);
   const estudoPlan = blocos.reduce((s,b) => s + (parseTime(b.fim) - parseTime(b.ini)), 0);
