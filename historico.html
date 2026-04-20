@@ -5,22 +5,83 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
 <style>
-.hist-summary { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); background: var(--card); margin-top: 24px; }
-.hs { padding: 20px; border-right: 1px solid var(--line); }
-.hs:last-child { border-right: none; }
-.hs.dark { background: var(--ink); color: var(--paper); }
-.hs .lbl { font-size: 10px; letter-spacing: 0.2em; color: var(--muted); font-weight: 600; text-transform: uppercase; }
-.hs.dark .lbl { color: var(--acid); }
-.hs .num { font-family: 'Fraunces', serif; font-size: 40px; letter-spacing: -0.04em; line-height: 1; font-weight: 500; margin-top: 10px; }
-.hs .num span { font-size: 16px; color: var(--muted); }
-.filters { display: flex; gap: 8px; margin-top: 32px; margin-bottom: 8px; flex-wrap: wrap; }
-.filter { padding: 6px 12px; background: var(--card); border: 1px solid var(--line); font-size: 12px; color: var(--ink2); cursor: pointer; }
-.filter.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-.day-group { margin-top: 24px; }
-.day-head { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--line); }
-.day-head h4 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
-.day-head .day-total { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.day-head .day-total b { color: var(--ink); font-family: 'Fraunces', serif; font-size: 18px; font-weight: 500; }
+.hoje-head { display: grid; grid-template-columns: 1fr auto auto auto; gap: 12px; margin-bottom: 20px; }
+.hoje-head .stat-card { background: #fff; border: 1px solid #E0E0E0; padding: 18px 20px; min-width: 140px; }
+.hoje-head .stat-card.dark { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.hoje-head .stat-card .lbl { font-size: 10px; letter-spacing: 0.18em; color: #70757A; font-weight: 600; text-transform: uppercase; }
+.hoje-head .stat-card.dark .lbl { color: var(--acid); }
+.hoje-head .stat-card .val { font-family: 'Fraunces', serif; font-size: 38px; font-weight: 400; letter-spacing: -0.03em; line-height: 1; margin-top: 8px; }
+.hoje-head .stat-card.dark .val { color: var(--acid); }
+.hoje-head .stat-card .sub { font-size: 12px; color: #70757A; margin-top: 8px; }
+.hoje-head .stat-card.dark .sub { color: rgba(244,241,234,0.6); }
+
+.section-box { background: #fff; border: 1px solid #E0E0E0; padding: 22px 26px; margin-bottom: 20px; }
+.section-box h2 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
+.section-box h2 i { color: var(--cobalt); font-style: italic; }
+.section-box .help { font-size: 12px; color: #70757A; margin-top: 4px; margin-bottom: 14px; }
+
+.blk-list { display: flex; flex-direction: column; gap: 8px; }
+.blk-item { display: grid; grid-template-columns: auto 1fr auto auto auto; gap: 14px; align-items: center; padding: 12px 16px; background: var(--paper); border-left: 3px solid var(--cobalt); }
+.blk-item.done { opacity: 0.65; background: #E8F5E9; border-left-color: #43A047; }
+.blk-item.done .nome { text-decoration: line-through; }
+.blk-item .horario { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink2); font-weight: 600; min-width: 85px; }
+.blk-item .nome { font-weight: 600; font-size: 14px; }
+.blk-item .motivo { font-size: 11px; color: #70757A; margin-top: 2px; }
+.blk-item .mins { font-family: 'Fraunces', serif; font-size: 20px; color: var(--cobalt); font-variant-numeric: tabular-nums; min-width: 55px; text-align: right; font-style: italic; }
+.blk-item.done .mins { color: #2E7D32; }
+.blk-item .play-btn { background: var(--cobalt); color: #fff; border: none; width: 36px; height: 36px; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; }
+.blk-item .play-btn:hover { background: #1530b3; }
+.blk-item .check-btn { background: transparent; border: 1px solid #E0E0E0; width: 36px; height: 36px; cursor: pointer; font-size: 14px; }
+.blk-item .check-btn:hover { border-color: var(--ink); }
+.blk-item.done .play-btn { display: none; }
+.blk-item .del-btn { background: transparent; border: none; color: #bbb; font-size: 16px; cursor: pointer; padding: 6px; }
+.blk-item .del-btn:hover { color: var(--rose); }
+
+.extra-btn { background: var(--ink); color: var(--paper); border: none; padding: 11px 20px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; letter-spacing: 0.02em; }
+.extra-btn:hover { background: var(--cobalt); }
+
+.hist-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; padding: 12px 0; border-bottom: 1px solid #F1F1F1; gap: 14px; }
+.hist-row:last-child { border: none; }
+.hist-row .data { font-size: 13px; color: var(--ink2); }
+.hist-row .data b { display: block; font-family: 'Fraunces', serif; font-size: 18px; color: var(--ink); font-weight: 500; }
+.hist-row .bar { width: 180px; height: 8px; background: #F1F1F1; position: relative; }
+.hist-row .bar div { height: 100%; background: var(--cobalt); }
+.hist-row .tot { font-family: 'Fraunces', serif; font-size: 20px; font-variant-numeric: tabular-nums; min-width: 70px; text-align: right; letter-spacing: -0.02em; }
+
+.empty-state { text-align: center; padding: 32px 16px; color: #70757A; font-size: 13px; font-style: italic; }
+.empty-state a { color: var(--cobalt); font-weight: 600; }
+
+/* Timer float */
+.timer-float { position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: var(--paper); padding: 22px 26px; width: 320px; box-shadow: 0 16px 48px rgba(10,19,48,0.4); z-index: 200; border-left: 5px solid var(--acid); display: none; }
+.timer-float.open { display: block; }
+.timer-float .t-label { font-size: 10px; letter-spacing: 0.2em; color: var(--acid); text-transform: uppercase; font-weight: 700; }
+.timer-float .t-disc { font-size: 15px; font-weight: 600; margin-top: 4px; }
+.timer-float .t-clock { font-family: 'Fraunces', serif; font-size: 64px; font-weight: 500; letter-spacing: -0.03em; margin: 14px 0; font-variant-numeric: tabular-nums; line-height: 1; text-align: center; color: var(--acid); }
+.timer-float .t-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.timer-float .t-actions button { background: rgba(244,241,234,0.08); color: var(--paper); border: 1px solid rgba(244,241,234,0.15); padding: 9px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; letter-spacing: 0.06em; text-transform: uppercase; }
+.timer-float .t-actions button:hover { background: rgba(244,241,234,0.16); }
+.timer-float .t-actions button.primary { background: var(--acid); color: var(--ink); border-color: var(--acid); }
+.timer-float .t-close { position: absolute; right: 14px; top: 12px; background: transparent; border: none; color: rgba(244,241,234,0.5); font-size: 20px; cursor: pointer; }
+
+/* Modal extra */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(10,19,48,0.55); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.modal-backdrop.open { display: flex; }
+.modal-box { background: #fff; border: 1px solid #E0E0E0; width: 480px; max-width: 100%; padding: 30px; position: relative; }
+.modal-box h2 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
+.modal-box h2 i { color: var(--cobalt); font-style: italic; }
+.modal-sub { font-size: 13px; color: #70757A; margin-top: 6px; margin-bottom: 18px; }
+.mbtn-close { position: absolute; right: 20px; top: 20px; background: transparent; border: none; font-size: 24px; cursor: pointer; color: #70757A; }
+.mfield { margin-bottom: 14px; }
+.mfield label { display: block; font-size: 11px; letter-spacing: 0.12em; color: #70757A; font-weight: 600; text-transform: uppercase; margin-bottom: 5px; }
+.mfield input, .mfield select { width: 100%; padding: 10px 12px; border: 1px solid #E0E0E0; background: var(--paper); font-size: 14px; font-family: inherit; }
+.mfield.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.dur-picker { display: flex; gap: 6px; }
+.dur-picker button { flex: 1; background: var(--paper); border: 1px solid #E0E0E0; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; color: #70757A; }
+.dur-picker button.active { background: var(--ink); color: var(--acid); border-color: var(--ink); }
+.mactions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #E0E0E0; }
+.mbtn-cancel { background: transparent; border: 1px solid #E0E0E0; padding: 10px 18px; font-size: 13px; cursor: pointer; font-family: inherit; }
+.mbtn-save { background: var(--cobalt); color: #fff; border: none; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.mbtn-timer { background: var(--acid); color: var(--ink); border: none; padding: 10px 22px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; letter-spacing: 0.03em; }
 </style></head><body>
 <div class="app">
 <aside class="sidebar">
@@ -31,45 +92,335 @@
 <a href="plannerstudy.html" class="nav-item">Planejamento</a>
 <a href="revisoes.html" class="nav-item">Revisões</a>
 <a href="historico.html" class="nav-item active">Histórico</a>
+<a href="erros.html" class="nav-item">Caderno de erros</a>
 <a href="dashboard.html" class="nav-item">Estatísticas</a>
 <a href="simulados.html" class="nav-item">Simulados</a>
 <div class="sidebar-foot">v0.1 · pessoal</div>
 </aside>
 <main class="main">
-<div class="topbar"><div class="crumb">Home <i>›</i> Histórico</div><div class="topbar-right"><span class="pill">Abril 2026</span><button class="btn ghost">Exportar CSV</button></div></div>
-<div><div class="kicker">Registros</div><h1 class="page-title">Tudo que você <i>já estudou</i>.</h1><p class="page-lede">Log completo das sessões, questões e revisões — filtra por disciplina ou data.</p></div>
-<div class="hist-summary">
-<div class="hs"><div class="lbl">Sessões no mês</div><div class="num">47</div></div>
-<div class="hs"><div class="lbl">Horas totais</div><div class="num">40<span>h 45m</span></div></div>
-<div class="hs dark"><div class="lbl">Questões</div><div class="num">312</div></div>
-<div class="hs"><div class="lbl">Acurácia</div><div class="num" style="color:var(--mint)">85<span>%</span></div></div>
+<div class="topbar">
+  <div class="crumb">Home <i>›</i> Histórico</div>
+  <div class="topbar-right"><span class="pill" id="dataHoje">—</span></div>
 </div>
-<div class="filters">
-<div class="filter active">Todos</div><div class="filter">Morfofuncional</div><div class="filter">Emergências</div><div class="filter">Farmacologia</div><div class="filter">Hematológicas</div><div class="filter">Saúde Coletiva</div><div class="filter">Cardiologia</div>
+
+<div>
+  <div class="kicker">Hoje</div>
+  <h1 class="page-title">Seu <i>estudo</i> de hoje.</h1>
+  <p class="page-lede">Comece pelo que foi planejado — ou registre um estudo extra. O cronômetro fica flutuante pra você seguir com a página aberta.</p>
 </div>
-<div class="day-group">
-<div class="day-head"><h4>Hoje · domingo, 19 abr</h4><div class="day-total"><b>2h 45m</b> · 3 sessões · 24 questões</div></div>
-<table><thead><tr><th>Hora</th><th>Disciplina</th><th>Tipo</th><th>Duração</th><th style="text-align:right">Questões</th><th style="text-align:right">Acerto</th></tr></thead><tbody>
-<tr><td>14:30–15:45</td><td>Morfofuncional II</td><td><span class="tag ghost">estudo</span></td><td>1h 15m</td><td style="text-align:right">12</td><td style="text-align:right;color:var(--mint);font-weight:600">92%</td></tr>
-<tr><td>10:00–10:50</td><td>Emergências</td><td><span class="tag ghost">questões</span></td><td>50m</td><td style="text-align:right">8</td><td style="text-align:right;color:var(--mint);font-weight:600">88%</td></tr>
-<tr><td>08:15–08:55</td><td>Farmacologia</td><td><span class="tag acid">revisão</span></td><td>40m</td><td style="text-align:right">4</td><td style="text-align:right;color:var(--rose);font-weight:600">50%</td></tr>
-</tbody></table>
+
+<div class="hoje-head">
+  <div class="stat-card"><div class="lbl">Estudado hoje</div><div class="val cobalt" id="totHoje" style="color:var(--cobalt)">0<span style="font-size:16px;color:#70757A">h00</span></div><div class="sub" id="subHoje">0 sessões</div></div>
+  <div class="stat-card"><div class="lbl">Planejado hoje</div><div class="val" id="totPlan">0<span style="font-size:16px;color:#70757A">h00</span></div><div class="sub" id="subPlan">—</div></div>
+  <div class="stat-card dark"><div class="lbl">Streak</div><div class="val" id="streak">0</div><div class="sub" id="subStreak">dias seguidos</div></div>
 </div>
-<div class="day-group">
-<div class="day-head"><h4>Ontem · sábado, 18 abr</h4><div class="day-total"><b>3h 20m</b> · 4 sessões · 32 questões</div></div>
-<table><thead><tr><th>Hora</th><th>Disciplina</th><th>Tipo</th><th>Duração</th><th style="text-align:right">Questões</th><th style="text-align:right">Acerto</th></tr></thead><tbody>
-<tr><td>20:00–21:00</td><td>Hematológicas</td><td><span class="tag ghost">estudo</span></td><td>1h</td><td style="text-align:right">10</td><td style="text-align:right;color:var(--mint);font-weight:600">90%</td></tr>
-<tr><td>16:30–17:20</td><td>Saúde Coletiva</td><td><span class="tag ghost">questões</span></td><td>50m</td><td style="text-align:right">8</td><td style="text-align:right;font-weight:600">75%</td></tr>
-<tr><td>14:00–14:45</td><td>Emergências</td><td><span class="tag acid">revisão</span></td><td>45m</td><td style="text-align:right">6</td><td style="text-align:right;color:var(--mint);font-weight:600">83%</td></tr>
-<tr><td>09:00–09:45</td><td>Morfofuncional II</td><td><span class="tag ghost">estudo</span></td><td>45m</td><td style="text-align:right">8</td><td style="text-align:right;color:var(--mint);font-weight:600">88%</td></tr>
-</tbody></table>
+
+<div class="section-box">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+    <div>
+      <h2>Planejado <i>pra hoje</i></h2>
+      <div class="help">Vindos do seu planejamento semanal. Clica ▶ pra iniciar o cronômetro.</div>
+    </div>
+    <button class="extra-btn" onclick="abrirExtra()">+ Estudo extra</button>
+  </div>
+  <div id="planList" class="blk-list" style="margin-top:14px"></div>
 </div>
-<div class="day-group">
-<div class="day-head"><h4>Sexta, 17 abr</h4><div class="day-total"><b>1h 50m</b> · 2 sessões · 14 questões</div></div>
-<table><thead><tr><th>Hora</th><th>Disciplina</th><th>Tipo</th><th>Duração</th><th style="text-align:right">Questões</th><th style="text-align:right">Acerto</th></tr></thead><tbody>
-<tr><td>19:00–20:10</td><td>Farmacologia</td><td><span class="tag ghost">estudo</span></td><td>1h 10m</td><td style="text-align:right">8</td><td style="text-align:right;color:var(--rose);font-weight:600">62%</td></tr>
-<tr><td>08:00–08:40</td><td>Saúde Coletiva</td><td><span class="tag ghost">questões</span></td><td>40m</td><td style="text-align:right">6</td><td style="text-align:right;color:var(--mint);font-weight:600">83%</td></tr>
-</tbody></table>
+
+<div class="section-box">
+  <h2>Últimos <i>7 dias</i></h2>
+  <div class="help">Todo o estudo registrado, marcado ou via cronômetro.</div>
+  <div id="histList" style="margin-top:10px"></div>
 </div>
-<div style="text-align:center;margin-top:48px"><button class="btn ghost">Carregar mais dias</button></div>
-</main></div></body></html>
+
+</main></div>
+
+<!-- Timer flutuante -->
+<div class="timer-float" id="timerFloat">
+  <button class="t-close" onclick="timerClose()">×</button>
+  <div class="t-label">Foco ativo</div>
+  <div class="t-disc" id="tDisc">—</div>
+  <div class="t-clock" id="tClock">25:00</div>
+  <div class="t-actions">
+    <button id="tPlayBtn" onclick="timerToggle()">Iniciar</button>
+    <button onclick="timerReset()">Resetar</button>
+    <button class="primary" onclick="timerFinish()">Concluir</button>
+  </div>
+</div>
+
+<!-- Modal extra -->
+<div class="modal-backdrop" id="extraModal" onclick="if(event.target===this) fecharExtra()">
+  <div class="modal-box">
+    <button class="mbtn-close" onclick="fecharExtra()">×</button>
+    <h2>Estudo <i>extra</i></h2>
+    <div class="modal-sub">Registre um bloco fora do planejamento — manual ou com cronômetro.</div>
+    <form id="extraForm" onsubmit="event.preventDefault();">
+      <div class="mfield"><label>Disciplina</label>
+        <select id="eDisc" required></select>
+      </div>
+      <div class="mfield"><label>Duração</label>
+        <div class="dur-picker" id="durPicker">
+          <button type="button" data-m="25" class="active">25min</button>
+          <button type="button" data-m="30">30min</button>
+          <button type="button" data-m="45">45min</button>
+          <button type="button" data-m="60">60min</button>
+          <button type="button" data-m="90">90min</button>
+        </div>
+      </div>
+      <div class="mactions">
+        <button type="button" class="mbtn-cancel" onclick="fecharExtra()">Cancelar</button>
+        <button type="button" class="mbtn-save" onclick="salvarExtraManual()">Registrar agora</button>
+        <button type="button" class="mbtn-timer" onclick="salvarExtraTimer()">▶ Cronômetro</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const DISC_KEY = 'trackermed.disciplinas.v1';
+const PLAN_KEY = 'trackermed.plan.v1';
+const SESS_KEY = 'trackermed.sess.v1';
+const DIAS_LBL = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+function loadDisc() { try { return JSON.parse(localStorage.getItem(DISC_KEY) || '[]'); } catch { return []; } }
+function loadPlan() { try { return JSON.parse(localStorage.getItem(PLAN_KEY) || '{}'); } catch { return {}; } }
+function savePlan(p) { localStorage.setItem(PLAN_KEY, JSON.stringify(p)); }
+function loadSess() { try { return JSON.parse(localStorage.getItem(SESS_KEY) || '{}'); } catch { return {}; } }
+function saveSess(s) { localStorage.setItem(SESS_KEY, JSON.stringify(s)); }
+function uid() { return 'b-'+Date.now()+'-'+Math.random().toString(36).slice(2,6); }
+function parseTime(t) { const [h,m]=t.split(':').map(Number); return h+m/60; }
+function startOfWeek(d) { const x=new Date(d); x.setHours(0,0,0,0); const w=(x.getDay()+6)%7; x.setDate(x.getDate()-w); return x; }
+function weekKey(d) { return startOfWeek(d).toISOString().slice(0,10); }
+function addDays(d,n) { const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function toHHMM(x) { const h=Math.max(0,Math.floor(x)), m=Math.max(0,Math.round((x-h)*60)); return String(h).padStart(2,'0')+':'+String(Math.min(59,m)).padStart(2,'0'); }
+function fmtH(h) { const H=Math.floor(h), M=Math.round((h-H)*60); return `${H}<span style="font-size:16px;color:#70757A">h${String(M).padStart(2,'0')}</span>`; }
+function fmtHrange(m) { const h=Math.floor(m/60), mm=m%60; return h>0 ? `${h}h${String(mm).padStart(2,'0')}` : `${mm}min`; }
+
+// Timer state
+let timerState = { discId: null, discNome: '', totalSec: 0, leftSec: 0, running: false, intervalId: null, linkedBlocoId: null };
+function timerOpen(discId, discNome, mins, linkedBlocoId) {
+  if (timerState.running && !confirm('Já tem um cronômetro rodando. Substituir?')) return;
+  if (timerState.intervalId) clearInterval(timerState.intervalId);
+  timerState = { discId, discNome, totalSec: mins*60, leftSec: mins*60, running: false, intervalId: null, linkedBlocoId: linkedBlocoId || null };
+  document.getElementById('tDisc').textContent = discNome;
+  document.getElementById('tPlayBtn').textContent = 'Iniciar';
+  updateClock();
+  document.getElementById('timerFloat').classList.add('open');
+  // auto-iniciar
+  timerToggle();
+}
+function updateClock() {
+  const m = Math.floor(Math.max(0,timerState.leftSec)/60), s = Math.max(0,timerState.leftSec)%60;
+  document.getElementById('tClock').textContent = String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  document.title = timerState.running ? `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} · Foco` : 'Histórico · TrackerMed';
+}
+function timerClose() {
+  if (timerState.intervalId) clearInterval(timerState.intervalId);
+  timerState = { discId:null, discNome:'', totalSec:0, leftSec:0, running:false, intervalId:null, linkedBlocoId:null };
+  document.getElementById('timerFloat').classList.remove('open');
+  document.title = 'Histórico · TrackerMed';
+}
+function timerToggle() {
+  if (!timerState.running) {
+    timerState.running = true;
+    document.getElementById('tPlayBtn').textContent = 'Pausar';
+    timerState.intervalId = setInterval(() => {
+      timerState.leftSec--;
+      updateClock();
+      if (timerState.leftSec <= 0) {
+        clearInterval(timerState.intervalId);
+        timerState.running = false;
+        try { new Audio('data:audio/wav;base64,UklGRjYEAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YRIEAAB/f3+Af39/f39/f39/f39/f39/').play(); } catch(e){}
+        timerFinish(true);
+      }
+    }, 1000);
+  } else {
+    clearInterval(timerState.intervalId);
+    timerState.running = false;
+    document.getElementById('tPlayBtn').textContent = 'Retomar';
+  }
+}
+function timerReset() { if (timerState.intervalId) clearInterval(timerState.intervalId); timerState.running=false; timerState.leftSec=timerState.totalSec; updateClock(); document.getElementById('tPlayBtn').textContent='Iniciar'; }
+function timerFinish(auto) {
+  if (timerState.intervalId) clearInterval(timerState.intervalId);
+  timerState.running = false;
+  const studied = Math.round((timerState.totalSec - Math.max(0,timerState.leftSec))/60);
+  if (studied < 1) { timerClose(); return; }
+
+  if (timerState.linkedBlocoId) {
+    // Marca bloco existente como feito
+    const plan = loadPlan();
+    const wk = weekKey(new Date());
+    plan[wk] = (plan[wk]||[]).map(b => b.id === timerState.linkedBlocoId ? {...b, feito: true, minutos: studied} : b);
+    savePlan(plan);
+  } else {
+    // Novo bloco
+    const plan = loadPlan();
+    const wk = weekKey(new Date());
+    if (!plan[wk]) plan[wk] = [];
+    const now = new Date();
+    const endH = now.getHours() + now.getMinutes()/60;
+    const startH = Math.max(0, endH - studied/60);
+    plan[wk].push({ id: uid(), tipo:'estudo', discId: timerState.discId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: true, fromTimer: true, minutos: studied, extra: true });
+    savePlan(plan);
+  }
+  if (auto) alert(`🎉 Sessão de ${Math.round(timerState.totalSec/60)}min completa! Registrada.`);
+  timerClose();
+  render();
+}
+
+function toggleFeito(wk, blocoId) {
+  const plan = loadPlan();
+  plan[wk] = (plan[wk]||[]).map(b => b.id === blocoId ? {...b, feito: !b.feito} : b);
+  savePlan(plan);
+  render();
+}
+function apagarBloco(wk, blocoId) {
+  if (!confirm('Apagar esse registro?')) return;
+  const plan = loadPlan();
+  plan[wk] = (plan[wk]||[]).filter(b => b.id !== blocoId);
+  savePlan(plan);
+  render();
+}
+
+// Modal extra
+function abrirExtra() {
+  const sel = document.getElementById('eDisc');
+  sel.innerHTML = loadDisc().filter(d=>d.status==='em-curso'||!d.status).map(d => `<option value="${d.id}">${d.nome}</option>`).join('');
+  if (!sel.options.length) { alert('Cadastre uma disciplina primeiro.'); return; }
+  document.querySelectorAll('#durPicker button').forEach(b => b.classList.toggle('active', b.dataset.m === '25'));
+  document.getElementById('extraModal').classList.add('open');
+}
+function fecharExtra() { document.getElementById('extraModal').classList.remove('open'); }
+document.getElementById('durPicker').addEventListener('click', e => {
+  if (e.target.tagName === 'BUTTON') {
+    document.querySelectorAll('#durPicker button').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+  }
+});
+function getMinsSelected() { return parseInt(document.querySelector('#durPicker button.active').dataset.m); }
+function salvarExtraManual() {
+  const discId = document.getElementById('eDisc').value;
+  const disc = loadDisc().find(d => d.id === discId);
+  const mins = getMinsSelected();
+  const plan = loadPlan();
+  const wk = weekKey(new Date());
+  if (!plan[wk]) plan[wk] = [];
+  const now = new Date();
+  const endH = now.getHours() + now.getMinutes()/60;
+  const startH = Math.max(0, endH - mins/60);
+  plan[wk].push({ id: uid(), tipo:'estudo', discId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: true, minutos: mins, extra: true });
+  savePlan(plan);
+  fecharExtra();
+  render();
+}
+function salvarExtraTimer() {
+  const discId = document.getElementById('eDisc').value;
+  const disc = loadDisc().find(d => d.id === discId);
+  const mins = getMinsSelected();
+  fecharExtra();
+  timerOpen(discId, disc.nome, mins);
+}
+
+function render() {
+  const disc = loadDisc();
+  const plan = loadPlan();
+  const hoje = new Date();
+  const hojeDia = hoje.getDay();
+  const wk = weekKey(hoje);
+  const yyyy = hoje.toISOString().slice(0,10);
+
+  document.getElementById('dataHoje').textContent = hoje.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
+
+  // ==== Blocos planejados pra HOJE ====
+  const blocosHoje = (plan[wk]||[]).filter(b => b.dia === hojeDia);
+  // Aulas fixas pra hoje (das disciplinas)
+  const DIA_IDX = { dom:0, seg:1, ter:2, qua:3, qui:4, sex:5, sab:6 };
+  const aulasHoje = [];
+  disc.forEach(d => (d.aulas||[]).forEach(a => { if (DIA_IDX[a.dia]===hojeDia) aulasHoje.push({disc:d, aula:a}); }));
+
+  // Stats
+  const feitosMin = blocosHoje.filter(b=>b.feito).reduce((s,b)=>s+(b.minutos||Math.round((parseTime(b.fim)-parseTime(b.ini))*60)),0);
+  const planMin = blocosHoje.reduce((s,b)=>s+(b.minutos||Math.round((parseTime(b.fim)-parseTime(b.ini))*60)),0);
+  document.getElementById('totHoje').innerHTML = fmtH(feitosMin/60);
+  document.getElementById('subHoje').textContent = `${blocosHoje.filter(b=>b.feito).length} de ${blocosHoje.length} sessões`;
+  document.getElementById('totPlan').innerHTML = fmtH(planMin/60);
+  document.getElementById('subPlan').textContent = blocosHoje.length ? `${blocosHoje.filter(b=>!b.feito).length} pendentes` : 'nada agendado';
+
+  // Streak: dias consecutivos com pelo menos 1 bloco feito (olhando últimas 30 semanas combinadas)
+  const todosBlocos = Object.values(plan).flat();
+  const diasComEstudo = new Set();
+  todosBlocos.filter(b=>b.feito).forEach(b => {
+    // reconstrói data aproximada via weekKey — nos registros a partir daqui salvamos "data" tb
+    if (b.data) diasComEstudo.add(b.data);
+  });
+  // Fallback: considerar blocos feitos recentes como válidos, contando só hoje/ontem
+  let streak = 0;
+  for (let i = 0; i < 365; i++) {
+    const d = addDays(hoje, -i);
+    const key = d.toISOString().slice(0,10);
+    if (diasComEstudo.has(key)) streak++;
+    else if (i > 0) break;
+    // i===0 sem estudo ainda: continua olhando (se ontem estudou, streak conta ontem)
+    else if (i === 0 && !diasComEstudo.has(key)) continue;
+  }
+  document.getElementById('streak').textContent = streak;
+  document.getElementById('subStreak').textContent = streak === 1 ? 'dia seguido' : 'dias seguidos';
+
+  // Planejado hoje lista
+  const plEl = document.getElementById('planList');
+  const sess = loadSess();
+  if (blocosHoje.length === 0 && aulasHoje.length === 0) {
+    plEl.innerHTML = `<div class="empty-state">Nada planejado pra hoje. <br><a href="plannerstudy.html">Ir ao planejamento →</a> ou adiciona um estudo extra aqui em cima.</div>`;
+  } else {
+    const itens = [];
+    // aulas fixas primeiro (read-only)
+    aulasHoje.sort((a,b)=>parseTime(a.aula.inicio)-parseTime(b.aula.inicio)).forEach(({disc,aula}) => {
+      itens.push(`<div class="blk-item" style="border-left-color:#999;background:#fafafa;opacity:0.75">
+        <div class="horario">${aula.inicio}—${aula.fim}</div>
+        <div><div class="nome">🎓 ${disc.nome}</div><div class="motivo">aula fixa</div></div>
+        <div class="mins">${fmtHrange(Math.round((parseTime(aula.fim)-parseTime(aula.inicio))*60))}</div>
+        <div></div><div></div>
+      </div>`);
+    });
+    // blocos de estudo
+    blocosHoje.sort((a,b)=>parseTime(a.ini)-parseTime(b.ini)).forEach(b => {
+      const d = disc.find(x=>x.id===b.discId);
+      const mins = b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60);
+      const sessMins = sess[b.discId] || 25;
+      const discNome = d ? d.nome : 'Estudo';
+      itens.push(`<div class="blk-item ${b.feito?'done':''}">
+        <div class="horario">${b.ini}—${b.fim}</div>
+        <div><div class="nome">${b.extra?'✦ ':''}${discNome}</div><div class="motivo">${b.feito?'concluído':'planejado'}${b.extra?' · extra':''}</div></div>
+        <div class="mins">${fmtHrange(mins)}</div>
+        <button class="play-btn" onclick="timerOpen('${b.discId}', ${JSON.stringify(discNome).replace(/"/g,'&quot;')}, ${sessMins}, '${b.id}')" title="Iniciar cronômetro">▶</button>
+        <button class="check-btn" onclick="toggleFeito('${wk}', '${b.id}')" title="Alternar concluído">${b.feito?'✓':'○'}</button>
+      </div>`);
+    });
+    plEl.innerHTML = itens.join('');
+  }
+
+  // ==== Histórico 7 dias ====
+  const histEl = document.getElementById('histList');
+  const linhas = [];
+  const todosWks = Object.keys(plan);
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(hoje, -i);
+    const dDia = d.getDay();
+    const wkD = weekKey(d);
+    const blocos = (plan[wkD]||[]).filter(b => b.dia === dDia && b.feito);
+    const mins = blocos.reduce((s,b)=>s+(b.minutos||Math.round((parseTime(b.fim)-parseTime(b.ini))*60)),0);
+    const maxMins = 360; // 6h = 100%
+    const pct = Math.min(100, (mins/maxMins)*100);
+    linhas.push(`<div class="hist-row">
+      <div class="data">${i===0?'Hoje':i===1?'Ontem':DIAS_LBL[dDia]+', '+d.getDate()+'/'+(d.getMonth()+1)}<b>${mins>0?blocos.length+' sessão'+(blocos.length!==1?'ões':''):'nada'}</b></div>
+      <div class="bar"><div style="width:${pct}%"></div></div>
+      <div class="tot">${mins>0?fmtHrange(mins):'—'}</div>
+    </div>`);
+  }
+  histEl.innerHTML = linhas.join('');
+}
+
+render();
+setInterval(() => { if (!timerState.running) render(); }, 60000);
+</script>
+</body></html>
