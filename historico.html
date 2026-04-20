@@ -194,6 +194,18 @@ function addDays(d,n) { const x=new Date(d); x.setDate(x.getDate()+n); return x;
 function toHHMM(x) { const h=Math.max(0,Math.floor(x)), m=Math.max(0,Math.round((x-h)*60)); return String(h).padStart(2,'0')+':'+String(Math.min(59,m)).padStart(2,'0'); }
 function fmtH(h) { const H=Math.floor(h), M=Math.round((h-H)*60); return `${H}<span style="font-size:16px;color:#70757A">h${String(M).padStart(2,'0')}</span>`; }
 function fmtHrange(m) { const h=Math.floor(m/60), mm=m%60; return h>0 ? `${h}h${String(mm).padStart(2,'0')}` : `${mm}min`; }
+function dateKey(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayKey() { return dateKey(new Date()); }
+function blocoDate(wk, b) {
+  if (b && b.data) return b.data;
+  if (!wk || !b || b.dia == null) return null;
+  const [y,m,d] = wk.split('-').map(Number);
+  if (!y) return null;
+  const monday = new Date(y, m-1, d);
+  const offset = b.dia === 0 ? 6 : b.dia - 1;
+  return dateKey(addDays(monday, offset));
+}
+function plural(n, singular, plural_) { return n === 1 ? singular : plural_; }
 
 // Timer state
 let timerState = { discId: null, discNome: '', totalSec: 0, leftSec: 0, running: false, intervalId: null, linkedBlocoId: null };
@@ -250,7 +262,7 @@ function timerFinish(auto) {
     // Marca bloco existente como feito
     const plan = loadPlan();
     const wk = weekKey(new Date());
-    plan[wk] = (plan[wk]||[]).map(b => b.id === timerState.linkedBlocoId ? {...b, feito: true, minutos: studied} : b);
+    plan[wk] = (plan[wk]||[]).map(b => b.id === timerState.linkedBlocoId ? {...b, feito: true, minutos: studied, data: todayKey()} : b);
     savePlan(plan);
   } else {
     // Novo bloco
@@ -260,7 +272,7 @@ function timerFinish(auto) {
     const now = new Date();
     const endH = now.getHours() + now.getMinutes()/60;
     const startH = Math.max(0, endH - studied/60);
-    plan[wk].push({ id: uid(), tipo:'estudo', discId: timerState.discId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: true, fromTimer: true, minutos: studied, extra: true });
+    plan[wk].push({ id: uid(), tipo:'estudo', discId: timerState.discId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: true, fromTimer: true, minutos: studied, extra: true, data: todayKey() });
     savePlan(plan);
   }
   if (auto) alert(`🎉 Sessão de ${Math.round(timerState.totalSec/60)}min completa! Registrada.`);
@@ -270,7 +282,11 @@ function timerFinish(auto) {
 
 function toggleFeito(wk, blocoId) {
   const plan = loadPlan();
-  plan[wk] = (plan[wk]||[]).map(b => b.id === blocoId ? {...b, feito: !b.feito} : b);
+  plan[wk] = (plan[wk]||[]).map(b => {
+    if (b.id !== blocoId) return b;
+    const feito = !b.feito;
+    return { ...b, feito, data: feito ? todayKey() : b.data };
+  });
   savePlan(plan);
   render();
 }
@@ -308,7 +324,7 @@ function salvarExtraManual() {
   const now = new Date();
   const endH = now.getHours() + now.getMinutes()/60;
   const startH = Math.max(0, endH - mins/60);
-  plan[wk].push({ id: uid(), tipo:'estudo', discId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: true, minutos: mins, extra: true });
+  plan[wk].push({ id: uid(), tipo:'estudo', discId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: true, minutos: mins, extra: true, data: todayKey() });
   savePlan(plan);
   fecharExtra();
   render();
@@ -342,26 +358,29 @@ function render() {
   const feitosMin = blocosHoje.filter(b=>b.feito).reduce((s,b)=>s+(b.minutos||Math.round((parseTime(b.fim)-parseTime(b.ini))*60)),0);
   const planMin = blocosHoje.reduce((s,b)=>s+(b.minutos||Math.round((parseTime(b.fim)-parseTime(b.ini))*60)),0);
   document.getElementById('totHoje').innerHTML = fmtH(feitosMin/60);
-  document.getElementById('subHoje').textContent = `${blocosHoje.filter(b=>b.feito).length} de ${blocosHoje.length} sessões`;
+  document.getElementById('subHoje').textContent = `${blocosHoje.filter(b=>b.feito).length} de ${blocosHoje.length} ${plural(blocosHoje.length, 'sessão', 'sessões')}`;
   document.getElementById('totPlan').innerHTML = fmtH(planMin/60);
   document.getElementById('subPlan').textContent = blocosHoje.length ? `${blocosHoje.filter(b=>!b.feito).length} pendentes` : 'nada agendado';
 
-  // Streak: dias consecutivos com pelo menos 1 bloco feito (olhando últimas 30 semanas combinadas)
-  const todosBlocos = Object.values(plan).flat();
-  const diasComEstudo = new Set();
-  todosBlocos.filter(b=>b.feito).forEach(b => {
-    // reconstrói data aproximada via weekKey — nos registros a partir daqui salvamos "data" tb
-    if (b.data) diasComEstudo.add(b.data);
+  // Indexa todos os blocos feitos pela data real (b.data ou fallback via weekKey+dia)
+  const blocosByDate = {};
+  Object.entries(plan).forEach(([wkPlan, arr]) => {
+    (arr || []).forEach(b => {
+      if (!b.feito) return;
+      const date = blocoDate(wkPlan, b);
+      if (!date) return;
+      (blocosByDate[date] = blocosByDate[date] || []).push(b);
+    });
   });
-  // Fallback: considerar blocos feitos recentes como válidos, contando só hoje/ontem
+  const diasComEstudo = new Set(Object.keys(blocosByDate));
+
+  // Streak: dias consecutivos com pelo menos 1 bloco feito. Hoje sem estudo não quebra streak.
   let streak = 0;
   for (let i = 0; i < 365; i++) {
     const d = addDays(hoje, -i);
-    const key = d.toISOString().slice(0,10);
+    const key = dateKey(d);
     if (diasComEstudo.has(key)) streak++;
     else if (i > 0) break;
-    // i===0 sem estudo ainda: continua olhando (se ontem estudou, streak conta ontem)
-    else if (i === 0 && !diasComEstudo.has(key)) continue;
   }
   document.getElementById('streak').textContent = streak;
   document.getElementById('subStreak').textContent = streak === 1 ? 'dia seguido' : 'dias seguidos';
@@ -402,17 +421,18 @@ function render() {
   // ==== Histórico 7 dias ====
   const histEl = document.getElementById('histList');
   const linhas = [];
-  const todosWks = Object.keys(plan);
   for (let i = 0; i < 7; i++) {
     const d = addDays(hoje, -i);
     const dDia = d.getDay();
-    const wkD = weekKey(d);
-    const blocos = (plan[wkD]||[]).filter(b => b.dia === dDia && b.feito);
+    const key = dateKey(d);
+    const blocos = blocosByDate[key] || [];
     const mins = blocos.reduce((s,b)=>s+(b.minutos||Math.round((parseTime(b.fim)-parseTime(b.ini))*60)),0);
     const maxMins = 360; // 6h = 100%
     const pct = Math.min(100, (mins/maxMins)*100);
+    const label = i===0 ? 'Hoje' : i===1 ? 'Ontem' : DIAS_LBL[dDia]+', '+d.getDate()+'/'+(d.getMonth()+1);
+    const detail = blocos.length > 0 ? blocos.length+' '+plural(blocos.length, 'sessão', 'sessões') : 'nada';
     linhas.push(`<div class="hist-row">
-      <div class="data">${i===0?'Hoje':i===1?'Ontem':DIAS_LBL[dDia]+', '+d.getDate()+'/'+(d.getMonth()+1)}<b>${mins>0?blocos.length+' sessão'+(blocos.length!==1?'ões':''):'nada'}</b></div>
+      <div class="data">${label}<b>${detail}</b></div>
       <div class="bar"><div style="width:${pct}%"></div></div>
       <div class="tot">${mins>0?fmtHrange(mins):'—'}</div>
     </div>`);
