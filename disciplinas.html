@@ -285,6 +285,12 @@ function apagarCard(id) {
   render();
 }
 
+function cardClick(e, id) {
+  const btn = e.target.closest('button');
+  if (btn && btn.classList.contains('del')) return apagarCard(id);
+  abrirEdit(id);
+}
+
 function render() {
   const list = load();
   const cont = document.getElementById('listaContainer');
@@ -323,10 +329,10 @@ function render() {
       return `<div class="prova-line"><span>${esc(p.nome)}</span><b>${fmtData(p.data)} <span style="color:var(--muted);font-weight:500;font-size:11px">· ${esc(badge)}</span></b></div>`;
     }).join('') || `<div style="color:var(--muted);font-size:12px;font-style:italic">Sem provas</div>`;
 
-    return `<div class="disc-card" onclick="abrirEdit('${d.id}')">
-      <div class="actions" onclick="event.stopPropagation()">
-        <button type="button" onclick="abrirEdit('${d.id}')" title="Editar">✎</button>
-        <button type="button" class="del" onclick="apagarCard('${d.id}')" title="Apagar">×</button>
+    return `<div class="disc-card" onclick="cardClick(event, '${d.id}')">
+      <div class="actions">
+        <button type="button" title="Editar">✎</button>
+        <button type="button" class="del" title="Apagar">×</button>
       </div>
       <div class="head">
         <div>
