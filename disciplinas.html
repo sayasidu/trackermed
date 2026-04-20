@@ -212,11 +212,17 @@ const DIAS = [['seg','Seg'],['ter','Ter'],['qua','Qua'],['qui','Qui'],['sex','Se
 const DIA_FULL = {seg:'Segunda', ter:'Terça', qua:'Quarta', qui:'Quinta', sex:'Sexta', sab:'Sábado', dom:'Domingo'};
 const CORES = ['#1E3AE8','#FF5B5B','#1FC28A','#F4A72F','#7C3AED','#0D9488','#EC4899','#0A1330'];
 const PRIOS = [
-  { v:'muito-alta', l:'Muito alta', h:'60min/dia' },
-  { v:'alta',       l:'Alta',       h:'45min/dia' },
-  { v:'media',      l:'Média',      h:'25min/dia' },
-  { v:'baixa',      l:'Baixa',      h:'15min/dia' }
+  { v:'alta',    l:'Alta',    h:'45min/dia' },
+  { v:'media',   l:'Média',   h:'25min/dia' },
+  { v:'baixa',   l:'Baixa',   h:'15min/dia' },
+  { v:'nenhuma', l:'Nenhuma', h:'Não incluída no planejamento automático' }
 ];
+const PRIOS_VALIDOS = PRIOS.map(p => p.v);
+function normalizaPrioridade(p) {
+  if (PRIOS_VALIDOS.includes(p)) return p;
+  if (p === 'muito-alta') return 'alta';
+  return 'media';
+}
 function corPadrao(nome) {
   const s = String(nome || '');
   let h = 0; for (let i = 0; i < s.length; i++) h = (h*31 + s.charCodeAt(i)) >>> 0;
@@ -227,7 +233,11 @@ function load() {
   try {
     const list = JSON.parse(localStorage.getItem(KEY) || '[]');
     let dirty = false;
-    list.forEach(d => { if (!d.id) { d.id = uid(); dirty = true; } });
+    list.forEach(d => {
+      if (!d.id) { d.id = uid(); dirty = true; }
+      const norm = normalizaPrioridade(d.prioridade);
+      if (d.prioridade !== norm) { d.prioridade = norm; dirty = true; }
+    });
     if (dirty) localStorage.setItem(KEY, JSON.stringify(list));
     return list;
   } catch { return []; }
@@ -270,15 +280,26 @@ function renderColorPicker(selected) {
 }
 function renderPrioChips(selected) {
   const el = document.getElementById('dPrioChips');
-  el.innerHTML = PRIOS.map(p => `<button type="button" class="prio-chip${p.v===selected?' active':''}" data-prio="${p.v}" title="${p.h}">${p.l}</button>`).join('');
-  document.getElementById('dPrioridade').value = selected;
+  const cur = normalizaPrioridade(selected);
+  el.innerHTML = PRIOS.map(p => `<button type="button" class="prio-chip${p.v===cur?' active':''}" data-prio="${p.v}" title="${p.h}">${p.l}</button>`).join('');
+  document.getElementById('dPrioridade').value = cur;
+  aplicaEstadoMeta(cur);
   el.onclick = (e) => {
     const chip = e.target.closest('.prio-chip');
     if (!chip) return;
     const v = chip.dataset.prio;
     document.getElementById('dPrioridade').value = v;
     el.querySelectorAll('.prio-chip').forEach(x => x.classList.toggle('active', x.dataset.prio === v));
+    aplicaEstadoMeta(v);
   };
+}
+function aplicaEstadoMeta(prioridade) {
+  const input = document.getElementById('dMetaHoras');
+  const disabled = prioridade === 'nenhuma';
+  input.disabled = disabled;
+  input.style.opacity = disabled ? '0.35' : '';
+  input.style.cursor = disabled ? 'not-allowed' : '';
+  input.title = disabled ? 'Disciplina sem prioridade não entra no planejamento automático' : '';
 }
 
 let editingId = null;
@@ -387,10 +408,15 @@ function STATUS_CHIP(s) {
   return `<span class="tag ${c}">${esc(l)}</span>`;
 }
 function PRIO_CHIP(p) {
-  const m = {'muito-alta':['rose','muito alta'],'alta':['cobalt','alta'],'media':['ghost','média'],'baixa':['mint','baixa']};
-  const key = p || 'media';
-  const [c,l] = m[key] || ['ghost','média'];
-  return `<span class="tag ${c}" title="Prioridade">${esc(l)}</span>`;
+  const m = {
+    'alta':    ['rose',  'alta',    'Prioridade alta'],
+    'media':   ['amber', 'média',   'Prioridade média'],
+    'baixa':   ['mint',  'baixa',   'Prioridade baixa'],
+    'nenhuma': ['ghost', 'nenhuma', 'Não incluída no planejamento automático']
+  };
+  const key = normalizaPrioridade(p);
+  const [c,l,t] = m[key];
+  return `<span class="tag ${c}" title="${t}">${esc(l)}</span>`;
 }
 function horasDaAula(a) {
   if(!a.inicio || !a.fim) return 0;
