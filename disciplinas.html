@@ -160,20 +160,21 @@
 
 <script>
 const KEY = 'trackermed.disciplinas.v1';
-const DIAS = [['seg','Seg'],['ter','Ter'],['qua','Qua'],['qui','Qui'],['sex','Sex'],['sab','Sáb']];
+const DIAS = [['seg','Seg'],['ter','Ter'],['qua','Qua'],['qui','Qui'],['sex','Sex'],['sab','Sáb'],['dom','Dom']];
 const DIA_FULL = {seg:'Segunda', ter:'Terça', qua:'Quarta', qui:'Quinta', sex:'Sexta', sab:'Sábado', dom:'Domingo'};
 
 function load() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } }
 function save(list) { localStorage.setItem(KEY, JSON.stringify(list)); }
 function uid() { return 'd-' + Date.now() + '-' + Math.random().toString(36).slice(2,6); }
+function esc(s) { return String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 function addAula(pre = {}) {
   const div = document.createElement('div');
   div.className = 'dyn-row';
   div.innerHTML = `
     <select class="aula-dia">${DIAS.map(([v,l])=>`<option value="${v}"${pre.dia===v?' selected':''}>${DIA_FULL[v]}</option>`).join('')}</select>
-    <input type="time" class="aula-inicio" value="${pre.inicio||'08:00'}">
-    <input type="time" class="aula-fim" value="${pre.fim||'10:00'}">
+    <input type="time" class="aula-inicio" value="${esc(pre.inicio||'08:00')}">
+    <input type="time" class="aula-fim" value="${esc(pre.fim||'10:00')}">
     <button type="button" class="dyn-remove" onclick="this.parentElement.remove()">×</button>`;
   document.getElementById('aulasList').appendChild(div);
 }
@@ -181,8 +182,8 @@ function addProva(pre = {}) {
   const div = document.createElement('div');
   div.className = 'dyn-row-prova';
   div.innerHTML = `
-    <input type="text" class="prova-nome" placeholder="Ex: P1 — Sistema cardio" value="${(pre.nome||'').replace(/"/g,'&quot;')}">
-    <input type="date" class="prova-data" value="${pre.data||''}">
+    <input type="text" class="prova-nome" placeholder="Ex: P1 — Sistema cardio" value="${esc(pre.nome)}">
+    <input type="date" class="prova-data" value="${esc(pre.data)}">
     <button type="button" class="dyn-remove" onclick="this.parentElement.remove()">×</button>`;
   document.getElementById('provasList').appendChild(div);
 }
@@ -265,11 +266,24 @@ function apagar() {
 function STATUS_CHIP(s) {
   const m = {'em-curso':['cobalt','em curso'],'planejada':['ghost','planejada'],'concluida':['mint','concluída'],'trancada':['rose','trancada']};
   const [c,l] = m[s] || ['ghost', s];
-  return `<span class="tag ${c}">${l}</span>`;
+  return `<span class="tag ${c}">${esc(l)}</span>`;
 }
-function horasDaAula(a) { const [h1,m1]=a.inicio.split(':').map(Number); const [h2,m2]=a.fim.split(':').map(Number); return (h2+m2/60)-(h1+m1/60); }
+function horasDaAula(a) {
+  if(!a.inicio || !a.fim) return 0;
+  const [h1,m1]=a.inicio.split(':').map(Number);
+  const [h2,m2]=a.fim.split(':').map(Number);
+  return Math.max(0, (h2+m2/60)-(h1+m1/60));
+}
 function fmtData(d) { if(!d) return ''; const [y,m,dd]=d.split('-'); return `${dd}/${m}/${y.slice(2)}`; }
 function diasAte(d) { if(!d) return null; const t=new Date(d+'T12:00'); const n=new Date(); n.setHours(0,0,0,0); return Math.round((t-n)/86400000); }
+
+function apagarCard(id) {
+  const d = load().find(x => x.id === id);
+  if (!d) return;
+  if (!confirm(`Apagar ${d.nome || 'essa disciplina'}?`)) return;
+  save(load().filter(x => x.id !== id));
+  render();
+}
 
 function render() {
   const list = load();
@@ -292,24 +306,33 @@ function render() {
   cont.innerHTML = `<div class="disc-grid">${list.map(d => {
     const aulas = (d.aulas||[]).map(a => {
       const dia = DIAS.find(([v])=>v===a.dia)?.[1] || a.dia;
-      return `<div class="aula-line"><span><b>${dia}</b></span><span>${a.inicio}—${a.fim}</span></div>`;
+      return `<div class="aula-line"><span><b>${esc(dia)}</b></span><span>${esc(a.inicio)}—${esc(a.fim)}</span></div>`;
     }).join('') || `<div style="color:var(--muted);font-size:12px;font-style:italic">Sem aulas cadastradas</div>`;
-    const provas = (d.provas||[]).sort((a,b)=>(a.data||'').localeCompare(b.data||'')).slice(0,3).map(p => {
+    const provasOrdenadas = (d.provas||[]).slice().sort((a,b) => {
+      const da = diasAte(a.data), db = diasAte(b.data);
+      if (da==null && db==null) return 0;
+      if (da==null) return 1;
+      if (db==null) return -1;
+      const fa = da < 0, fb = db < 0;
+      if (fa !== fb) return fa ? 1 : -1; // futuras antes das passadas
+      return fa ? db - da : da - db;      // futuras: mais próxima primeiro; passadas: mais recente primeiro
+    });
+    const provas = provasOrdenadas.slice(0,3).map(p => {
       const diff = diasAte(p.data);
       const badge = diff===null?'':diff<0?'passou':diff===0?'hoje':diff+'d';
-      return `<div class="prova-line"><span>${p.nome}</span><b>${fmtData(p.data)} <span style="color:var(--muted);font-weight:500;font-size:11px">· ${badge}</span></b></div>`;
+      return `<div class="prova-line"><span>${esc(p.nome)}</span><b>${fmtData(p.data)} <span style="color:var(--muted);font-weight:500;font-size:11px">· ${esc(badge)}</span></b></div>`;
     }).join('') || `<div style="color:var(--muted);font-size:12px;font-style:italic">Sem provas</div>`;
 
     return `<div class="disc-card">
       <div class="actions">
         <button onclick="abrirEdit('${d.id}')" title="Editar">✎</button>
-        <button class="del" onclick="if(confirm('Apagar ${(d.nome||'').replace(/'/g,'\\\'')}?')){ save(load().filter(x=>x.id!=='${d.id}')); render(); }" title="Apagar">×</button>
+        <button class="del" onclick="apagarCard('${d.id}')" title="Apagar">×</button>
       </div>
       <div class="head">
         <div>
-          ${d.codigo ? `<div class="codigo">${d.codigo}</div>`:''}
-          <h3>${d.nome}</h3>
-          ${d.prof ? `<div class="prof">${d.prof}</div>`:''}
+          ${d.codigo ? `<div class="codigo">${esc(d.codigo)}</div>`:''}
+          <h3>${esc(d.nome)}</h3>
+          ${d.prof ? `<div class="prof">${esc(d.prof)}</div>`:''}
         </div>
         ${STATUS_CHIP(d.status)}
       </div>
