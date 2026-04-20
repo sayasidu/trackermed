@@ -101,6 +101,25 @@
 </div>
 </main></div>
 
+<!-- Modal de confirmação de exclusão -->
+<div class="modal-backdrop" id="delDiscModal" onclick="if(event.target===this) fecharDel()">
+  <div class="modal-box" style="width:440px">
+    <button class="mbtn-close" onclick="fecharDel()">×</button>
+    <h2>Apagar <i>disciplina</i>?</h2>
+    <div class="modal-sub">Esta ação não pode ser desfeita. As aulas, metas e provas desta disciplina serão removidas.</div>
+    <div class="section-group rose" style="margin-top:8px">
+      <h4 id="delDiscNome">—</h4>
+      <div class="sg-help" id="delDiscInfo"></div>
+    </div>
+    <div class="mactions">
+      <div style="display:flex;gap:10px;margin-left:auto">
+        <button type="button" class="mbtn-cancel" onclick="fecharDel()">Cancelar</button>
+        <button type="button" class="mbtn-save" id="btnDelConfirm" style="background:var(--rose)">Apagar disciplina</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Modal -->
 <div class="modal-backdrop" id="newDiscModal" onclick="if(event.target===this) fechar()">
   <div class="modal-box">
@@ -162,7 +181,15 @@ const KEY = 'trackermed.disciplinas.v1';
 const DIAS = [['seg','Seg'],['ter','Ter'],['qua','Qua'],['qui','Qui'],['sex','Sex'],['sab','Sáb'],['dom','Dom']];
 const DIA_FULL = {seg:'Segunda', ter:'Terça', qua:'Quarta', qui:'Quinta', sex:'Sexta', sab:'Sábado', dom:'Domingo'};
 
-function load() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } }
+function load() {
+  try {
+    const list = JSON.parse(localStorage.getItem(KEY) || '[]');
+    let dirty = false;
+    list.forEach(d => { if (!d.id) { d.id = uid(); dirty = true; } });
+    if (dirty) localStorage.setItem(KEY, JSON.stringify(list));
+    return list;
+  } catch { return []; }
+}
 function save(list) { localStorage.setItem(KEY, JSON.stringify(list)); }
 function uid() { return 'd-' + Date.now() + '-' + Math.random().toString(36).slice(2,6); }
 function esc(s) { return String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -225,6 +252,25 @@ function abrirEdit(id) {
 }
 
 function fechar() { document.getElementById('newDiscModal').classList.remove('open'); }
+function fecharDel() { document.getElementById('delDiscModal').classList.remove('open'); pendingDelId = null; }
+
+let pendingDelId = null;
+function abrirDel(id) {
+  const d = load().find(x => x.id === id);
+  if (!d) return;
+  pendingDelId = id;
+  document.getElementById('delDiscNome').textContent = d.nome || 'Sem nome';
+  const aulasN = (d.aulas || []).length, provasN = (d.provas || []).length;
+  document.getElementById('delDiscInfo').textContent =
+    `${aulasN} aula${aulasN!==1?'s':''} · ${provasN} prova${provasN!==1?'s':''} cadastrada${provasN!==1?'s':''}`;
+  document.getElementById('delDiscModal').classList.add('open');
+}
+document.getElementById('btnDelConfirm').addEventListener('click', () => {
+  if (!pendingDelId) return;
+  save(load().filter(x => x.id !== pendingDelId));
+  fecharDel();
+  render();
+});
 
 function salvar() {
   const aulas = [...document.querySelectorAll('#aulasList .dyn-row')].map(r => ({
@@ -256,11 +302,9 @@ function salvar() {
 
 function apagar() {
   if (!editingId) return;
-  const d = load().find(x => x.id === editingId);
-  if (!confirm(`Apagar ${d?.nome || 'essa disciplina'}?`)) return;
-  save(load().filter(x => x.id !== editingId));
+  const id = editingId;
   fechar();
-  render();
+  abrirDel(id);
 }
 
 function STATUS_CHIP(s) {
@@ -276,14 +320,6 @@ function horasDaAula(a) {
 }
 function fmtData(d) { if(!d) return ''; const [y,m,dd]=d.split('-'); return `${dd}/${m}/${y.slice(2)}`; }
 function diasAte(d) { if(!d) return null; const t=new Date(d+'T12:00'); const n=new Date(); n.setHours(0,0,0,0); return Math.round((t-n)/86400000); }
-
-function apagarCard(id) {
-  const d = load().find(x => x.id === id);
-  if (!d) return;
-  if (!confirm(`Apagar ${d.nome || 'essa disciplina'}?`)) return;
-  save(load().filter(x => x.id !== id));
-  render();
-}
 
 function render() {
   const list = load();
@@ -323,10 +359,10 @@ function render() {
       return `<div class="prova-line"><span>${esc(p.nome)}</span><b>${fmtData(p.data)} <span style="color:var(--muted);font-weight:500;font-size:11px">· ${esc(badge)}</span></b></div>`;
     }).join('') || `<div style="color:var(--muted);font-size:12px;font-style:italic">Sem provas</div>`;
 
-    return `<div class="disc-card" onclick="abrirEdit('${d.id}')">
-      <div class="actions" onclick="event.stopPropagation()">
-        <button type="button" onclick="abrirEdit('${d.id}')" title="Editar">✎</button>
-        <button type="button" class="del" onclick="apagarCard('${d.id}')" title="Apagar">×</button>
+    return `<div class="disc-card" data-id="${esc(d.id)}" data-action="edit">
+      <div class="actions">
+        <button type="button" data-id="${esc(d.id)}" data-action="edit" title="Editar">✎</button>
+        <button type="button" class="del" data-id="${esc(d.id)}" data-action="del" title="Apagar">×</button>
       </div>
       <div class="head">
         <div>
@@ -344,6 +380,16 @@ function render() {
     </div>`;
   }).join('')}</div>`;
 }
+
+document.getElementById('listaContainer').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  if (!id) return;
+  const action = btn.dataset.action;
+  if (action === 'del') { e.stopPropagation(); abrirDel(id); return; }
+  if (action === 'edit') { abrirEdit(id); }
+});
 
 render();
 </script>
