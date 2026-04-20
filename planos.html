@@ -29,6 +29,9 @@
 .empty h3 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
 .empty p { color: var(--muted); margin-top: 8px; font-size: 14px; }
 .empty button { margin-top: 18px; background: var(--cobalt); color: #fff; border: none; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.add-more { margin-top: 18px; text-align: center; }
+.add-more button { background: transparent; border: 1.5px dashed var(--line); color: var(--ink2); padding: 14px 24px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; width: 100%; transition: all .15s; }
+.add-more button:hover { border-color: var(--cobalt); color: var(--cobalt); border-style: solid; }
 
 /* Modal */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(10,19,48,0.55); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
@@ -95,11 +98,9 @@
   <div class="modal-box">
     <button class="mbtn-close" onclick="fechar()">×</button>
     <h2 id="modalTitle">Novo <i>plano</i></h2>
-    <div class="modal-sub">Pra qual objetivo esse plano vai servir?</div>
+    <div class="modal-sub" id="modalSub">Pra qual objetivo esse plano vai servir?</div>
 
     <form id="planoForm" onsubmit="event.preventDefault(); salvar();">
-      <input type="hidden" id="pId">
-
       <div class="mfield">
         <label>Tipo de plano</label>
         <div class="type-choice">
@@ -171,6 +172,7 @@ const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov'
 function load() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } }
 function save(list) { localStorage.setItem(KEY, JSON.stringify(list)); }
 function uid() { return 'p-' + Date.now() + '-' + Math.random().toString(36).slice(2,6); }
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 let editingId = null;
 
@@ -183,12 +185,14 @@ function toggleTipo() {
 function abrirNovo() {
   editingId = null;
   document.getElementById('modalTitle').innerHTML = 'Novo <i>plano</i>';
+  document.getElementById('modalSub').textContent = 'Pra qual objetivo esse plano vai servir?';
   document.getElementById('btnSave').textContent = 'Criar plano';
   document.getElementById('btnDel').style.display = 'none';
   document.getElementById('planoForm').reset();
   document.querySelector('input[name="tipo"][value="semestre"]').checked = true;
   toggleTipo();
   document.getElementById('planoModal').classList.add('open');
+  setTimeout(() => document.getElementById('pNome').focus(), 50);
 }
 
 function abrirEdit(id) {
@@ -196,9 +200,9 @@ function abrirEdit(id) {
   if (!p) return;
   editingId = id;
   document.getElementById('modalTitle').innerHTML = 'Editar <i>plano</i>';
+  document.getElementById('modalSub').textContent = 'Ajuste datas, matérias ou o tipo desse plano.';
   document.getElementById('btnSave').textContent = 'Salvar';
   document.getElementById('btnDel').style.display = 'block';
-  document.getElementById('pId').value = id;
   document.getElementById('pNome').value = p.nome || '';
   document.querySelector(`input[name="tipo"][value="${p.tipo}"]`).checked = true;
   toggleTipo();
@@ -221,15 +225,22 @@ function fechar() { document.getElementById('planoModal').classList.remove('open
 function salvar() {
   const tipo = document.querySelector('input[name="tipo"]:checked').value;
   const nome = document.getElementById('pNome').value.trim();
+  if (!nome) { alert('Dá um nome pro plano antes de salvar.'); return; }
   let p = { id: editingId || uid(), tipo, nome };
   if (tipo === 'semestre') {
     p.inicio = document.getElementById('sInicio').value;
     p.fim = document.getElementById('sFim').value;
+    if (p.inicio && p.fim && p.inicio > p.fim) {
+      alert('A data de fim precisa ser depois da data de início.'); return;
+    }
     p.instituicao = document.getElementById('sInst').value.trim();
     p.materias = document.getElementById('sMaterias').value.split('\n').map(x=>x.trim()).filter(Boolean);
   } else {
     p.dataProva = document.getElementById('rData').value;
     p.inicio = document.getElementById('rInicio').value;
+    if (p.inicio && p.dataProva && p.inicio > p.dataProva) {
+      alert('O início do plano precisa ser antes da data da prova.'); return;
+    }
     p.instituicao = document.getElementById('rInst').value.trim();
     p.materias = document.getElementById('rMaterias').value.split('\n').map(x=>x.trim()).filter(Boolean);
   }
@@ -250,7 +261,14 @@ function apagar() {
 }
 
 function fmtData(d) { if(!d) return '—'; const [y,m,dd]=d.split('-'); return `${parseInt(dd)} ${MESES[parseInt(m)-1]} ${y.slice(2)}`; }
-function diasAte(d) { if(!d) return null; const t=new Date(d+'T12:00'); const n=new Date(); n.setHours(0,0,0,0); return Math.round((t-n)/86400000); }
+function diasAte(d) {
+  if(!d) return null;
+  const [y,m,dd] = d.split('-').map(Number);
+  if (!y || !m || !dd) return null;
+  const t = new Date(y, m-1, dd); t.setHours(0,0,0,0);
+  const n = new Date(); n.setHours(0,0,0,0);
+  return Math.round((t-n)/86400000);
+}
 
 function render() {
   const list = load();
@@ -266,22 +284,22 @@ function render() {
     return;
   }
 
-  cont.innerHTML = list.map(p => {
-    const materias = (p.materias || []).map(m => `<span>${m}</span>`).join('');
+  const cards = list.map(p => {
+    const materias = (p.materias || []).map(m => `<span>${esc(m)}</span>`).join('');
     let rightCol = '';
     let metaInfo = '';
     if (p.tipo === 'residencia') {
       const dias = diasAte(p.dataProva);
       rightCol = `<div class="plano-countdown">
-        ${dias !== null ? `<div class="num">${Math.max(0,dias)}</div><div class="lbl">${dias < 0 ? 'prova passou' : 'dias até a prova'}</div>` : '<div class="lbl">sem data</div>'}
+        ${dias !== null ? `<div class="num">${Math.max(0,dias)}</div><div class="lbl">${dias < 0 ? 'prova passou' : (dias === 1 ? 'dia até a prova' : 'dias até a prova')}</div>` : '<div class="lbl">sem data</div>'}
       </div>`;
-      metaInfo = `${p.instituicao ? p.instituicao + ' · ' : ''}Prova: <b>${fmtData(p.dataProva)}</b>${p.inicio ? ` · início <b>${fmtData(p.inicio)}</b>` : ''}`;
+      metaInfo = `${p.instituicao ? esc(p.instituicao) + ' · ' : ''}Prova: <b>${fmtData(p.dataProva)}</b>${p.inicio ? ` · início <b>${fmtData(p.inicio)}</b>` : ''}`;
     } else {
       const diasFim = diasAte(p.fim);
       rightCol = `<div class="plano-countdown">
-        ${diasFim !== null ? `<div class="num" style="color:var(--mint)">${Math.max(0,diasFim)}</div><div class="lbl">${diasFim < 0 ? 'semestre acabou' : 'dias restantes'}</div>` : '<div class="lbl">sem data</div>'}
+        ${diasFim !== null ? `<div class="num" style="color:var(--mint)">${Math.max(0,diasFim)}</div><div class="lbl">${diasFim < 0 ? 'semestre acabou' : (diasFim === 1 ? 'dia restante' : 'dias restantes')}</div>` : '<div class="lbl">sem data</div>'}
       </div>`;
-      metaInfo = `${p.instituicao ? p.instituicao + ' · ' : ''}<b>${fmtData(p.inicio)}</b> — <b>${fmtData(p.fim)}</b>`;
+      metaInfo = `${p.instituicao ? esc(p.instituicao) + ' · ' : ''}<b>${fmtData(p.inicio)}</b> — <b>${fmtData(p.fim)}</b>`;
     }
 
     return `<div class="plano-card ${p.tipo}">
@@ -291,14 +309,20 @@ function render() {
       </div>
       <div>
         <div class="tipo">${p.tipo === 'residencia' ? '🏥 Residência' : '🎓 Semestre'}</div>
-        <h3>${p.nome}</h3>
+        <h3>${esc(p.nome)}</h3>
         <div class="meta">${metaInfo}</div>
         ${materias ? `<div class="plano-materias">${materias}</div>` : ''}
       </div>
       ${rightCol}
     </div>`;
   }).join('');
+
+  cont.innerHTML = cards + `<div class="add-more"><button onclick="abrirNovo()">+ Adicionar outro plano</button></div>`;
 }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('planoModal').classList.contains('open')) fechar();
+});
 
 render();
 </script>
