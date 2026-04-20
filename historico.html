@@ -75,9 +75,6 @@
 .mfield label { display: block; font-size: 11px; letter-spacing: 0.12em; color: #70757A; font-weight: 600; text-transform: uppercase; margin-bottom: 5px; }
 .mfield input, .mfield select { width: 100%; padding: 10px 12px; border: 1px solid #E0E0E0; background: var(--paper); font-size: 14px; font-family: inherit; }
 .mfield.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.dur-picker { display: flex; gap: 6px; }
-.dur-picker button { flex: 1; background: var(--paper); border: 1px solid #E0E0E0; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; color: #70757A; }
-.dur-picker button.active { background: var(--ink); color: var(--acid); border-color: var(--ink); }
 .mactions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #E0E0E0; }
 .mbtn-cancel { background: transparent; border: 1px solid #E0E0E0; padding: 10px 18px; font-size: 13px; cursor: pointer; font-family: inherit; }
 .mbtn-save { background: var(--cobalt); color: #fff; border: none; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
@@ -154,16 +151,31 @@
     <h2>Estudo <i>extra</i></h2>
     <div class="modal-sub">Registre um bloco fora do planejamento — manual ou com cronômetro.</div>
     <form id="extraForm" onsubmit="event.preventDefault();">
-      <div class="mfield"><label>Disciplina</label>
+      <div class="mfield"><label>Matéria</label>
         <select id="eDisc" required></select>
       </div>
-      <div class="mfield"><label>Duração</label>
-        <div class="dur-picker" id="durPicker">
-          <button type="button" data-m="25" class="active">25min</button>
-          <button type="button" data-m="30">30min</button>
-          <button type="button" data-m="45">45min</button>
-          <button type="button" data-m="60">60min</button>
-          <button type="button" data-m="90">90min</button>
+      <div class="mfield"><label>Duração (Pomodoro)</label>
+        <select id="eMins">
+          <option value="25">25 min</option>
+          <option value="30">30 min</option>
+          <option value="45">45 min</option>
+          <option value="60">60 min</option>
+        </select>
+      </div>
+      <div class="mfield row2">
+        <div>
+          <label>Concluiu o planejado?</label>
+          <select id="eConcluido">
+            <option value="sim">Sim</option>
+            <option value="nao">Não</option>
+          </select>
+        </div>
+        <div>
+          <label>Revisar depois?</label>
+          <select id="eRevisar">
+            <option value="nao">Não</option>
+            <option value="sim">Sim</option>
+          </select>
         </div>
       </div>
       <div class="mactions">
@@ -179,6 +191,7 @@
 const DISC_KEY = 'trackermed.disciplinas.v1';
 const PLAN_KEY = 'trackermed.plan.v1';
 const SESS_KEY = 'trackermed.sess.v1';
+const HIST_KEY = 'historicoEstudos';
 const DIAS_LBL = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 
 function loadDisc() { try { return JSON.parse(localStorage.getItem(DISC_KEY) || '[]'); } catch { return []; } }
@@ -186,6 +199,36 @@ function loadPlan() { try { return JSON.parse(localStorage.getItem(PLAN_KEY) || 
 function savePlan(p) { localStorage.setItem(PLAN_KEY, JSON.stringify(p)); }
 function loadSess() { try { return JSON.parse(localStorage.getItem(SESS_KEY) || '{}'); } catch { return {}; } }
 function saveSess(s) { localStorage.setItem(SESS_KEY, JSON.stringify(s)); }
+
+// historicoEstudos: feed que alimenta revisoes.html
+function loadHist() {
+  try { const v = JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); return Array.isArray(v) ? v : []; }
+  catch { return []; }
+}
+function saveHist(arr) { localStorage.setItem(HIST_KEY, JSON.stringify(arr)); }
+function pushHist(rec) { const arr = loadHist(); arr.push(rec); saveHist(arr); }
+function fmtDataBR(d) { return d.toLocaleDateString('pt-BR'); } // DD/MM/AAAA
+// Migração não-destrutiva: se a chave já existe, normaliza campos sem descartar registros.
+(function migrateHist() {
+  const raw = localStorage.getItem(HIST_KEY);
+  if (raw == null) return;
+  try {
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return;
+    const migrated = arr.map(r => {
+      if (!r || typeof r !== 'object') return r;
+      const out = { ...r };
+      if (out.data == null) out.data = '';
+      if (out.materia == null) out.materia = r.disciplina || r.nome || '';
+      if (out.minutos == null) out.minutos = parseInt(r.mins) || 0;
+      else if (typeof out.minutos === 'string') out.minutos = parseInt(out.minutos) || 0;
+      if (typeof out.concluido !== 'boolean') out.concluido = !!(out.concluido || r.feito);
+      if (typeof out.revisar !== 'boolean') out.revisar = !!out.revisar;
+      return out;
+    });
+    saveHist(migrated);
+  } catch {}
+})();
 function uid() { return 'b-'+Date.now()+'-'+Math.random().toString(36).slice(2,6); }
 function parseTime(t) { const [h,m]=t.split(':').map(Number); return h+m/60; }
 function startOfWeek(d) { const x=new Date(d); x.setHours(0,0,0,0); const w=(x.getDay()+6)%7; x.setDate(x.getDate()-w); return x; }
@@ -208,11 +251,12 @@ function blocoDate(wk, b) {
 function plural(n, singular, plural_) { return n === 1 ? singular : plural_; }
 
 // Timer state
-let timerState = { discId: null, discNome: '', totalSec: 0, leftSec: 0, running: false, intervalId: null, linkedBlocoId: null };
-function timerOpen(discId, discNome, mins, linkedBlocoId) {
+let timerState = { discId: null, discNome: '', totalSec: 0, leftSec: 0, running: false, intervalId: null, linkedBlocoId: null, fromModal: false, revisar: false };
+function timerOpen(discId, discNome, mins, linkedBlocoId, opts) {
+  opts = opts || {};
   if (timerState.running && !confirm('Já tem um cronômetro rodando. Substituir?')) return;
   if (timerState.intervalId) clearInterval(timerState.intervalId);
-  timerState = { discId, discNome, totalSec: mins*60, leftSec: mins*60, running: false, intervalId: null, linkedBlocoId: linkedBlocoId || null };
+  timerState = { discId, discNome, totalSec: mins*60, leftSec: mins*60, running: false, intervalId: null, linkedBlocoId: linkedBlocoId || null, fromModal: !!opts.fromModal, revisar: !!opts.revisar };
   document.getElementById('tDisc').textContent = discNome;
   document.getElementById('tPlayBtn').textContent = 'Iniciar';
   updateClock();
@@ -227,7 +271,7 @@ function updateClock() {
 }
 function timerClose() {
   if (timerState.intervalId) clearInterval(timerState.intervalId);
-  timerState = { discId:null, discNome:'', totalSec:0, leftSec:0, running:false, intervalId:null, linkedBlocoId:null };
+  timerState = { discId:null, discNome:'', totalSec:0, leftSec:0, running:false, intervalId:null, linkedBlocoId:null, fromModal:false, revisar:false };
   document.getElementById('timerFloat').classList.remove('open');
   document.title = 'Histórico · TrackerMed';
 }
@@ -257,6 +301,7 @@ function timerFinish(auto) {
   timerState.running = false;
   const studied = Math.round((timerState.totalSec - Math.max(0,timerState.leftSec))/60);
   if (studied < 1) { timerClose(); return; }
+  const concluidoNatural = timerState.leftSec <= 0;
 
   if (timerState.linkedBlocoId) {
     // Marca bloco existente como feito
@@ -272,9 +317,21 @@ function timerFinish(auto) {
     const now = new Date();
     const endH = now.getHours() + now.getMinutes()/60;
     const startH = Math.max(0, endH - studied/60);
-    plan[wk].push({ id: uid(), tipo:'estudo', discId: timerState.discId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: true, fromTimer: true, minutos: studied, extra: true, data: todayKey() });
+    plan[wk].push({ id: uid(), tipo:'estudo', discId: timerState.discId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: true, fromTimer: true, minutos: studied, extra: true, data: todayKey(), revisar: timerState.revisar });
     savePlan(plan);
   }
+
+  // Se veio do modal "Estudo extra", registra também em historicoEstudos (feed de revisões)
+  if (timerState.fromModal) {
+    pushHist({
+      data: fmtDataBR(new Date()),
+      materia: timerState.discNome,
+      minutos: Math.round(timerState.totalSec/60),
+      concluido: concluidoNatural,
+      revisar: !!timerState.revisar
+    });
+  }
+
   if (auto) alert(`🎉 Sessão de ${Math.round(timerState.totalSec/60)}min completa! Registrada.`);
   timerClose();
   render();
@@ -303,29 +360,39 @@ function abrirExtra() {
   const sel = document.getElementById('eDisc');
   sel.innerHTML = loadDisc().filter(d=>d.status==='em-curso'||!d.status).map(d => `<option value="${d.id}">${d.nome}</option>`).join('');
   if (!sel.options.length) { alert('Cadastre uma disciplina primeiro.'); return; }
-  document.querySelectorAll('#durPicker button').forEach(b => b.classList.toggle('active', b.dataset.m === '25'));
+  document.getElementById('eMins').value = '25';
+  document.getElementById('eConcluido').value = 'sim';
+  document.getElementById('eRevisar').value = 'nao';
   document.getElementById('extraModal').classList.add('open');
 }
 function fecharExtra() { document.getElementById('extraModal').classList.remove('open'); }
-document.getElementById('durPicker').addEventListener('click', e => {
-  if (e.target.tagName === 'BUTTON') {
-    document.querySelectorAll('#durPicker button').forEach(b => b.classList.remove('active'));
-    e.target.classList.add('active');
-  }
-});
-function getMinsSelected() { return parseInt(document.querySelector('#durPicker button.active').dataset.m); }
+function getMinsSelected() { return parseInt(document.getElementById('eMins').value); }
+function getConcluidoSelected() { return document.getElementById('eConcluido').value === 'sim'; }
+function getRevisarSelected() { return document.getElementById('eRevisar').value === 'sim'; }
 function salvarExtraManual() {
   const discId = document.getElementById('eDisc').value;
   const disc = loadDisc().find(d => d.id === discId);
   const mins = getMinsSelected();
+  const concluido = getConcluidoSelected();
+  const revisar = getRevisarSelected();
   const plan = loadPlan();
   const wk = weekKey(new Date());
   if (!plan[wk]) plan[wk] = [];
   const now = new Date();
   const endH = now.getHours() + now.getMinutes()/60;
   const startH = Math.max(0, endH - mins/60);
-  plan[wk].push({ id: uid(), tipo:'estudo', discId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: true, minutos: mins, extra: true, data: todayKey() });
+  plan[wk].push({ id: uid(), tipo:'estudo', discId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: concluido, minutos: mins, extra: true, data: todayKey(), revisar });
   savePlan(plan);
+
+  // Feed de revisões
+  pushHist({
+    data: fmtDataBR(now),
+    materia: disc ? disc.nome : 'Estudo',
+    minutos: mins,
+    concluido,
+    revisar
+  });
+
   fecharExtra();
   render();
 }
@@ -333,8 +400,9 @@ function salvarExtraTimer() {
   const discId = document.getElementById('eDisc').value;
   const disc = loadDisc().find(d => d.id === discId);
   const mins = getMinsSelected();
+  const revisar = getRevisarSelected();
   fecharExtra();
-  timerOpen(discId, disc.nome, mins);
+  timerOpen(discId, disc.nome, mins, null, { fromModal: true, revisar });
 }
 
 function render() {
