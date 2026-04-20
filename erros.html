@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Caderno de erros · TrackerMed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+.stat-card { background: #fff; border: 1px solid var(--line); padding: 18px 20px; }
+.stat-card.dark { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.stat-card .lbl { font-size: 10px; letter-spacing: 0.18em; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+.stat-card.dark .lbl { color: var(--acid); }
+.stat-card .val { font-family: 'Fraunces', serif; font-size: 38px; font-weight: 400; letter-spacing: -0.03em; line-height: 1; margin-top: 8px; }
+.stat-card.dark .val { color: var(--acid); }
+.stat-card .sub { font-size: 12px; color: var(--muted); margin-top: 8px; }
+.stat-card.dark .sub { color: rgba(244,241,234,0.6); }
+
+.tool-row { display: flex; gap: 10px; margin-bottom: 22px; align-items: center; flex-wrap: wrap; }
+.tool-row input.search { flex: 1; min-width: 220px; padding: 11px 14px; border: 1px solid var(--line); background: #fff; font-size: 14px; font-family: inherit; }
+.tool-row select { padding: 11px 14px; border: 1px solid var(--line); background: #fff; font-size: 13px; font-family: inherit; }
+.tool-row .add { background: var(--cobalt); color: #fff; border: none; padding: 11px 20px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.tool-row .add:hover { background: #1530b3; }
+
+.erro-card { background: #fff; border: 1px solid var(--line); padding: 22px 24px; margin-bottom: 14px; position: relative; border-left: 4px solid var(--rose); }
+.erro-card.revisado { border-left-color: var(--mint); opacity: 0.75; }
+.erro-card .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; margin-bottom: 10px; flex-wrap: wrap; }
+.erro-card .disc-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--cobalt); text-transform: uppercase; }
+.erro-card .disc-tag::before { content:''; width: 8px; height: 8px; background: var(--cobalt); }
+.erro-card .assunto { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; letter-spacing: -0.01em; margin-top: 2px; }
+.erro-card .q { font-size: 14px; color: var(--ink2); margin-top: 10px; line-height: 1.55; white-space: pre-wrap; }
+.erro-card .por-que { margin-top: 14px; padding: 12px 14px; background: var(--paper); border-left: 2px solid var(--amber); }
+.erro-card .por-que .lbl { font-size: 10px; letter-spacing: 0.15em; color: var(--muted); font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+.erro-card .por-que .txt { font-size: 13px; color: var(--ink); line-height: 1.55; white-space: pre-wrap; }
+.erro-card .meta-row { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); gap: 12px; flex-wrap: wrap; }
+.erro-card .meta-left { font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
+.erro-card .meta-left .fonte { font-weight: 600; color: var(--ink2); text-transform: uppercase; letter-spacing: 0.08em; }
+.erro-card .meta-actions { display: flex; gap: 6px; }
+.erro-card .meta-actions button { background: transparent; border: 1px solid var(--line); color: var(--ink2); padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; letter-spacing: 0.04em; }
+.erro-card .meta-actions button.mark-rev { background: var(--mint); border-color: var(--mint); color: var(--ink); }
+.erro-card .meta-actions button.del { color: var(--rose); border-color: rgba(255,91,91,0.3); }
+.erro-card.revisado .rev-badge { position: absolute; top: 18px; right: 18px; font-family: 'Fraunces', serif; font-style: italic; color: var(--mint); font-size: 13px; font-weight: 600; }
+
+.empty-state { text-align: center; padding: 60px 24px; background: #fff; border: 1px dashed var(--line); }
+.empty-state h3 { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 500; color: var(--ink2); }
+.empty-state p { color: var(--muted); margin-top: 8px; font-size: 14px; }
+
+/* Modal */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(10,19,48,0.55); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.modal-backdrop.open { display: flex; }
+.modal-box { background: #fff; border: 1px solid var(--line); width: 560px; max-width: 100%; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto; }
+.modal-box h2 { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; letter-spacing: -0.02em; }
+.modal-box h2 i { color: var(--cobalt); font-style: italic; }
+.modal-sub { font-size: 13px; color: var(--muted); margin-top: 6px; margin-bottom: 20px; }
+.mbtn-close { position: absolute; right: 20px; top: 20px; background: transparent; border: none; font-size: 24px; cursor: pointer; color: var(--muted); }
+.mfield { margin-bottom: 14px; }
+.mfield label { display: block; font-size: 11px; letter-spacing: 0.12em; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 6px; }
+.mfield input, .mfield select, .mfield textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); background: var(--paper); font-size: 14px; font-family: inherit; color: var(--ink); }
+.mfield textarea { min-height: 70px; resize: vertical; line-height: 1.5; }
+.mfield.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.mactions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.mbtn-cancel { background: transparent; border: 1px solid var(--line); padding: 10px 18px; font-size: 13px; cursor: pointer; font-family: inherit; }
+.mbtn-save { background: var(--cobalt); color: #fff; border: none; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+
+.filter-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-tabs button { background: #fff; border: 1px solid var(--line); padding: 8px 14px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; color: var(--ink2); letter-spacing: 0.02em; }
+.filter-tabs button.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.filter-tabs button .cnt { opacity: 0.6; margin-left: 6px; }
+</style></head><body>
+<div class="app">
+<aside class="sidebar">
+<div class="logo">Tracker<em>Med</em></div>
+<a href="index.html" class="nav-item">Home</a>
+<a href="planos.html" class="nav-item">Planos</a>
+<a href="disciplinas.html" class="nav-item">Disciplinas</a>
+<a href="plannerstudy.html" class="nav-item">Planejamento</a>
+<a href="revisoes.html" class="nav-item">Revisões</a>
+<a href="historico.html" class="nav-item">Histórico</a>
+<a href="erros.html" class="nav-item active">Caderno de erros</a>
+<a href="dashboard.html" class="nav-item">Estatísticas</a>
+<a href="simulados.html" class="nav-item">Simulados</a>
+<div class="sidebar-foot">v0.1 · pessoal</div>
+</aside>
+<main class="main">
+<div class="topbar">
+  <div class="crumb">Home <i>›</i> Caderno de erros</div>
+  <div class="topbar-right"><span class="pill" id="totalPill">0 questões</span></div>
+</div>
+
+<div>
+  <div class="kicker">Caderno</div>
+  <h1 class="page-title">Questões que <i>erraram</i> você.</h1>
+  <p class="page-lede">Registre o que você errou com o porquê do erro — não a resposta certa, mas o que você não sabia. É o material mais denso pra revisar antes da prova.</p>
+</div>
+
+<div class="stats-row" style="margin-top:36px">
+  <div class="stat-card"><div class="lbl">Total</div><div class="val" id="sTotal" style="color:var(--cobalt)">0</div><div class="sub">questões registradas</div></div>
+  <div class="stat-card"><div class="lbl">Pendentes</div><div class="val" id="sPend" style="color:var(--rose)">0</div><div class="sub">a revisar</div></div>
+  <div class="stat-card"><div class="lbl">Revisadas</div><div class="val" id="sRev" style="color:var(--mint)">0</div><div class="sub">ficou claro</div></div>
+  <div class="stat-card dark"><div class="lbl">Mais recorrente</div><div class="val" id="sTopDisc" style="font-size:22px">—</div><div class="sub" id="sTopDiscSub">—</div></div>
+</div>
+
+<div class="tool-row">
+  <input type="text" class="search" id="searchInput" placeholder="Buscar por assunto, enunciado, disciplina…"/>
+  <select id="filterDisc"><option value="">Todas disciplinas</option></select>
+  <button class="add" onclick="abrirModal()">+ Registrar erro</button>
+</div>
+
+<div class="filter-tabs">
+  <button data-f="pend" class="active" onclick="setFilter('pend',this)">Pendentes <span class="cnt" id="cntPend">0</span></button>
+  <button data-f="todas" onclick="setFilter('todas',this)">Todas <span class="cnt" id="cntTodas">0</span></button>
+  <button data-f="rev" onclick="setFilter('rev',this)">Revisadas <span class="cnt" id="cntRev">0</span></button>
+</div>
+
+<div id="lista"></div>
+
+</main></div>
+
+<!-- Modal -->
+<div class="modal-backdrop" id="modal" onclick="if(event.target===this) fecharModal()">
+  <div class="modal-box">
+    <button class="mbtn-close" onclick="fecharModal()">×</button>
+    <h2 id="mTitulo">Registrar <i>erro</i></h2>
+    <div class="modal-sub">Foca no que você não sabia. O essencial é o campo "por que errei" — escreva o conceito que faltou, não a resposta.</div>
+    <form id="eForm" onsubmit="event.preventDefault(); salvar()">
+      <input type="hidden" id="eId"/>
+      <div class="mfield row2">
+        <div>
+          <label>Disciplina *</label>
+          <select id="eDisc" required></select>
+        </div>
+        <div>
+          <label>Assunto *</label>
+          <input type="text" id="eAssunto" required placeholder="ex: ECG taquiarritmias"/>
+        </div>
+      </div>
+      <div class="mfield">
+        <label>Enunciado / questão</label>
+        <textarea id="eQ" placeholder="Cole ou resuma a pergunta (opcional)"></textarea>
+      </div>
+      <div class="mfield">
+        <label>Por que errei? *</label>
+        <textarea id="ePorQue" required placeholder="O conceito que faltou, a armadilha, o que confundi…"></textarea>
+      </div>
+      <div class="mfield row2">
+        <div>
+          <label>Fonte</label>
+          <input type="text" id="eFonte" placeholder="ex: Sanar, Revalida 2022, QBank"/>
+        </div>
+        <div>
+          <label>Dificuldade</label>
+          <select id="eDif"><option value="1">★ Fácil (bobeada)</option><option value="2" selected>★★ Média</option><option value="3">★★★ Difícil (não sabia)</option></select>
+        </div>
+      </div>
+      <div class="mactions">
+        <button type="button" class="mbtn-cancel" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="mbtn-save">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const DISC_KEY = 'trackermed.disciplinas.v1';
+const ERR_KEY = 'trackermed.erros.v1';
+let filter = 'pend';
+
+function loadDisc() { try { return JSON.parse(localStorage.getItem(DISC_KEY) || '[]'); } catch { return []; } }
+function loadErros() { try { return JSON.parse(localStorage.getItem(ERR_KEY) || '[]'); } catch { return []; } }
+function saveErros(e) { localStorage.setItem(ERR_KEY, JSON.stringify(e)); }
+function uid() { return 'er-'+Date.now()+'-'+Math.random().toString(36).slice(2,6); }
+function esc(s) { return String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmtData(ts) {
+  const d = new Date(ts), now = new Date();
+  const diff = (now - d) / 86400000;
+  if (diff < 1) return 'hoje';
+  if (diff < 2) return 'ontem';
+  if (diff < 7) return Math.floor(diff)+' dias atrás';
+  return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'short'});
+}
+function difStars(n) { return '★'.repeat(n) + '☆'.repeat(3-n); }
+
+function abrirModal(id) {
+  const disc = loadDisc();
+  const sel = document.getElementById('eDisc');
+  sel.innerHTML = '<option value="">—</option>' + disc.map(d => `<option value="${d.id}">${esc(d.nome)}</option>`).join('');
+  if (!disc.length) { alert('Cadastre uma disciplina primeiro em "Disciplinas".'); return; }
+  if (id) {
+    const e = loadErros().find(x => x.id === id);
+    document.getElementById('mTitulo').innerHTML = 'Editar <i>erro</i>';
+    document.getElementById('eId').value = e.id;
+    document.getElementById('eDisc').value = e.discId;
+    document.getElementById('eAssunto').value = e.assunto;
+    document.getElementById('eQ').value = e.q || '';
+    document.getElementById('ePorQue').value = e.porQue;
+    document.getElementById('eFonte').value = e.fonte || '';
+    document.getElementById('eDif').value = e.dif || 2;
+  } else {
+    document.getElementById('mTitulo').innerHTML = 'Registrar <i>erro</i>';
+    document.getElementById('eForm').reset();
+    document.getElementById('eId').value = '';
+  }
+  document.getElementById('modal').classList.add('open');
+}
+function fecharModal() { document.getElementById('modal').classList.remove('open'); }
+
+function salvar() {
+  const id = document.getElementById('eId').value;
+  const dados = {
+    discId: document.getElementById('eDisc').value,
+    assunto: document.getElementById('eAssunto').value.trim(),
+    q: document.getElementById('eQ').value.trim(),
+    porQue: document.getElementById('ePorQue').value.trim(),
+    fonte: document.getElementById('eFonte').value.trim(),
+    dif: parseInt(document.getElementById('eDif').value),
+  };
+  const erros = loadErros();
+  if (id) {
+    const i = erros.findIndex(x => x.id === id);
+    erros[i] = { ...erros[i], ...dados };
+  } else {
+    erros.unshift({ id: uid(), ...dados, revisado: false, ts: Date.now() });
+  }
+  saveErros(erros);
+  fecharModal();
+  render();
+}
+
+function apagar(id) {
+  if (!confirm('Apagar esse erro?')) return;
+  saveErros(loadErros().filter(e => e.id !== id));
+  render();
+}
+function toggleRev(id) {
+  const erros = loadErros();
+  const i = erros.findIndex(e => e.id === id);
+  erros[i].revisado = !erros[i].revisado;
+  erros[i].revisadoEm = erros[i].revisado ? Date.now() : null;
+  saveErros(erros);
+  render();
+}
+function setFilter(f, btn) {
+  filter = f;
+  document.querySelectorAll('.filter-tabs button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function render() {
+  const disc = loadDisc();
+  const erros = loadErros();
+  const discById = Object.fromEntries(disc.map(d => [d.id, d]));
+
+  // Filtro disciplina
+  const filterDisc = document.getElementById('filterDisc');
+  if (!filterDisc.dataset.filled) {
+    filterDisc.innerHTML = '<option value="">Todas disciplinas</option>' + disc.map(d => `<option value="${d.id}">${esc(d.nome)}</option>`).join('');
+    filterDisc.dataset.filled = '1';
+  }
+  const selDisc = filterDisc.value;
+  const search = document.getElementById('searchInput').value.toLowerCase().trim();
+
+  // Stats
+  const total = erros.length;
+  const pend = erros.filter(e => !e.revisado).length;
+  const rev = erros.filter(e => e.revisado).length;
+  document.getElementById('sTotal').textContent = total;
+  document.getElementById('sPend').textContent = pend;
+  document.getElementById('sRev').textContent = rev;
+  document.getElementById('totalPill').textContent = `${total} questã${total!==1?'es':'o'}`;
+  document.getElementById('cntTodas').textContent = total;
+  document.getElementById('cntPend').textContent = pend;
+  document.getElementById('cntRev').textContent = rev;
+
+  // Top disciplina
+  const counts = {};
+  erros.forEach(e => { if (e.discId) counts[e.discId] = (counts[e.discId]||0) + 1; });
+  const top = Object.entries(counts).sort((a,b) => b[1]-a[1])[0];
+  if (top && discById[top[0]]) {
+    document.getElementById('sTopDisc').textContent = discById[top[0]].nome;
+    document.getElementById('sTopDiscSub').textContent = `${top[1]} erro${top[1]!==1?'s':''} registrado${top[1]!==1?'s':''}`;
+  } else {
+    document.getElementById('sTopDisc').textContent = '—';
+    document.getElementById('sTopDiscSub').textContent = 'sem erros ainda';
+  }
+
+  // Lista filtrada
+  let lista = erros.slice();
+  if (filter === 'pend') lista = lista.filter(e => !e.revisado);
+  else if (filter === 'rev') lista = lista.filter(e => e.revisado);
+  if (selDisc) lista = lista.filter(e => e.discId === selDisc);
+  if (search) lista = lista.filter(e => (e.assunto+' '+e.q+' '+e.porQue+' '+(discById[e.discId]?.nome||'')).toLowerCase().includes(search));
+
+  const listaEl = document.getElementById('lista');
+  if (lista.length === 0) {
+    if (total === 0) {
+      listaEl.innerHTML = `<div class="empty-state"><h3>Nenhum erro registrado ainda.</h3><p>Clica em <b>+ Registrar erro</b> ali em cima pra começar.</p></div>`;
+    } else {
+      listaEl.innerHTML = `<div class="empty-state"><h3>Nada aqui.</h3><p>Nenhum erro bate com os filtros atuais.</p></div>`;
+    }
+    return;
+  }
+
+  listaEl.innerHTML = lista.map(e => {
+    const d = discById[e.discId];
+    return `<div class="erro-card ${e.revisado?'revisado':''}">
+      ${e.revisado ? `<div class="rev-badge">revisado</div>` : ''}
+      <div class="top">
+        <div>
+          <div class="disc-tag">${esc(d?d.nome:'?')}</div>
+          <div class="assunto">${esc(e.assunto)}</div>
+        </div>
+        <div style="color:var(--amber);font-size:13px;letter-spacing:2px" title="Dificuldade">${difStars(e.dif||2)}</div>
+      </div>
+      ${e.q ? `<div class="q">${esc(e.q)}</div>` : ''}
+      <div class="por-que">
+        <div class="lbl">por que errei</div>
+        <div class="txt">${esc(e.porQue)}</div>
+      </div>
+      <div class="meta-row">
+        <div class="meta-left">${e.fonte ? `<span class="fonte">${esc(e.fonte)}</span> · ` : ''}${fmtData(e.ts)}${e.revisado && e.revisadoEm ? ` · revisado ${fmtData(e.revisadoEm)}` : ''}</div>
+        <div class="meta-actions">
+          <button onclick="abrirModal('${e.id}')">Editar</button>
+          <button class="${e.revisado?'':'mark-rev'}" onclick="toggleRev('${e.id}')">${e.revisado?'Voltar pra pendente':'Marcar revisado'}</button>
+          <button class="del" onclick="apagar('${e.id}')">Apagar</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('searchInput').addEventListener('input', render);
+document.getElementById('filterDisc').addEventListener('change', render);
+render();
+</script>
+</body></html>
