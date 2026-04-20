@@ -1,89 +1,339 @@
 <!doctype html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8" />
-<title>TrackerMed · Dashboard — 3 variações</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Dashboard · TrackerMed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
 <style>
-  html, body { margin: 0; padding: 0; background: #f0eee9; }
-  * { box-sizing: border-box; }
-</style>
-</head>
-<body>
-<div id="root"></div>
+.greet-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-bottom: 36px; align-items: start; }
+.greet .kicker-sm { font-size: 11px; letter-spacing: 0.2em; color: var(--muted); font-weight: 700; text-transform: uppercase; }
+.greet h1 { font-family: 'Fraunces', serif; font-size: clamp(40px,5vw,64px); font-weight: 500; letter-spacing: -0.035em; line-height: 1; margin-top: 8px; }
+.greet h1 i { color: var(--cobalt); font-style: italic; }
+.greet p { font-size: 16px; color: var(--ink2); margin-top: 12px; max-width: 480px; }
 
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+.countdown-box { background: var(--ink); color: var(--paper); padding: 24px 26px; border-left: 5px solid var(--acid); }
+.countdown-box .lbl { font-size: 10px; letter-spacing: 0.2em; color: var(--acid); font-weight: 700; text-transform: uppercase; }
+.countdown-box .nome-prova { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; margin-top: 4px; }
+.countdown-box .dias { font-family: 'Fraunces', serif; font-size: 88px; font-weight: 500; color: var(--acid); line-height: 1; letter-spacing: -0.04em; margin-top: 8px; }
+.countdown-box .dias span { font-size: 20px; color: rgba(244,241,234,0.6); font-style: italic; margin-left: 6px; }
+.countdown-box .data-prova { font-size: 12px; color: rgba(244,241,234,0.6); margin-top: 8px; letter-spacing: 0.04em; }
+.countdown-box .edit-btn { background: transparent; color: rgba(244,241,234,0.5); border: 1px solid rgba(244,241,234,0.15); padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 14px; letter-spacing: 0.04em; }
+.countdown-box .edit-btn:hover { color: var(--paper); }
 
-<script type="text/babel" src="design-canvas.jsx"></script>
-<script type="text/babel" src="variations/v1-cobalto.jsx"></script>
-<script type="text/babel" src="variations/v2-lima.jsx"></script>
-<script type="text/babel" src="variations/v3-magenta.jsx"></script>
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 40px; }
+.kpi { background: var(--card); border: 1px solid var(--line); padding: 22px 24px; }
+.kpi.dark { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.kpi.acid { background: var(--acid); }
+.kpi .lbl { font-size: 10px; letter-spacing: 0.18em; color: var(--muted); font-weight: 700; text-transform: uppercase; }
+.kpi.dark .lbl { color: var(--acid); }
+.kpi.acid .lbl { color: var(--ink); }
+.kpi .val { font-family: 'Fraunces', serif; font-size: 54px; font-weight: 400; letter-spacing: -0.04em; line-height: 1; margin-top: 12px; color: var(--cobalt); }
+.kpi.dark .val { color: var(--acid); }
+.kpi.acid .val { color: var(--ink); font-style: italic; }
+.kpi .val span { font-size: 20px; color: var(--muted); font-style: normal; }
+.kpi.dark .val span { color: rgba(244,241,234,0.5); }
+.kpi.acid .val span { color: var(--ink2); }
+.kpi .sub { font-size: 13px; color: var(--ink2); margin-top: 10px; }
+.kpi.dark .sub { color: rgba(244,241,234,0.6); }
+.kpi.acid .sub { color: var(--ink2); }
 
-<script type="text/babel">
-function App() {
-  return (
-    <DesignCanvas>
-      <div style={{ padding: '0 60px 40px', maxWidth: 1200 }}>
-        <div style={{ fontFamily: '"Fraunces", serif', fontSize: 44, fontWeight: 600, letterSpacing: -1.5, color: '#2a2418', lineHeight: 1.05 }}>
-          TrackerMed · Dashboard Home
-        </div>
-        <div style={{ fontFamily: '-apple-system, sans-serif', fontSize: 15, color: 'rgba(60,50,40,0.7)', marginTop: 10, maxWidth: 680, lineHeight: 1.5 }}>
-          Três variações do painel de estudo para residência médica. Cada uma leva uma paleta,
-          uma hierarquia tipográfica e um estilo de visualização de dados diferentes — misture
-          e combine os elementos que mais gostar. Arraste para navegar · scroll p/ zoom.
-        </div>
-      </div>
+.col2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; margin-bottom: 40px; }
 
-      <DCSection
-        title="01 · Cobalto Elétrico"
-        subtitle="Editorial serif + cobalto profundo + acento amarelo ácido. Anéis, número grande, tom confiante/clássico."
-      >
-        <DCArtboard label="1280 × 820 · Home" width={1280} height={820}>
-          <V1Dashboard />
-        </DCArtboard>
-        <DCPostIt top={-20} left={1260} rotate={3} width={200}>
-          Sidebar escura destaca a marca. KPI grande com serif <b>Fraunces</b> dá sensação editorial, não genérico.
-        </DCPostIt>
-      </DCSection>
+.box { background: var(--card); border: 1px solid var(--line); padding: 24px 26px; }
+.box h2 { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 500; letter-spacing: -0.02em; }
+.box h2 i { color: var(--cobalt); font-style: italic; }
+.box .sub { font-size: 12px; color: var(--muted); margin-top: 4px; margin-bottom: 18px; }
 
-      <DCSection
-        title="02 · Lima Ácida"
-        subtitle="Dark mode · Space Grotesk + JetBrains Mono · heatmap e barras. Vibe terminal/produtividade, para quem curte data-density."
-      >
-        <DCArtboard label="1280 × 820 · Home (dark)" width={1280} height={820}>
-          <V2Dashboard />
-        </DCArtboard>
-        <DCPostIt top={-20} left={1260} rotate={-2} width={200}>
-          Heatmap 18×7 substitui a tira de streak — mostra <b>padrão</b>, não só última semana. Log com timestamps tipo commit.
-        </DCPostIt>
-      </DCSection>
+.disc-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); gap: 14px; font-size: 13px; }
+.disc-row:last-child { border: none; }
+.disc-row .nm { font-weight: 600; min-width: 130px; flex-shrink: 0; }
+.disc-row .bar-wrap { flex: 1; height: 6px; background: var(--paper); position: relative; overflow: hidden; }
+.disc-row .bar-wrap div { height: 100%; background: var(--cobalt); }
+.disc-row .pct { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--muted); min-width: 42px; text-align: right; }
 
-      <DCSection
-        title="03 · Magenta Cirúrgica"
-        subtitle="Brutalista · IBM Plex Serif + Mono · grid assimétrico com bordas pretas, magenta quente + amarelo. Números gigantes, hierarquia clara."
-      >
-        <DCArtboard label="1280 × 820 · Home" width={1280} height={820}>
-          <V3Dashboard />
-        </DCArtboard>
-        <DCPostIt top={-20} left={1260} rotate={2} width={200}>
-          KPIs em grid assimétrico: tempo de estudo domina, resto se organiza ao redor. Sparklines por disciplina.
-        </DCPostIt>
-      </DCSection>
+.today-list { display: flex; flex-direction: column; gap: 8px; }
+.today-item { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 10px 14px; background: var(--paper); border-left: 3px solid var(--cobalt); font-size: 13px; }
+.today-item.done { opacity: 0.55; background: #E8F5E9; border-left-color: #43A047; }
+.today-item.done .nome { text-decoration: line-through; }
+.today-item .hora { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 12px; color: var(--ink2); min-width: 72px; }
+.today-item .nome { font-weight: 600; }
+.today-item .mins { font-family: 'Fraunces', serif; font-style: italic; color: var(--cobalt); font-size: 16px; font-variant-numeric: tabular-nums; }
+.today-item.done .mins { color: #2E7D32; }
 
-      <div style={{ padding: '20px 60px 40px', fontFamily: '"Inter Tight", sans-serif', fontSize: 13, color: 'rgba(60,50,40,0.6)', maxWidth: 900, lineHeight: 1.6 }}>
-        <b>Eixos de variação:</b> &nbsp;paleta (clara warm · dark terminal · cream brutalista) · tipografia (serif editorial · grotesque+mono · plex serif+mono) · data-viz (anéis + barra horizontal de streak · heatmap + barras · sparklines + grid de streak) · densidade (confortável · alta · média).
-        <br /><br />
-        <b>Próximos passos:</b> me diga qual direção prefere (ou mistura, ex. paleta da 3 com layout da 1) e eu refino em alta fidelidade com os tweaks (tema escuro, densidade, cor de acento) ativáveis.
-      </div>
-    </DesignCanvas>
-  );
+.erros-list { display: flex; flex-direction: column; gap: 10px; }
+.erro-preview { border-left: 3px solid var(--rose); padding: 10px 14px; background: var(--paper); }
+.erro-preview .disc { font-size: 10px; letter-spacing: 0.12em; font-weight: 700; color: var(--rose); text-transform: uppercase; }
+.erro-preview .assunto { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 500; margin-top: 2px; }
+.erro-preview .por-que { font-size: 12px; color: var(--ink2); margin-top: 4px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+.empty-inline { padding: 24px 4px; color: var(--muted); font-size: 13px; font-style: italic; text-align: center; }
+.empty-inline a { color: var(--cobalt); font-weight: 600; font-style: normal; }
+
+.quick-links { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 20px; }
+.quick { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; background: var(--card); border: 1px solid var(--line); transition: all .15s; min-height: 92px; }
+.quick:hover { border-color: var(--ink); transform: translateY(-1px); }
+.quick .qi { font-family: 'Fraunces', serif; font-size: 14px; color: var(--cobalt); font-style: italic; }
+.quick .qt { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 500; letter-spacing: -0.01em; }
+.quick .qs { font-size: 11px; color: var(--muted); margin-top: auto; }
+
+/* Modal edit prova */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(10,19,48,0.55); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.modal-backdrop.open { display: flex; }
+.modal-box { background: #fff; width: 420px; max-width: 100%; padding: 28px; position: relative; border: 1px solid var(--line); }
+.modal-box h2 { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 500; letter-spacing: -0.02em; }
+.modal-box h2 i { color: var(--cobalt); font-style: italic; }
+.mfield { margin-top: 14px; }
+.mfield label { display: block; font-size: 11px; letter-spacing: 0.12em; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 6px; }
+.mfield input { width: 100%; padding: 10px 12px; border: 1px solid var(--line); background: var(--paper); font-size: 14px; font-family: inherit; }
+.mactions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.mbtn-cancel { background: transparent; border: 1px solid var(--line); padding: 10px 18px; font-size: 13px; cursor: pointer; font-family: inherit; }
+.mbtn-save { background: var(--cobalt); color: #fff; border: none; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+
+@media (max-width: 900px) {
+  .greet-row, .col2 { grid-template-columns: 1fr; }
+  .kpi-row, .quick-links { grid-template-columns: 1fr 1fr; }
+}
+</style></head><body>
+<div class="app">
+<aside class="sidebar">
+<div class="logo">Tracker<em>Med</em></div>
+<a href="index.html" class="nav-item">Home</a>
+<a href="planos.html" class="nav-item">Planos</a>
+<a href="disciplinas.html" class="nav-item">Disciplinas</a>
+<a href="plannerstudy.html" class="nav-item">Planejamento</a>
+<a href="revisoes.html" class="nav-item">Revisões</a>
+<a href="historico.html" class="nav-item">Histórico</a>
+<a href="erros.html" class="nav-item">Caderno de erros</a>
+<a href="dashboard.html" class="nav-item active">Dashboard</a>
+<a href="simulados.html" class="nav-item">Simulados</a>
+<div class="sidebar-foot">v0.1 · pessoal</div>
+</aside>
+<main class="main">
+
+<div class="topbar">
+  <div class="crumb">Home <i>›</i> Dashboard</div>
+  <div class="topbar-right"><span class="pill" id="dataHoje">—</span></div>
+</div>
+
+<div class="greet-row">
+  <div class="greet">
+    <div class="kicker-sm" id="saudacao">Oi —</div>
+    <h1>Seu <i>resumo</i> de hoje.</h1>
+    <p>Tudo num lugar só: o que você estudou, o que tá pendente, onde você errou e quanto falta pra prova.</p>
+  </div>
+  <div class="countdown-box">
+    <div class="lbl">Próxima prova</div>
+    <div class="nome-prova" id="provaNome">—</div>
+    <div class="dias"><span id="provaDias">—</span><span id="provaDiasLbl">dias</span></div>
+    <div class="data-prova" id="provaData">—</div>
+    <button class="edit-btn" onclick="abrirProva()">✎ Editar prova</button>
+  </div>
+</div>
+
+<div class="kpi-row">
+  <div class="kpi"><div class="lbl">Estudado hoje</div><div class="val" id="kHoje">0<span>h00</span></div><div class="sub" id="kHojeSub">—</div></div>
+  <div class="kpi dark"><div class="lbl">Streak</div><div class="val" id="kStreak">0</div><div class="sub" id="kStreakSub">dias seguidos</div></div>
+  <div class="kpi"><div class="lbl">Semana</div><div class="val" id="kSemana">0<span>h00</span></div><div class="sub" id="kSemanaSub">—</div></div>
+  <div class="kpi acid"><div class="lbl">Erros pendentes</div><div class="val" id="kErros">0</div><div class="sub" id="kErrosSub">a revisar</div></div>
+</div>
+
+<div class="col2">
+  <div class="box">
+    <h2>Progresso por <i>disciplina</i></h2>
+    <div class="sub">Cobertura do edital por matéria — do que você já estudou.</div>
+    <div id="discList"></div>
+  </div>
+  <div class="box">
+    <h2>Hoje <i>pra você</i></h2>
+    <div class="sub">Sessões planejadas do dia. Início, duração e status.</div>
+    <div id="todayList" class="today-list"></div>
+  </div>
+</div>
+
+<div class="col2">
+  <div class="box">
+    <h2>Erros <i>recentes</i></h2>
+    <div class="sub">Os últimos registros do seu caderno de erros.</div>
+    <div id="errosList" class="erros-list"></div>
+  </div>
+  <div class="box">
+    <h2>Atalhos</h2>
+    <div class="sub">Vá direto pra onde você precisa.</div>
+    <div class="quick-links">
+      <a href="plannerstudy.html" class="quick"><div class="qi">→</div><div class="qt">Planejamento</div><div class="qs">grade semanal</div></a>
+      <a href="historico.html" class="quick"><div class="qi">→</div><div class="qt">Cronômetro</div><div class="qs">iniciar sessão</div></a>
+      <a href="erros.html" class="quick"><div class="qi">→</div><div class="qt">+ Registrar erro</div><div class="qs">caderno</div></a>
+      <a href="disciplinas.html" class="quick"><div class="qi">→</div><div class="qt">Disciplinas</div><div class="qs">cadastros</div></a>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<div class="modal-backdrop" id="provaModal" onclick="if(event.target===this) fecharProva()">
+  <div class="modal-box">
+    <h2>Editar <i>prova</i></h2>
+    <div class="mfield"><label>Nome da prova</label><input type="text" id="pNome" placeholder="ex: USP Residência 2026"/></div>
+    <div class="mfield"><label>Data da prova</label><input type="date" id="pData"/></div>
+    <div class="mactions"><button class="mbtn-cancel" onclick="fecharProva()">Cancelar</button><button class="mbtn-save" onclick="salvarProva()">Salvar</button></div>
+  </div>
+</div>
+
+<script>
+const NOME_KEY = 'trackermed.nome.v1';
+const PROVA_KEY = 'trackermed.prova.v1';
+const DISC_KEY = 'trackermed.disciplinas.v1';
+const PLAN_KEY = 'trackermed.plan.v1';
+const ERR_KEY = 'trackermed.erros.v1';
+
+function loadJSON(k, d) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(d)); } catch { return d; } }
+function parseTime(t) { const [h,m]=t.split(':').map(Number); return h+m/60; }
+function startOfWeek(d) { const x=new Date(d); x.setHours(0,0,0,0); const w=(x.getDay()+6)%7; x.setDate(x.getDate()-w); return x; }
+function weekKey(d) { return startOfWeek(d).toISOString().slice(0,10); }
+function addDays(d,n) { const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function fmtH(m) { const h=Math.floor(m/60), mm=m%60; return `${h}<span>h${String(mm).padStart(2,'0')}</span>`; }
+function esc(s) { return String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function saudacaoHora() {
+  const h = new Date().getHours();
+  if (h < 6) return 'Boa madrugada';
+  if (h < 12) return 'Bom dia';
+  if (h < 18) return 'Boa tarde';
+  return 'Boa noite';
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+function abrirProva() {
+  const p = loadJSON(PROVA_KEY, {});
+  document.getElementById('pNome').value = p.nome || '';
+  document.getElementById('pData').value = p.data || '';
+  document.getElementById('provaModal').classList.add('open');
+}
+function fecharProva() { document.getElementById('provaModal').classList.remove('open'); }
+function salvarProva() {
+  const nome = document.getElementById('pNome').value.trim();
+  const data = document.getElementById('pData').value;
+  localStorage.setItem(PROVA_KEY, JSON.stringify({nome, data}));
+  fecharProva();
+  render();
+}
+
+function render() {
+  const nome = localStorage.getItem(NOME_KEY) || '';
+  const prova = loadJSON(PROVA_KEY, {});
+  const disc = loadJSON(DISC_KEY, []);
+  const plan = loadJSON(PLAN_KEY, {});
+  const erros = loadJSON(ERR_KEY, []);
+  const hoje = new Date();
+  const hojeDia = hoje.getDay();
+  const wk = weekKey(hoje);
+
+  document.getElementById('saudacao').textContent = `${saudacaoHora()}${nome?`, ${nome}`:''} —`;
+  document.getElementById('dataHoje').textContent = hoje.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
+
+  // Prova
+  if (prova.nome && prova.data) {
+    document.getElementById('provaNome').textContent = prova.nome;
+    const diff = Math.ceil((new Date(prova.data) - hoje) / 86400000);
+    document.getElementById('provaDias').textContent = Math.max(0,diff);
+    document.getElementById('provaDiasLbl').textContent = Math.abs(diff) === 1 ? 'dia' : 'dias';
+    document.getElementById('provaData').textContent = new Date(prova.data+'T12:00').toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long', year:'numeric'});
+  } else {
+    document.getElementById('provaNome').textContent = 'Nenhuma prova cadastrada';
+    document.getElementById('provaDias').textContent = '—';
+    document.getElementById('provaDiasLbl').textContent = '';
+    document.getElementById('provaData').textContent = 'Clica em "Editar prova" pra começar';
+  }
+
+  // Blocos de hoje
+  const blocosHoje = (plan[wk]||[]).filter(b => b.dia === hojeDia);
+  const hojeMin = blocosHoje.filter(b=>b.feito).reduce((s,b)=>s+(b.minutos||Math.round((parseTime(b.fim)-parseTime(b.ini))*60)),0);
+  const planMin = blocosHoje.reduce((s,b)=>s+(b.minutos||Math.round((parseTime(b.fim)-parseTime(b.ini))*60)),0);
+  document.getElementById('kHoje').innerHTML = fmtH(hojeMin);
+  document.getElementById('kHojeSub').textContent = blocosHoje.length ? `${blocosHoje.filter(b=>b.feito).length} de ${blocosHoje.length} sessões · ${planMin>0?Math.round(hojeMin/planMin*100):0}% da meta` : 'nada planejado pra hoje';
+
+  // Semana total
+  const semanaMin = (plan[wk]||[]).filter(b=>b.feito).reduce((s,b)=>s+(b.minutos||Math.round((parseTime(b.fim)-parseTime(b.ini))*60)),0);
+  const semanaPlan = (plan[wk]||[]).reduce((s,b)=>s+(b.minutos||Math.round((parseTime(b.fim)-parseTime(b.ini))*60)),0);
+  document.getElementById('kSemana').innerHTML = fmtH(semanaMin);
+  document.getElementById('kSemanaSub').textContent = semanaPlan > 0 ? `${Math.round(semanaMin/semanaPlan*100)}% do plano da semana` : 'sem meta semanal';
+
+  // Streak
+  const diasEstudo = new Set();
+  const todasSemanas = Object.entries(plan);
+  todasSemanas.forEach(([wkS, blocos]) => {
+    const inicioSem = new Date(wkS+'T00:00');
+    blocos.filter(b => b.feito).forEach(b => {
+      const d = addDays(inicioSem, (b.dia + 6) % 7);
+      diasEstudo.add(d.toISOString().slice(0,10));
+    });
+  });
+  let streak = 0;
+  for (let i = 0; i < 365; i++) {
+    const d = addDays(hoje, -i);
+    const key = d.toISOString().slice(0,10);
+    if (diasEstudo.has(key)) streak++;
+    else if (i > 0) break;
+  }
+  document.getElementById('kStreak').textContent = streak;
+  document.getElementById('kStreakSub').textContent = streak === 1 ? 'dia seguido' : 'dias seguidos';
+
+  // Erros
+  const pend = erros.filter(e => !e.revisado).length;
+  document.getElementById('kErros').textContent = pend;
+  document.getElementById('kErrosSub').textContent = erros.length ? `de ${erros.length} registrado${erros.length!==1?'s':''}` : 'nenhum registro';
+
+  // Disciplinas progress
+  const dEl = document.getElementById('discList');
+  if (disc.length === 0) {
+    dEl.innerHTML = `<div class="empty-inline">Nenhuma disciplina cadastrada. <a href="disciplinas.html">Cadastrar agora →</a></div>`;
+  } else {
+    dEl.innerHTML = disc.map(d => {
+      const pct = d.progresso || 0;
+      return `<div class="disc-row">
+        <div class="nm">${esc(d.nome)}</div>
+        <div class="bar-wrap"><div style="width:${pct}%"></div></div>
+        <div class="pct">${pct}%</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Hoje list
+  const tEl = document.getElementById('todayList');
+  if (blocosHoje.length === 0) {
+    tEl.innerHTML = `<div class="empty-inline">Nada planejado pra hoje. <a href="plannerstudy.html">Planejar →</a></div>`;
+  } else {
+    const discById = Object.fromEntries(disc.map(d => [d.id, d]));
+    tEl.innerHTML = blocosHoje.sort((a,b)=>parseTime(a.ini)-parseTime(b.ini)).slice(0,6).map(b => {
+      const d = discById[b.discId];
+      const mins = b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60);
+      const h = Math.floor(mins/60), m = mins%60;
+      return `<div class="today-item ${b.feito?'done':''}">
+        <div class="hora">${b.ini}—${b.fim}</div>
+        <div class="nome">${esc(d?d.nome:'Estudo')}</div>
+        <div class="mins">${h>0?h+'h':''}${String(m).padStart(2,'0')}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Erros recentes
+  const eEl = document.getElementById('errosList');
+  const discById = Object.fromEntries(disc.map(d => [d.id, d]));
+  const recentes = erros.filter(e => !e.revisado).slice(0, 3);
+  if (recentes.length === 0) {
+    eEl.innerHTML = `<div class="empty-inline">${erros.length ? 'Nenhum erro pendente — tudo revisado 🎯' : 'Nenhum erro registrado ainda.'} <a href="erros.html">Abrir caderno →</a></div>`;
+  } else {
+    eEl.innerHTML = recentes.map(e => {
+      const d = discById[e.discId];
+      return `<a href="erros.html" class="erro-preview" style="display:block">
+        <div class="disc">${esc(d?d.nome:'?')}</div>
+        <div class="assunto">${esc(e.assunto)}</div>
+        <div class="por-que">${esc(e.porQue)}</div>
+      </a>`;
+    }).join('');
+  }
+}
+
+render();
 </script>
-</body>
-</html>
+</body></html>
