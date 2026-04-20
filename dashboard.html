@@ -234,10 +234,14 @@ function render() {
   // Prova
   if (prova.nome && prova.data) {
     document.getElementById('provaNome').textContent = prova.nome;
-    const diff = Math.ceil((new Date(prova.data) - hoje) / 86400000);
-    document.getElementById('provaDias').textContent = Math.max(0,diff);
-    document.getElementById('provaDiasLbl').textContent = Math.abs(diff) === 1 ? 'dia' : 'dias';
-    document.getElementById('provaData').textContent = new Date(prova.data+'T12:00').toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long', year:'numeric'});
+    const [py, pm, pd] = prova.data.split('-').map(Number);
+    const examDate = new Date(py, pm-1, pd);
+    const todayDate = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    const diff = Math.round((examDate - todayDate) / 86400000);
+    const diasMostrados = Math.max(0, diff);
+    document.getElementById('provaDias').textContent = diasMostrados;
+    document.getElementById('provaDiasLbl').textContent = diasMostrados === 1 ? 'dia' : 'dias';
+    document.getElementById('provaData').textContent = examDate.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long', year:'numeric'});
   } else {
     document.getElementById('provaNome').textContent = 'Nenhuma prova cadastrada';
     document.getElementById('provaDias').textContent = '—';
@@ -283,17 +287,25 @@ function render() {
   document.getElementById('kErros').textContent = pend;
   document.getElementById('kErrosSub').textContent = erros.length ? `de ${erros.length} registrado${erros.length!==1?'s':''}` : 'nenhum registro';
 
-  // Disciplinas progress
+  // Disciplinas progress — semana atual: minutos feitos / meta semanal
   const dEl = document.getElementById('discList');
   if (disc.length === 0) {
     dEl.innerHTML = `<div class="empty-inline">Nenhuma disciplina cadastrada. <a href="disciplinas.html">Cadastrar agora →</a></div>`;
   } else {
+    const minsPorDisc = {};
+    (plan[wk]||[]).filter(b => b.feito && b.discId).forEach(b => {
+      const m = b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60);
+      minsPorDisc[b.discId] = (minsPorDisc[b.discId]||0) + m;
+    });
     dEl.innerHTML = disc.map(d => {
-      const pct = d.progresso || 0;
+      const metaMin = (d.metaHorasSemana||0) * 60;
+      const feitoMin = minsPorDisc[d.id] || 0;
+      const pct = metaMin > 0 ? Math.min(100, Math.round(feitoMin/metaMin*100)) : 0;
+      const lbl = metaMin > 0 ? `${pct}%` : '—';
       return `<div class="disc-row">
         <div class="nm">${esc(d.nome)}</div>
         <div class="bar-wrap"><div style="width:${pct}%"></div></div>
-        <div class="pct">${pct}%</div>
+        <div class="pct">${lbl}</div>
       </div>`;
     }).join('');
   }
