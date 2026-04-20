@@ -122,16 +122,33 @@
 .avail-setup h3 { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
 .avail-setup h3 i { color: var(--cobalt); font-style: italic; }
 .avail-setup .help { font-size: 12px; color: #70757A; margin-top: 4px; margin-bottom: 14px; }
-.avail-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
-.avail-day { display: flex; flex-direction: column; gap: 4px; }
-.avail-day label { font-size: 10px; letter-spacing: 0.12em; color: #70757A; font-weight: 600; text-transform: uppercase; text-align: center; }
-.avail-day input { width: 100%; padding: 8px 10px; border: 1px solid var(--line); background: var(--paper); font-size: 14px; font-family: inherit; text-align: center; font-variant-numeric: tabular-nums; }
-.avail-day input:focus { outline: none; border-color: var(--cobalt); }
-.avail-day.hoje label { color: var(--cobalt); }
-.avail-total { margin-top: 14px; font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.avail-top { display: grid; grid-template-columns: 200px 1fr; gap: 20px; align-items: start; }
+@media (max-width: 720px) { .avail-top { grid-template-columns: 1fr; } }
+.avail-hours { display: flex; flex-direction: column; gap: 4px; }
+.avail-hours label { font-size: 10px; letter-spacing: 0.12em; color: #70757A; font-weight: 600; text-transform: uppercase; }
+.avail-hours input { width: 100%; padding: 10px 12px; border: 1px solid var(--line); background: var(--paper); font-size: 18px; font-family: 'Fraunces', serif; font-variant-numeric: tabular-nums; }
+.avail-hours input:focus { outline: none; border-color: var(--cobalt); }
+.avail-days { display: flex; flex-direction: column; gap: 4px; }
+.avail-days .d-label { font-size: 10px; letter-spacing: 0.12em; color: #70757A; font-weight: 600; text-transform: uppercase; }
+.avail-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.avail-chip { background: #fff; border: 1px solid #E0E0E0; padding: 8px 14px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; color: #70757A; letter-spacing: 0.04em; text-transform: uppercase; user-select: none; }
+.avail-chip:hover { border-color: var(--ink); color: var(--ink); }
+.avail-chip.active { background: var(--cobalt); color: #fff; border-color: var(--cobalt); }
+.avail-chip.hoje { outline: 2px dashed var(--acid); outline-offset: 2px; }
+.avail-total { margin-top: 14px; font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; padding-top: 12px; border-top: 1px dashed var(--line); }
 .avail-total b { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; margin: 0 4px; }
 .avail-warn { color: var(--rose); font-weight: 600; }
 .avail-ok { color: #2E7D32; font-weight: 600; }
+.prio-breakdown { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.prio-breakdown .pb-row { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: center; padding: 8px 12px; background: var(--paper); border-left: 3px solid var(--cobalt); font-size: 13px; }
+.prio-breakdown .pb-row.muito-alta { border-left-color: var(--rose); }
+.prio-breakdown .pb-row.alta { border-left-color: var(--cobalt); }
+.prio-breakdown .pb-row.media { border-left-color: #C9A200; }
+.prio-breakdown .pb-row.baixa { border-left-color: #9E9E9E; }
+.prio-breakdown .pb-nome { font-weight: 600; }
+.prio-breakdown .pb-prio { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-left: 8px; }
+.prio-breakdown .pb-calc { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.prio-breakdown .pb-tot { font-family: 'Fraunces', serif; font-size: 16px; color: var(--cobalt); font-variant-numeric: tabular-nums; font-weight: 500; }
 </style></head><body>
 <div class="app">
 <aside class="sidebar">
@@ -161,16 +178,26 @@
 <div class="stat-row">
   <div class="stat-card"><div class="lbl">Horas planejadas</div><div class="val" id="statPlan">0<sup>h00m</sup></div><div class="sub" id="statPlanSub">na semana toda</div></div>
   <div class="stat-card"><div class="lbl">Sessões</div><div class="val" id="statSess">0</div><div class="sub" id="statSessSub">0 feitas</div></div>
-  <div class="stat-card"><div class="lbl">Meta semanal</div><div class="val cobalt" id="statMeta">0<sup>h</sup></div><div class="sub" id="statMetaSub">0h faltando</div></div>
+  <div class="stat-card"><div class="lbl">Meta por prioridade</div><div class="val cobalt" id="statMeta">0<sup>h</sup></div><div class="sub" id="statMetaSub">0h faltando</div></div>
   <div class="stat-card dark"><div class="lbl">Provas</div><div class="val" id="statProv">0</div><div class="sub" id="statProvSub">nos próximos 30d</div></div>
 </div>
 
 <div class="avail-setup">
-  <h3>Suas <i>horas</i> por dia</h3>
-  <div class="help">Quantas horas você consegue estudar em cada dia da semana? Usamos isso pra checar se a meta das disciplinas cabe na sua rotina.</div>
-  <div class="avail-grid" id="availGrid"></div>
+  <h3>Suas <i>horas</i> de estudo</h3>
+  <div class="help">Quantas horas por semana você pretende estudar e quais são seus dias livres. Calculamos quanto dar pra cada matéria pela prioridade (muito alta = 60min, alta = 45min, média = 25min, baixa = 15min por dia livre).</div>
+  <div class="avail-top">
+    <div class="avail-hours">
+      <label>Horas por semana</label>
+      <input type="number" id="availHoras" min="0" step="0.5" value="10">
+    </div>
+    <div class="avail-days">
+      <span class="d-label">Dias livres</span>
+      <div class="avail-chips" id="availChips"></div>
+    </div>
+  </div>
+  <div class="prio-breakdown" id="prioBreakdown"></div>
   <div class="avail-total">
-    <span>Total disponível: <b id="availTot">0h</b> por semana</span>
+    <span>Sugerido pela prioridade: <b id="availCalc">0h</b> · Meta semanal: <b id="availTot">0h</b></span>
     <span id="availStatus"></span>
   </div>
 </div>
@@ -209,13 +236,16 @@
 <script>
 const DISC_KEY = 'trackermed.disciplinas.v1';
 const PLAN_KEY = 'trackermed.plan.v1';
-const AVAIL_KEY = 'trackermed.avail.v1';
+const AVAIL_KEY = 'trackermed.avail.v2';
 const DIAS_LBL = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const DIAS_LONG = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 const DIA_IDX = { dom:0, seg:1, ter:2, qua:3, qui:4, sex:5, sab:6 };
 const HORA_INI = 7, HORA_FIM = 23; // 7h → 23h, 16h cobertura
 // Ordem exibida na UI: Seg → Dom (getDay: 1..6, 0)
 const DIAS_ORDEM = [1,2,3,4,5,6,0];
+// Minutos por dia livre conforme prioridade da matéria
+const PRIO_MIN = { 'muito-alta': 60, 'alta': 45, 'media': 25, 'baixa': 15 };
+const PRIO_LBL = { 'muito-alta': 'Muito alta', 'alta': 'Alta', 'media': 'Média', 'baixa': 'Baixa' };
 
 let anchorDate = new Date();
 let editSlot = null;
@@ -224,10 +254,29 @@ function loadDisc() { try { return JSON.parse(localStorage.getItem(DISC_KEY) || 
 function loadPlan() { try { return JSON.parse(localStorage.getItem(PLAN_KEY) || '{}'); } catch { return {}; } }
 function savePlan(p) { localStorage.setItem(PLAN_KEY, JSON.stringify(p)); }
 function loadAvail() {
-  try { const a = JSON.parse(localStorage.getItem(AVAIL_KEY) || 'null'); if (a) return a; } catch {}
-  return { 0:0, 1:2, 2:2, 3:2, 4:2, 5:2, 6:3 };
+  try {
+    const a = JSON.parse(localStorage.getItem(AVAIL_KEY) || 'null');
+    if (a && typeof a.horasSemana === 'number' && Array.isArray(a.diasLivres)) return a;
+  } catch {}
+  // migra legado: soma por-dia -> horasSemana; dias com >0h viram dias livres
+  try {
+    const old = JSON.parse(localStorage.getItem('trackermed.avail.v1') || 'null');
+    if (old) {
+      const diasLivres = []; let tot = 0;
+      Object.entries(old).forEach(([k,v]) => {
+        const n = parseFloat(v) || 0; tot += n;
+        if (n > 0) diasLivres.push(parseInt(k));
+      });
+      return { horasSemana: tot, diasLivres };
+    }
+  } catch {}
+  return { horasSemana: 10, diasLivres: [6, 0] };
 }
 function saveAvail(a) { localStorage.setItem(AVAIL_KEY, JSON.stringify(a)); }
+function metaPrioHoras(d, diasLivresCount) {
+  const m = PRIO_MIN[d.prioridade || 'media'] || 25;
+  return (m * diasLivresCount) / 60;
+}
 function weekKey(d) { const m=startOfWeek(d); return m.toISOString().slice(0,10); }
 function startOfWeek(d) { const x=new Date(d); x.setHours(0,0,0,0); const w=(x.getDay()+6)%7; x.setDate(x.getDate()-w); return x; }
 function uid() { return 'b-'+Date.now()+'-'+Math.random().toString(36).slice(2,6); }
@@ -241,13 +290,14 @@ function mudarSemana(dir) {
   render();
 }
 
-function gerarSugestoes(discList, wkKey, plan) {
-  // Para cada disciplina em-curso: horas meta - horas já agendadas nesta semana
+function gerarSugestoes(discList, wkKey, plan, diasLivresCount) {
+  // Para cada disciplina em-curso: horas sugeridas pela prioridade - horas já agendadas nesta semana
   const blocos = (plan[wkKey] || []);
   const sugestoes = [];
   discList.filter(d => d.status === 'em-curso' || !d.status).forEach(d => {
     const agendado = blocos.filter(b => b.discId === d.id).reduce((s,b) => s + (parseTime(b.fim)-parseTime(b.ini)), 0);
-    const falta = (d.metaHorasSemana || 0) - agendado;
+    const meta = metaPrioHoras(d, diasLivresCount);
+    const falta = meta - agendado;
     if (falta <= 0.1) return;
     // urgência: alguma prova em ≤14 dias?
     const prox = (d.provas || []).map(p => {
@@ -255,10 +305,12 @@ function gerarSugestoes(discList, wkKey, plan) {
       return Math.round((new Date(p.data+'T12:00') - new Date().setHours(0,0,0,0))/86400000);
     }).filter(x => x >= 0).sort((a,b)=>a-b)[0];
     const urgente = prox !== undefined && prox <= 14;
+    const min = PRIO_MIN[d.prioridade || 'media'] || 25;
+    const prioLbl = PRIO_LBL[d.prioridade || 'media'];
     let motivo;
-    if (urgente) motivo = `prova em ${prox}d · priorize`;
-    else if (agendado > 0) motivo = `${agendado.toFixed(1)}h já agendadas · faltam ${falta.toFixed(1)}h pra meta`;
-    else motivo = `meta de ${(d.metaHorasSemana||0).toFixed(1)}h/sem · nada agendado`;
+    if (urgente) motivo = `prova em ${prox}d · priorize · ${prioLbl.toLowerCase()} (${min}min/dia)`;
+    else if (agendado > 0) motivo = `${prioLbl.toLowerCase()} · ${min}min × ${diasLivresCount} dia${diasLivresCount!==1?'s':''} · ${agendado.toFixed(1)}h já agendadas`;
+    else motivo = `${prioLbl.toLowerCase()} · ${min}min × ${diasLivresCount} dia${diasLivresCount!==1?'s':''} livre${diasLivresCount!==1?'s':''}`;
     sugestoes.push({ disc: d, falta, urgente, motivo });
   });
   sugestoes.sort((a,b) => (b.urgente?1:0)-(a.urgente?1:0) || b.falta-a.falta);
@@ -385,34 +437,73 @@ function renderGrade(discList) {
   return `<div class="grade"><div class="grade-head">${head}</div><div class="grade-body" style="min-height:${horas.length*50}px">${body}</div></div>`;
 }
 
-function renderAvail(metaTot) {
+function renderAvail(discList) {
   const avail = loadAvail();
   const hojeDia = new Date().getDay();
-  const grid = document.getElementById('availGrid');
-  grid.innerHTML = DIAS_ORDEM.map(d => `
-    <div class="avail-day ${d===hojeDia?'hoje':''}">
-      <label>${DIAS_LBL[d]}</label>
-      <input type="number" min="0" max="24" step="0.5" data-dia="${d}" value="${avail[d] ?? 0}">
-    </div>`).join('');
-  grid.querySelectorAll('input').forEach(inp => {
-    inp.addEventListener('change', () => {
+  const inp = document.getElementById('availHoras');
+  inp.value = avail.horasSemana;
+  inp.onchange = () => {
+    const a = loadAvail();
+    const v = parseFloat(inp.value);
+    a.horasSemana = isNaN(v) || v < 0 ? 0 : Math.min(168, v);
+    saveAvail(a);
+    render();
+  };
+
+  const chips = document.getElementById('availChips');
+  const livres = new Set(avail.diasLivres || []);
+  chips.innerHTML = DIAS_ORDEM.map(d => `
+    <button type="button" class="avail-chip ${livres.has(d)?'active':''} ${d===hojeDia?'hoje':''}" data-dia="${d}">${DIAS_LBL[d]}</button>
+  `).join('');
+  chips.querySelectorAll('.avail-chip').forEach(b => {
+    b.addEventListener('click', () => {
       const a = loadAvail();
-      const v = parseFloat(inp.value);
-      a[inp.dataset.dia] = isNaN(v) || v < 0 ? 0 : Math.min(24, v);
+      const dia = parseInt(b.dataset.dia);
+      const s = new Set(a.diasLivres || []);
+      if (s.has(dia)) s.delete(dia); else s.add(dia);
+      a.diasLivres = [...s];
       saveAvail(a);
       render();
     });
   });
-  const total = DIAS_ORDEM.reduce((s,d) => s + (parseFloat(avail[d]) || 0), 0);
-  document.getElementById('availTot').textContent = `${total.toFixed(1)}h`;
-  const status = document.getElementById('availStatus');
-  if (metaTot <= 0) {
-    status.innerHTML = '';
-  } else if (total + 0.05 < metaTot) {
-    status.innerHTML = `<span class="avail-warn">Meta de ${metaTot.toFixed(1)}h não cabe · faltam ${(metaTot-total).toFixed(1)}h</span>`;
+
+  const diasLivresCount = (avail.diasLivres || []).length;
+  const alvo = discList.filter(d => d.status === 'em-curso' || !d.status);
+  const breakdown = document.getElementById('prioBreakdown');
+  if (alvo.length === 0) {
+    breakdown.innerHTML = '';
   } else {
-    status.innerHTML = `<span class="avail-ok">Cabe a meta de ${metaTot.toFixed(1)}h · sobram ${(total-metaTot).toFixed(1)}h</span>`;
+    breakdown.innerHTML = alvo.map(d => {
+      const prio = d.prioridade || 'media';
+      const min = PRIO_MIN[prio] || 25;
+      const horas = metaPrioHoras(d, diasLivresCount);
+      const hH = Math.floor(horas), hM = Math.round((horas-hH)*60);
+      const totStr = diasLivresCount === 0 ? '—' : (hH>0?`${hH}h${hM?String(hM).padStart(2,'0'):''}`:`${hM}min`);
+      return `<div class="pb-row ${prio}">
+        <div><span class="pb-nome">${d.nome || 'Sem nome'}</span><span class="pb-prio">${PRIO_LBL[prio]}</span></div>
+        <div class="pb-calc">${min}min × ${diasLivresCount} dia${diasLivresCount!==1?'s':''} livre${diasLivresCount!==1?'s':''}</div>
+        <div class="pb-tot">${totStr}</div>
+      </div>`;
+    }).join('');
   }
+
+  const calcTot = alvo.reduce((s,d) => s + metaPrioHoras(d, diasLivresCount), 0);
+  const metaTot = avail.horasSemana || 0;
+  document.getElementById('availCalc').textContent = `${calcTot.toFixed(1)}h`;
+  document.getElementById('availTot').textContent = `${metaTot.toFixed(1)}h`;
+  const status = document.getElementById('availStatus');
+  if (metaTot <= 0 && calcTot <= 0) {
+    status.innerHTML = '';
+  } else if (diasLivresCount === 0) {
+    status.innerHTML = `<span class="avail-warn">Selecione pelo menos um dia livre</span>`;
+  } else if (metaTot <= 0) {
+    status.innerHTML = `<span class="avail-warn">Defina suas horas por semana</span>`;
+  } else if (calcTot > metaTot + 0.05) {
+    status.innerHTML = `<span class="avail-warn">Sugestão passa ${(calcTot-metaTot).toFixed(1)}h da meta</span>`;
+  } else {
+    status.innerHTML = `<span class="avail-ok">Cabe na meta · sobram ${(metaTot-calcTot).toFixed(1)}h pra folga</span>`;
+  }
+  return { diasLivresCount, calcTot, metaTot };
 }
 
 function render() {
@@ -428,8 +519,7 @@ function render() {
   discList.forEach(d => (d.aulas||[]).forEach(a => {
     if (a.inicio && a.fim) aulasTot += parseTime(a.fim) - parseTime(a.inicio);
   }));
-  const metaTot = discList.filter(d => d.status === 'em-curso' || !d.status).reduce((s,d) => s + (d.metaHorasSemana||0), 0);
-  renderAvail(metaTot);
+  const { diasLivresCount, calcTot, metaTot } = renderAvail(discList);
   const blocos = plan[wk] || [];
   const feitoTot = blocos.filter(b => b.feito).reduce((s,b) => s + (parseTime(b.fim) - parseTime(b.ini)), 0);
   const estudoPlan = blocos.reduce((s,b) => s + (parseTime(b.fim) - parseTime(b.ini)), 0);
@@ -439,9 +529,13 @@ function render() {
   document.getElementById('statPlanSub').textContent = `${aulasTot.toFixed(1)}h aula + ${estudoPlan.toFixed(1)}h estudo`;
   document.getElementById('statSess').textContent = blocos.length;
   document.getElementById('statSessSub').textContent = `${blocos.filter(b=>b.feito).length} feitas · ${feitoTot.toFixed(1)}h`;
-  document.getElementById('statMeta').innerHTML = `${metaTot.toFixed(0)}<sup>h</sup>`;
-  const falta = Math.max(0, metaTot - estudoPlan);
-  document.getElementById('statMetaSub').textContent = falta < 0.1 ? 'meta batida ✓' : `${falta.toFixed(1)}h faltando`;
+  document.getElementById('statMeta').innerHTML = `${calcTot.toFixed(1)}<sup>h</sup>`;
+  document.getElementById('statMetaSub').textContent = diasLivresCount === 0
+    ? 'selecione dias livres'
+    : (() => {
+      const falta = Math.max(0, calcTot - estudoPlan);
+      return falta < 0.1 ? 'meta batida ✓' : `${falta.toFixed(1)}h faltando`;
+    })();
   let nProvas = 0, menorDias = null;
   discList.forEach(d => (d.provas||[]).forEach(p => {
     if (!p.data) return;
@@ -463,7 +557,7 @@ function render() {
   }
 
   // Sugestões
-  const sugestoes = gerarSugestoes(discList, wk, plan);
+  const sugestoes = gerarSugestoes(discList, wk, plan, diasLivresCount);
   const sugHtml = sugestoes.length === 0
     ? `<div class="sugestoes"><h3>Meta da semana <i>batida</i> 🎉</h3><div class="help">Todas as horas de estudo já estão agendadas. Dá pra estudar além da meta se quiser — adiciona blocos direto na grade.</div></div>`
     : `<div class="sugestoes">

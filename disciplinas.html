@@ -142,6 +142,15 @@
           <option value="trancada">Trancada</option>
         </select></div>
       </div>
+      <div class="mfield row2">
+        <div><label>Prioridade</label><select id="dPrioridade">
+          <option value="muito-alta">Muito alta (60 min/dia)</option>
+          <option value="alta">Alta (45 min/dia)</option>
+          <option value="media" selected>Média (25 min/dia)</option>
+          <option value="baixa">Baixa (15 min/dia)</option>
+        </select></div>
+        <div></div>
+      </div>
 
       <div class="section-group">
         <h4>📚 Horários das aulas</h4>
@@ -224,6 +233,7 @@ function abrirNova() {
   document.getElementById('aulasList').innerHTML = '';
   document.getElementById('provasList').innerHTML = '';
   document.getElementById('dMetaHoras').value = 5;
+  document.getElementById('dPrioridade').value = 'media';
   addAula();
   addProva();
   document.getElementById('newDiscModal').classList.add('open');
@@ -241,6 +251,7 @@ function abrirEdit(id) {
   document.getElementById('dCodigo').value = d.codigo || '';
   document.getElementById('dProf').value = d.prof || '';
   document.getElementById('dStatus').value = d.status || 'em-curso';
+  document.getElementById('dPrioridade').value = d.prioridade || 'media';
   document.getElementById('dMetaHoras').value = d.metaHorasSemana || 0;
   document.getElementById('aulasList').innerHTML = '';
   document.getElementById('provasList').innerHTML = '';
@@ -289,6 +300,7 @@ function salvar() {
     codigo: document.getElementById('dCodigo').value.trim(),
     prof: document.getElementById('dProf').value.trim(),
     status: document.getElementById('dStatus').value,
+    prioridade: document.getElementById('dPrioridade').value,
     metaHorasSemana: parseFloat(document.getElementById('dMetaHoras').value) || 0,
     aulas, provas
   };
@@ -311,6 +323,12 @@ function STATUS_CHIP(s) {
   const m = {'em-curso':['cobalt','em curso'],'planejada':['ghost','planejada'],'concluida':['mint','concluída'],'trancada':['rose','trancada']};
   const [c,l] = m[s] || ['ghost', s];
   return `<span class="tag ${c}">${esc(l)}</span>`;
+}
+function PRIO_CHIP(p) {
+  const m = {'muito-alta':['rose','muito alta'],'alta':['cobalt','alta'],'media':['ghost','média'],'baixa':['mint','baixa']};
+  const key = p || 'media';
+  const [c,l] = m[key] || ['ghost','média'];
+  return `<span class="tag ${c}" title="Prioridade">${esc(l)}</span>`;
 }
 function horasDaAula(a) {
   if(!a.inicio || !a.fim) return 0;
@@ -370,7 +388,10 @@ function render() {
           <h3>${esc(d.nome)}</h3>
           ${d.prof ? `<div class="prof">${esc(d.prof)}</div>`:''}
         </div>
-        ${STATUS_CHIP(d.status)}
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+          ${STATUS_CHIP(d.status)}
+          ${PRIO_CHIP(d.prioridade)}
+        </div>
       </div>
       <div class="aulas">${aulas}</div>
       <div>
