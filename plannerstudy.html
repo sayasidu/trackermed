@@ -127,6 +127,7 @@
 <a href="plannerstudy.html" class="nav-item active">Planejamento</a>
 <a href="revisoes.html" class="nav-item">Revisões</a>
 <a href="historico.html" class="nav-item">Histórico</a>
+<a href="erros.html" class="nav-item">Caderno de erros</a>
 <a href="dashboard.html" class="nav-item">Estatísticas</a>
 <a href="simulados.html" class="nav-item">Simulados</a>
 <div class="sidebar-foot">v0.1 · pessoal</div>
@@ -149,26 +150,10 @@
   <div class="stat-card dark"><div class="lbl">Provas</div><div class="val" id="statProv">0</div><div class="sub" id="statProvSub">nos próximos 30d</div></div>
 </div>
 
-<div id="sessoesSetup"></div>
 <div id="sugContainer"></div>
 <div id="gradeContainer"></div>
 <div class="legenda"><span class="a"><b></b>Aula</span><span class="e"><b></b>Estudo</span><span class="d"><b></b>Feito</span><span>(clica num bloco pra marcar ✓ · clique-direito apaga)</span></div>
 </main></div>
-
-<!-- Timer float -->
-<div class="timer-float" id="timerFloat">
-  <button class="t-close" onclick="timerClose()">×</button>
-  <div class="t-label">Foco ativo</div>
-  <div class="t-disc" id="tDisc">—</div>
-  <div class="t-clock" id="tClock">25:00</div>
-  <div class="t-actions">
-    <button id="tPlayBtn" onclick="timerToggle()">Iniciar</button>
-    <button onclick="timerReset()">Resetar</button>
-    <button class="primary" onclick="timerFinish()">Concluir</button>
-  </div>
-</div>
-
-<audio id="beep" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA="></audio>
 
 <!-- Modal adicionar bloco de estudo -->
 <div class="modal-backdrop" id="addModal" onclick="if(event.target===this) fecharAdd()">
@@ -213,107 +198,6 @@ function uid() { return 'b-'+Date.now()+'-'+Math.random().toString(36).slice(2,6
 function parseTime(t) { const [h,m]=t.split(':').map(Number); return h+m/60; }
 function fmtDate(d) { return d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0'); }
 function addDays(d,n) { const x=new Date(d); x.setDate(x.getDate()+n); return x; }
-
-const SESS_KEY = 'trackermed.sess.v1'; // { [discId]: mins }
-
-function loadSess() { try { return JSON.parse(localStorage.getItem(SESS_KEY) || '{}'); } catch { return {}; } }
-function saveSess(s) { localStorage.setItem(SESS_KEY, JSON.stringify(s)); }
-function setMins(discId, m) { const s = loadSess(); s[discId] = m; saveSess(s); renderSessoes(); }
-
-// Timer
-let timerState = { discId: null, discNome: '', totalSec: 0, leftSec: 0, running: false, intervalId: null };
-function timerOpen(discId, discNome, mins) {
-  timerState = { discId, discNome, totalSec: mins*60, leftSec: mins*60, running: false, intervalId: null };
-  document.getElementById('tDisc').textContent = discNome;
-  updateClock();
-  document.getElementById('tPlayBtn').textContent = 'Iniciar';
-  document.getElementById('timerFloat').classList.add('open');
-}
-function timerClose() { if (timerState.intervalId) clearInterval(timerState.intervalId); document.getElementById('timerFloat').classList.remove('open'); timerState.running=false; }
-function updateClock() {
-  const m = Math.floor(timerState.leftSec/60), s = timerState.leftSec%60;
-  document.getElementById('tClock').textContent = String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
-}
-function timerToggle() {
-  if (!timerState.running) {
-    timerState.running = true;
-    document.getElementById('tPlayBtn').textContent = 'Pausar';
-    timerState.intervalId = setInterval(() => {
-      timerState.leftSec--;
-      updateClock();
-      if (timerState.leftSec <= 0) {
-        clearInterval(timerState.intervalId);
-        timerState.running = false;
-        try { document.getElementById('beep').play(); } catch(e){}
-        timerFinish(true);
-      }
-    }, 1000);
-  } else {
-    clearInterval(timerState.intervalId);
-    timerState.running = false;
-    document.getElementById('tPlayBtn').textContent = 'Retomar';
-  }
-}
-function timerReset() { clearInterval(timerState.intervalId); timerState.running=false; timerState.leftSec = timerState.totalSec; updateClock(); document.getElementById('tPlayBtn').textContent='Iniciar'; }
-function timerFinish(auto) {
-  clearInterval(timerState.intervalId);
-  timerState.running = false;
-  // Registrar sessão concluída na semana corrente
-  const studied = Math.round((timerState.totalSec - timerState.leftSec)/60);
-  if (studied < 1) { timerClose(); return; }
-  const plan = loadPlan();
-  const wk = weekKey(new Date());
-  if (!plan[wk]) plan[wk] = [];
-  const now = new Date();
-  const startH = now.getHours() + (now.getMinutes() - studied)/60;
-  const endH = now.getHours() + now.getMinutes()/60;
-  const toHHMM = (x) => {
-    const h = Math.max(0, Math.floor(x)), m = Math.max(0, Math.round((x-h)*60));
-    return String(h).padStart(2,'0')+':'+String(Math.min(59,m)).padStart(2,'0');
-  };
-  plan[wk].push({
-    id: uid(),
-    tipo: 'estudo',
-    discId: timerState.discId,
-    dia: now.getDay(),
-    ini: toHHMM(Math.max(0,startH)),
-    fim: toHHMM(endH),
-    feito: true,
-    fromTimer: true,
-    minutos: studied
-  });
-  savePlan(plan);
-  if (auto) alert(`Sessão de ${Math.round(timerState.totalSec/60)}min concluída! 🎉\nRegistrada no planejamento.`);
-  timerClose();
-  render();
-}
-
-function renderSessoes() {
-  const discList = loadDisc().filter(d => d.status === 'em-curso' || !d.status);
-  const sess = loadSess();
-  const cont = document.getElementById('sessoesSetup');
-  if (discList.length === 0) { cont.innerHTML = ''; return; }
-  const opts = [25, 30, 45, 60];
-  cont.innerHTML = `<div class="sessoes-setup">
-    <h3>Sessões <i>por disciplina</i></h3>
-    <div class="help">Escolhe o tempo de foco ideal pra cada matéria. O cronômetro registra no planejamento automaticamente quando termina.</div>
-    <div class="sess-list">
-      ${discList.map(d => {
-        const chosen = sess[d.id] || 25;
-        return `<div class="sess-row">
-          <div>
-            <div class="nome">${d.nome}</div>
-            <div class="meta-info">meta ${(d.metaHorasSemana||0).toFixed(1)}h/sem · sessão de ${chosen}min</div>
-          </div>
-          <div class="mins-picker">
-            ${opts.map(m => `<button class="${m===chosen?'active':''}" onclick="setMins('${d.id}', ${m})">${m}</button>`).join('')}
-          </div>
-          <button class="timer-btn" onclick="timerOpen('${d.id}', ${JSON.stringify(d.nome).replace(/"/g,'&quot;')}, ${chosen})"><span class="play-ico">▶</span> ${chosen}min</button>
-        </div>`;
-      }).join('')}
-    </div>
-  </div>`;
-}
 
 function mudarSemana(dir) {
   if (dir === 0) anchorDate = new Date();
@@ -529,7 +413,6 @@ function render() {
           </div>`).join('')}
         </div>
       </div>`;
-  renderSessoes();
   document.getElementById('sugContainer').innerHTML = sugHtml;
   document.getElementById('gradeContainer').innerHTML = renderGrade(discList);
 }
