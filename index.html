@@ -143,7 +143,7 @@
       </div>
     </div>
 
-    <div class="hero-preview" role="img" aria-label="Preview do dashboard">
+    <div class="hero-preview" role="group" aria-label="Preview do dashboard">
       <div class="mini-card">
         <div class="mini-label">TEMPO DE ESTUDO</div>
         <div class="mini-num">40h<span>45m</span></div>
@@ -200,7 +200,7 @@
       <a href="erros.html" class="qcard">
         <div class="qn">06</div>
         <h3>Caderno de erros</h3>
-        <p>Questões que erraram você. O material mais denso pra revisar.</p>
+        <p>Questões que você errou. O material mais denso pra revisar.</p>
       </a>
       <a href="planos.html" class="qcard">
         <div class="qn">07</div>
@@ -223,8 +223,18 @@
 <script>
   const NOME_KEY = 'trackermed.nome.v1';
 
+  function lerNome() {
+    try { return localStorage.getItem(NOME_KEY); } catch (_) { return null; }
+  }
+  function salvarNome(nome) {
+    try { localStorage.setItem(NOME_KEY, nome); } catch (_) {}
+  }
+  function apagarNome() {
+    try { localStorage.removeItem(NOME_KEY); } catch (_) {}
+  }
+
   function init() {
-    const nome = localStorage.getItem(NOME_KEY);
+    const nome = lerNome();
     if (nome) {
       document.getElementById('accessLabel').textContent = 'Meu painel';
       document.getElementById('accessForm').style.display = 'none';
@@ -238,17 +248,18 @@
     e.preventDefault();
     const nome = document.getElementById('nomeInput').value.trim();
     if (!nome) return;
-    localStorage.setItem(NOME_KEY, nome);
+    salvarNome(nome);
     location.href = 'dashboard.html';
   }
 
   function trocarNome() {
     if (!confirm('Trocar o nome salvo?')) return;
-    localStorage.removeItem(NOME_KEY);
+    apagarNome();
     document.getElementById('accessLabel').textContent = 'Entrar no meu painel';
     document.getElementById('accessForm').style.display = 'flex';
     document.getElementById('accessHint').style.display = 'block';
     document.getElementById('welcomeBack').classList.remove('show');
+    document.getElementById('nomeInput').value = '';
     document.getElementById('nomeInput').focus();
   }
 
