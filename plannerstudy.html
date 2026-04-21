@@ -141,6 +141,13 @@
 .calendario-semanal .cs-cell { padding: 12px 8px; text-align: center; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #70757A; font-weight: 600; border-right: 1px solid #F1F1F1; }
 .calendario-semanal .cs-cell:last-child { border-right: none; }
 .calendario-semanal .cs-corner { background: var(--paper); }
+.calendario-semanal .cs-body { background: #fff; }
+.calendario-semanal .cs-row { display: grid; grid-template-columns: 60px repeat(7, 1fr); height: 20px; border-bottom: 1px solid #F1F1F1; }
+.calendario-semanal .cs-row.cs-meia { border-bottom-style: dashed; border-bottom-color: #F5F5F5; }
+.calendario-semanal .cs-row:last-child { border-bottom: none; }
+.calendario-semanal .cs-time { font-size: 10px; color: #70757A; padding: 0 8px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; display: flex; align-items: center; justify-content: flex-end; background: var(--paper); border-right: 1px solid #E0E0E0; }
+.calendario-semanal .cs-slot { border-right: 1px solid #F1F1F1; }
+.calendario-semanal .cs-slot:last-child { border-right: none; }
 
 .avail-setup { background: #fff; border: 1px solid #E0E0E0; padding: 20px 24px; margin-bottom: 20px; }
 .avail-setup h3 { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
@@ -275,6 +282,7 @@
     <div class="cs-cell">Sáb</div>
     <div class="cs-cell">Dom</div>
   </div>
+  <div class="cs-body" id="csBody"></div>
 </div>
 
 <div class="avail-setup">
@@ -1057,7 +1065,23 @@ function render() {
   renderHistPanel();
 }
 
+function renderCsBody() {
+  const body = document.getElementById('csBody');
+  if (!body) return;
+  const rows = [];
+  for (let minutes = 6*60; minutes <= 23*60; minutes += 30) {
+    const h = Math.floor(minutes/60), m = minutes % 60;
+    const label = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+    rows.push(`<div class="cs-row ${m === 30 ? 'cs-meia' : ''}">`
+      + `<div class="cs-time">${label}</div>`
+      + '<div class="cs-slot"></div>'.repeat(7)
+      + '</div>');
+  }
+  body.innerHTML = rows.join('');
+}
+
 renderDisp();
+renderCsBody();
 render();
 </script>
 </body></html>
