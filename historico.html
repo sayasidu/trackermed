@@ -36,6 +36,18 @@
 .blk-item.done .play-btn { display: none; }
 .blk-item .del-btn { background: transparent; border: none; color: #bbb; font-size: 16px; cursor: pointer; padding: 6px; }
 .blk-item .del-btn:hover { color: var(--rose); }
+.blk-item .mins-wrap { display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end; }
+.blk-item .edit-btn { background: transparent; border: none; color: #b5b5b5; font-size: 13px; cursor: pointer; padding: 2px 4px; line-height: 1; }
+.blk-item .edit-btn:hover { color: var(--cobalt); }
+.blk-item.done .edit-btn { display: none; }
+
+.dur-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+.dur-btn { background: var(--paper); border: 1px solid #E0E0E0; padding: 16px 8px; font-family: 'Fraunces', serif; font-size: 22px; cursor: pointer; font-style: italic; color: var(--cobalt); font-variant-numeric: tabular-nums; transition: all 0.12s; }
+.dur-btn:hover { background: var(--cobalt); color: #fff; border-color: var(--cobalt); }
+.dur-custom { display: flex; gap: 8px; align-items: center; }
+.dur-custom input { flex: 1; padding: 10px 12px; border: 1px solid #E0E0E0; background: var(--paper); font-size: 14px; font-family: inherit; }
+.dur-custom button { background: var(--ink); color: var(--paper); border: none; padding: 10px 18px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; letter-spacing: 0.04em; text-transform: uppercase; }
+.dur-custom button:hover { background: var(--cobalt); }
 
 .extra-btn { background: var(--ink); color: var(--paper); border: none; padding: 11px 20px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; letter-spacing: 0.02em; }
 .extra-btn:hover { background: var(--cobalt); }
@@ -141,6 +153,28 @@
     <button id="tPlayBtn" onclick="timerToggle()">Iniciar</button>
     <button onclick="timerReset()">Resetar</button>
     <button class="primary" onclick="timerFinish()">Concluir</button>
+  </div>
+</div>
+
+<!-- Modal escolha de duração (play / edit) -->
+<div class="modal-backdrop" id="durModal" onclick="if(event.target===this) fecharDur()">
+  <div class="modal-box" style="width:440px">
+    <button class="mbtn-close" onclick="fecharDur()">×</button>
+    <h2 id="durTitulo">Duração</h2>
+    <div class="modal-sub" id="durSub">—</div>
+    <div class="dur-grid">
+      <button type="button" class="dur-btn" onclick="escolherDur(25)">25min</button>
+      <button type="button" class="dur-btn" onclick="escolherDur(30)">30min</button>
+      <button type="button" class="dur-btn" onclick="escolherDur(45)">45min</button>
+      <button type="button" class="dur-btn" onclick="escolherDur(60)">60min</button>
+    </div>
+    <div class="mfield" id="durCustomWrap" style="display:none">
+      <label>Outro valor (em minutos)</label>
+      <div class="dur-custom">
+        <input type="number" id="durCustom" min="1" max="360" placeholder="ex: 90">
+        <button type="button" onclick="escolherDurCustom()">Aplicar</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -405,6 +439,60 @@ function salvarExtraTimer() {
   timerOpen(discId, disc.nome, mins, null, { fromModal: true, revisar });
 }
 
+// Modal duração (escolher antes do play, ou editar duração planejada)
+let durCtx = null;
+function abrirPlayDuracao(discId, discNome, blocoId) {
+  durCtx = { modo: 'play', discId, discNome, blocoId };
+  document.getElementById('durTitulo').innerHTML = 'Iniciar <i>cronômetro</i>';
+  document.getElementById('durSub').textContent = `Quanto tempo pra "${discNome}"?`;
+  document.getElementById('durCustomWrap').style.display = 'none';
+  document.getElementById('durModal').classList.add('open');
+}
+function abrirEditarDuracao(wk, blocoId, discNome, minsAtual) {
+  durCtx = { modo: 'edit', wk, blocoId, discNome };
+  document.getElementById('durTitulo').innerHTML = 'Editar <i>duração</i>';
+  document.getElementById('durSub').textContent = `"${discNome}" — atual: ${fmtHrange(minsAtual)}`;
+  document.getElementById('durCustom').value = minsAtual;
+  document.getElementById('durCustomWrap').style.display = '';
+  document.getElementById('durModal').classList.add('open');
+}
+function fecharDur() { document.getElementById('durModal').classList.remove('open'); durCtx = null; }
+function escolherDur(mins) {
+  if (!durCtx) return;
+  if (durCtx.modo === 'play') {
+    const { discId, discNome, blocoId } = durCtx;
+    fecharDur();
+    timerOpen(discId, discNome, mins, blocoId);
+  } else {
+    aplicarEdicaoDuracao(mins);
+  }
+}
+function escolherDurCustom() {
+  const v = parseInt(document.getElementById('durCustom').value);
+  if (!v || v < 1) { alert('Informe um número de minutos válido.'); return; }
+  if (!durCtx) return;
+  if (durCtx.modo === 'play') {
+    const { discId, discNome, blocoId } = durCtx;
+    fecharDur();
+    timerOpen(discId, discNome, v, blocoId);
+  } else {
+    aplicarEdicaoDuracao(v);
+  }
+}
+function aplicarEdicaoDuracao(mins) {
+  const { wk, blocoId } = durCtx;
+  const plan = loadPlan();
+  plan[wk] = (plan[wk]||[]).map(b => {
+    if (b.id !== blocoId) return b;
+    const iniH = parseTime(b.ini);
+    const fimH = Math.min(24, iniH + mins/60);
+    return { ...b, minutos: mins, fim: toHHMM(fimH) };
+  });
+  savePlan(plan);
+  fecharDur();
+  render();
+}
+
 function render() {
   const disc = loadDisc();
   const plan = loadPlan();
@@ -473,13 +561,14 @@ function render() {
     blocosHoje.sort((a,b)=>parseTime(a.ini)-parseTime(b.ini)).forEach(b => {
       const d = disc.find(x=>x.id===b.discId);
       const mins = b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60);
-      const sessMins = sess[b.discId] || 25;
       const discNome = d ? d.nome : 'Estudo';
+      const discNomeAttr = JSON.stringify(discNome).replace(/"/g,'&quot;');
+      const editBtn = b.feito ? '' : `<button class="edit-btn" onclick="abrirEditarDuracao('${wk}','${b.id}', ${discNomeAttr}, ${mins})" title="Editar duração">✎</button>`;
       itens.push(`<div class="blk-item ${b.feito?'done':''}">
         <div class="horario">${b.ini}—${b.fim}</div>
         <div><div class="nome">${b.extra?'✦ ':''}${discNome}</div><div class="motivo">${b.feito?'concluído':'planejado'}${b.extra?' · extra':''}</div></div>
-        <div class="mins">${fmtHrange(mins)}</div>
-        <button class="play-btn" onclick="timerOpen('${b.discId}', ${JSON.stringify(discNome).replace(/"/g,'&quot;')}, ${sessMins}, '${b.id}')" title="Iniciar cronômetro">▶</button>
+        <div class="mins"><span class="mins-wrap">${fmtHrange(mins)}${editBtn}</span></div>
+        <button class="play-btn" onclick="abrirPlayDuracao('${b.discId}', ${discNomeAttr}, '${b.id}')" title="Iniciar cronômetro">▶</button>
         <button class="check-btn" onclick="toggleFeito('${wk}', '${b.id}')" title="Alternar concluído">${b.feito?'✓':'○'}</button>
       </div>`);
     });
