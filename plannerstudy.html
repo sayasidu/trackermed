@@ -136,44 +136,10 @@
 .disp-sugerir { background: var(--ink); color: var(--paper); border: none; padding: 10px 18px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; letter-spacing: 0.06em; text-transform: uppercase; }
 .disp-sugerir:hover { background: var(--cobalt); }
 
-.calendario-semanal { background: #fff; border: 1px solid #E0E0E0; margin-bottom: 20px; }
-.calendario-semanal .cs-header { display: grid; grid-template-columns: 60px repeat(7, 1fr); border-bottom: 1px solid #E0E0E0; }
-.calendario-semanal .cs-cell { padding: 12px 8px; text-align: center; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #70757A; font-weight: 600; border-right: 1px solid #F1F1F1; }
-.calendario-semanal .cs-cell:last-child { border-right: none; }
-.calendario-semanal .cs-corner { background: var(--paper); }
-.calendario-semanal .cs-body { background: #fff; }
-.calendario-semanal .cs-row { display: grid; grid-template-columns: 60px repeat(7, 1fr); height: 20px; border-bottom: 1px solid #F1F1F1; }
-.calendario-semanal .cs-row.cs-meia { border-bottom-style: dashed; border-bottom-color: #F5F5F5; }
-.calendario-semanal .cs-row:last-child { border-bottom: none; }
-.calendario-semanal .cs-time { font-size: 10px; color: #70757A; padding: 0 8px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; display: flex; align-items: center; justify-content: flex-end; background: var(--paper); border-right: 1px solid #E0E0E0; }
-.calendario-semanal .cs-slot { border-right: 1px solid #F1F1F1; }
-.calendario-semanal .cs-slot:last-child { border-right: none; }
-.calendario-semanal .cs-capbar { display: grid; grid-template-columns: 60px repeat(7, 1fr); border-bottom: 1px solid #E0E0E0; background: var(--paper); }
-.calendario-semanal .cs-capbar .cap-cell { padding: 6px 8px; text-align: center; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--ink2); border-right: 1px solid #F1F1F1; font-weight: 600; letter-spacing: 0.02em; }
-.calendario-semanal .cs-capbar .cap-cell:last-child { border-right: none; }
-.calendario-semanal .cs-capbar .cap-corner { background: var(--paper); }
-
-.avail-setup { background: #fff; border: 1px solid #E0E0E0; padding: 20px 24px; margin-bottom: 20px; }
-.avail-setup h3 { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
-.avail-setup h3 i { color: var(--cobalt); font-style: italic; }
-.avail-setup .help { font-size: 12px; color: #70757A; margin-top: 4px; margin-bottom: 14px; }
-.avail-top { display: grid; grid-template-columns: 200px 1fr; gap: 20px; align-items: start; }
-@media (max-width: 720px) { .avail-top { grid-template-columns: 1fr; } }
-.avail-hours { display: flex; flex-direction: column; gap: 4px; }
-.avail-hours label { font-size: 10px; letter-spacing: 0.12em; color: #70757A; font-weight: 600; text-transform: uppercase; }
-.avail-hours input { width: 100%; padding: 10px 12px; border: 1px solid var(--line); background: var(--paper); font-size: 18px; font-family: 'Fraunces', serif; font-variant-numeric: tabular-nums; }
-.avail-hours input:focus { outline: none; border-color: var(--cobalt); }
-.avail-days { display: flex; flex-direction: column; gap: 4px; }
-.avail-days .d-label { font-size: 10px; letter-spacing: 0.12em; color: #70757A; font-weight: 600; text-transform: uppercase; }
-.avail-chips { display: flex; gap: 6px; flex-wrap: wrap; }
-.avail-chip { background: #fff; border: 1px solid #E0E0E0; padding: 8px 14px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; color: #70757A; letter-spacing: 0.04em; text-transform: uppercase; user-select: none; }
-.avail-chip:hover { border-color: var(--ink); color: var(--ink); }
-.avail-chip.active { background: var(--cobalt); color: #fff; border-color: var(--cobalt); }
-.avail-chip.hoje { outline: 2px dashed var(--acid); outline-offset: 2px; }
-.avail-total { margin-top: 14px; font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; padding-top: 12px; border-top: 1px dashed var(--line); }
-.avail-total b { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; margin: 0 4px; }
-.avail-warn { color: var(--rose); font-weight: 600; }
-.avail-ok { color: #2E7D32; font-weight: 600; }
+.disp-total { margin-top: 14px; font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; padding-top: 12px; border-top: 1px dashed var(--line); }
+.disp-total b { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; margin: 0 4px; }
+.disp-warn { color: var(--rose); font-weight: 600; }
+.disp-ok { color: #2E7D32; font-weight: 600; }
 .prio-breakdown { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
 .prio-breakdown .pb-row { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: center; padding: 8px 12px; background: var(--paper); border-left: 3px solid var(--cobalt); font-size: 13px; }
 .prio-breakdown .pb-row.muito-alta { border-left-color: var(--rose); }
@@ -267,45 +233,15 @@
 
 <div class="disp-setup">
   <h3>Suas <i>horas</i> de estudo</h3>
-  <div class="help">Informe quantas horas você tem disponível por dia. Use <b>Sugerir</b> pra preencher com a rotina padrão (4h de Seg a Sex, 3h no Sábado, 2h no Domingo).</div>
+  <div class="help">Quantas horas você tem por dia. Dias com horas &gt; 0 viram <b>dias livres</b> pro cálculo de prioridade (muito alta = 60min, alta = 45min, média = 25min, baixa = 15min por dia livre). Use <b>Sugerir</b> pra preencher a rotina padrão (4h Seg–Sex, 3h Sáb, 2h Dom).</div>
   <div class="disp-grid" id="dispGrid"></div>
   <div class="disp-foot">
-    <div class="disp-tot">Total da semana: <b id="dispTot">0h</b></div>
+    <div class="disp-tot">Total: <b id="dispTot">0h</b> · <span id="dispLivresLbl">0 dias livres</span></div>
     <button type="button" class="disp-sugerir" id="btnSugerirDisp">Sugerir</button>
   </div>
-</div>
-
-<div class="calendario-semanal">
-  <div class="cs-header">
-    <div class="cs-cell cs-corner"></div>
-    <div class="cs-cell">Seg</div>
-    <div class="cs-cell">Ter</div>
-    <div class="cs-cell">Qua</div>
-    <div class="cs-cell">Qui</div>
-    <div class="cs-cell">Sex</div>
-    <div class="cs-cell">Sáb</div>
-    <div class="cs-cell">Dom</div>
-  </div>
-  <div class="cs-capbar" id="csCapBar"></div>
-  <div class="cs-body" id="csBody"></div>
-</div>
-
-<div class="avail-setup">
-  <h3>Meta <i>por prioridade</i></h3>
-  <div class="help">Quantas horas por semana você pretende estudar e quais são seus dias livres. Calculamos quanto dar pra cada matéria pela prioridade (muito alta = 60min, alta = 45min, média = 25min, baixa = 15min por dia livre).</div>
-  <div class="avail-top">
-    <div class="avail-hours">
-      <label>Horas por semana</label>
-      <input type="number" id="availHoras" min="0" step="0.5" value="10">
-    </div>
-    <div class="avail-days">
-      <span class="d-label">Dias livres</span>
-      <div class="avail-chips" id="availChips"></div>
-    </div>
-  </div>
   <div class="prio-breakdown" id="prioBreakdown"></div>
-  <div class="avail-total">
-    <span>Sugerido pela prioridade: <b id="availCalc">0h</b> · Meta semanal: <b id="availTot">0h</b></span>
+  <div class="disp-total">
+    <span>Sugerido pela prioridade: <b id="availCalc">0h</b></span>
     <span id="availStatus"></span>
   </div>
 </div>
@@ -364,7 +300,6 @@
 <script>
 const DISC_KEY = 'trackermed.disciplinas.v1';
 const PLAN_KEY = 'trackermed.plan.v1';
-const AVAIL_KEY = 'trackermed.avail.v2';
 const HIST_KEY = 'trackermed.planner.historico.v1';
 const DISP_KEY = 'planejamento.disponibilidade';
 const DISP_SUG = { seg: 4, ter: 4, qua: 4, qui: 4, sex: 4, sab: 3, dom: 2 };
@@ -397,8 +332,6 @@ const DIAS_LBL = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const DIAS_LONG = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 const DIA_IDX = { dom:0, seg:1, ter:2, qua:3, qui:4, sex:5, sab:6 };
 const HORA_INI = 7, HORA_FIM = 23; // 7h → 23h, 16h cobertura
-// Ordem exibida na UI: Seg → Dom (getDay: 1..6, 0)
-const DIAS_ORDEM = [1,2,3,4,5,6,0];
 // Minutos por dia livre conforme prioridade da matéria
 const PRIO_MIN = { 'muito-alta': 60, 'alta': 45, 'media': 25, 'baixa': 15 };
 const PRIO_LBL = { 'muito-alta': 'Muito alta', 'alta': 'Alta', 'media': 'Média', 'baixa': 'Baixa' };
@@ -439,10 +372,6 @@ function renderDisp() {
       <input type="number" id="disp-${day.k}" data-dia="${day.k}" min="0" max="${DISP_MAX}" step="0.5" value="${data[day.k]}">
     </div>
   `).join('');
-  const totEl = document.getElementById('dispTot');
-  const atualizarTotal = () => {
-    totEl.textContent = fmtDispHoras(dispTotal(loadDisp()));
-  };
   grid.querySelectorAll('input[data-dia]').forEach(inp => {
     inp.addEventListener('input', () => {
       const atual = loadDisp();
@@ -451,7 +380,7 @@ function renderDisp() {
       if (v > DISP_MAX) { v = DISP_MAX; inp.value = v; }
       atual[inp.dataset.dia] = v;
       saveDisp(atual);
-      atualizarTotal();
+      render();
     });
     inp.addEventListener('blur', () => {
       const atual = loadDisp();
@@ -465,34 +394,59 @@ function renderDisp() {
       const inp = document.getElementById('disp-' + day.k);
       if (inp) inp.value = novo[day.k];
     });
-    atualizarTotal();
+    render();
   });
-  atualizarTotal();
+}
+
+function renderPrioStats(discList) {
+  const avail = loadAvail();
+  const diasLivresCount = avail.diasLivres.length;
+  const metaTot = avail.horasSemana;
+  document.getElementById('dispTot').textContent = fmtDispHoras(metaTot);
+  const livresLbl = document.getElementById('dispLivresLbl');
+  if (livresLbl) livresLbl.textContent = `${diasLivresCount} dia${diasLivresCount!==1?'s':''} livre${diasLivresCount!==1?'s':''}`;
+
+  const alvo = discList.filter(d => d.status === 'em-curso' || !d.status);
+  const breakdown = document.getElementById('prioBreakdown');
+  if (alvo.length === 0) {
+    breakdown.innerHTML = '';
+  } else {
+    breakdown.innerHTML = alvo.map(d => {
+      const prio = d.prioridade || 'media';
+      const min = PRIO_MIN[prio] || 25;
+      const horas = metaPrioHoras(d, diasLivresCount);
+      const hH = Math.floor(horas), hM = Math.round((horas-hH)*60);
+      const totStr = diasLivresCount === 0 ? '—' : (hH>0?`${hH}h${hM?String(hM).padStart(2,'0'):''}`:`${hM}min`);
+      return `<div class="pb-row ${prio}">
+        <div><span class="pb-nome">${d.nome || 'Sem nome'}</span><span class="pb-prio">${PRIO_LBL[prio]}</span></div>
+        <div class="pb-calc">${min}min × ${diasLivresCount} dia${diasLivresCount!==1?'s':''} livre${diasLivresCount!==1?'s':''}</div>
+        <div class="pb-tot">${totStr}</div>
+      </div>`;
+    }).join('');
+  }
+
+  const calcTot = alvo.reduce((s,d) => s + metaPrioHoras(d, diasLivresCount), 0);
+  document.getElementById('availCalc').textContent = `${calcTot.toFixed(1)}h`;
+  const status = document.getElementById('availStatus');
+  if (diasLivresCount === 0) {
+    status.innerHTML = `<span class="disp-warn">Preencha ao menos um dia com horas &gt; 0</span>`;
+  } else if (calcTot > metaTot + 0.05) {
+    status.innerHTML = `<span class="disp-warn">Sugestão passa ${(calcTot-metaTot).toFixed(1)}h da sua disponibilidade</span>`;
+  } else {
+    status.innerHTML = `<span class="disp-ok">Cabe na semana · sobram ${(metaTot-calcTot).toFixed(1)}h pra folga</span>`;
+  }
+  return { diasLivresCount, calcTot, metaTot };
 }
 
 function loadDisc() { try { return JSON.parse(localStorage.getItem(DISC_KEY) || '[]'); } catch { return []; } }
 function loadPlan() { try { return JSON.parse(localStorage.getItem(PLAN_KEY) || '{}'); } catch { return {}; } }
 function savePlan(p) { localStorage.setItem(PLAN_KEY, JSON.stringify(p)); }
+// Avail agora deriva de disp: dias com horas > 0 são "dias livres", total é a meta semanal.
 function loadAvail() {
-  try {
-    const a = JSON.parse(localStorage.getItem(AVAIL_KEY) || 'null');
-    if (a && typeof a.horasSemana === 'number' && Array.isArray(a.diasLivres)) return a;
-  } catch {}
-  // migra legado: soma por-dia -> horasSemana; dias com >0h viram dias livres
-  try {
-    const old = JSON.parse(localStorage.getItem('trackermed.avail.v1') || 'null');
-    if (old) {
-      const diasLivres = []; let tot = 0;
-      Object.entries(old).forEach(([k,v]) => {
-        const n = parseFloat(v) || 0; tot += n;
-        if (n > 0) diasLivres.push(parseInt(k));
-      });
-      return { horasSemana: tot, diasLivres };
-    }
-  } catch {}
-  return { horasSemana: 10, diasLivres: [6, 0] };
+  const d = loadDisp();
+  const diasLivres = DISP_DAYS.filter(day => (Number(d[day.k]) || 0) > 0).map(day => day.wd);
+  return { horasSemana: dispTotal(d), diasLivres };
 }
-function saveAvail(a) { localStorage.setItem(AVAIL_KEY, JSON.stringify(a)); }
 function metaPrioHoras(d, diasLivresCount) {
   const m = PRIO_MIN[d.prioridade || 'media'] || 25;
   return (m * diasLivresCount) / 60;
@@ -537,7 +491,7 @@ function gerarAuto() {
   const discList = loadDisc();
   const avail = loadAvail();
   const diasLivres = (avail.diasLivres || []).slice();
-  if (diasLivres.length === 0) { alert('Seleciona ao menos um dia livre antes de gerar a sugestão.'); return; }
+  if (diasLivres.length === 0) { alert('Preencha ao menos um dia com horas > 0 antes de gerar a sugestão.'); return; }
   const ativas = discList.filter(d => d.status === 'em-curso' || !d.status);
   if (ativas.length === 0) { alert('Sem disciplinas ativas pra planejar.'); return; }
 
@@ -929,75 +883,6 @@ function renderHistPanel() {
   };
 }
 
-function renderAvail(discList) {
-  const avail = loadAvail();
-  const hojeDia = new Date().getDay();
-  const inp = document.getElementById('availHoras');
-  inp.value = avail.horasSemana;
-  inp.onchange = () => {
-    const a = loadAvail();
-    const v = parseFloat(inp.value);
-    a.horasSemana = isNaN(v) || v < 0 ? 0 : Math.min(168, v);
-    saveAvail(a);
-    render();
-  };
-
-  const chips = document.getElementById('availChips');
-  const livres = new Set(avail.diasLivres || []);
-  chips.innerHTML = DIAS_ORDEM.map(d => `
-    <button type="button" class="avail-chip ${livres.has(d)?'active':''} ${d===hojeDia?'hoje':''}" data-dia="${d}">${DIAS_LBL[d]}</button>
-  `).join('');
-  chips.querySelectorAll('.avail-chip').forEach(b => {
-    b.addEventListener('click', () => {
-      const a = loadAvail();
-      const dia = parseInt(b.dataset.dia);
-      const s = new Set(a.diasLivres || []);
-      if (s.has(dia)) s.delete(dia); else s.add(dia);
-      a.diasLivres = [...s];
-      saveAvail(a);
-      render();
-    });
-  });
-
-  const diasLivresCount = (avail.diasLivres || []).length;
-  const alvo = discList.filter(d => d.status === 'em-curso' || !d.status);
-  const breakdown = document.getElementById('prioBreakdown');
-  if (alvo.length === 0) {
-    breakdown.innerHTML = '';
-  } else {
-    breakdown.innerHTML = alvo.map(d => {
-      const prio = d.prioridade || 'media';
-      const min = PRIO_MIN[prio] || 25;
-      const horas = metaPrioHoras(d, diasLivresCount);
-      const hH = Math.floor(horas), hM = Math.round((horas-hH)*60);
-      const totStr = diasLivresCount === 0 ? '—' : (hH>0?`${hH}h${hM?String(hM).padStart(2,'0'):''}`:`${hM}min`);
-      return `<div class="pb-row ${prio}">
-        <div><span class="pb-nome">${d.nome || 'Sem nome'}</span><span class="pb-prio">${PRIO_LBL[prio]}</span></div>
-        <div class="pb-calc">${min}min × ${diasLivresCount} dia${diasLivresCount!==1?'s':''} livre${diasLivresCount!==1?'s':''}</div>
-        <div class="pb-tot">${totStr}</div>
-      </div>`;
-    }).join('');
-  }
-
-  const calcTot = alvo.reduce((s,d) => s + metaPrioHoras(d, diasLivresCount), 0);
-  const metaTot = avail.horasSemana || 0;
-  document.getElementById('availCalc').textContent = `${calcTot.toFixed(1)}h`;
-  document.getElementById('availTot').textContent = `${metaTot.toFixed(1)}h`;
-  const status = document.getElementById('availStatus');
-  if (metaTot <= 0 && calcTot <= 0) {
-    status.innerHTML = '';
-  } else if (diasLivresCount === 0) {
-    status.innerHTML = `<span class="avail-warn">Selecione pelo menos um dia livre</span>`;
-  } else if (metaTot <= 0) {
-    status.innerHTML = `<span class="avail-warn">Defina suas horas por semana</span>`;
-  } else if (calcTot > metaTot + 0.05) {
-    status.innerHTML = `<span class="avail-warn">Sugestão passa ${(calcTot-metaTot).toFixed(1)}h da meta</span>`;
-  } else {
-    status.innerHTML = `<span class="avail-ok">Cabe na meta · sobram ${(metaTot-calcTot).toFixed(1)}h pra folga</span>`;
-  }
-  return { diasLivresCount, calcTot, metaTot };
-}
-
 function render() {
   const discList = loadDisc();
   const plan = loadPlan();
@@ -1011,7 +896,7 @@ function render() {
   discList.forEach(d => (d.aulas||[]).forEach(a => {
     if (a.inicio && a.fim) aulasTot += parseTime(a.fim) - parseTime(a.inicio);
   }));
-  const { diasLivresCount, calcTot, metaTot } = renderAvail(discList);
+  const { diasLivresCount, calcTot, metaTot } = renderPrioStats(discList);
   const blocos = plan[wk] || [];
   const feitoTot = blocos.filter(b => b.feito).reduce((s,b) => s + (parseTime(b.fim) - parseTime(b.ini)), 0);
   const estudoPlan = blocos.reduce((s,b) => s + (parseTime(b.fim) - parseTime(b.ini)), 0);
@@ -1070,36 +955,7 @@ function render() {
   renderHistPanel();
 }
 
-function renderCsBody() {
-  const body = document.getElementById('csBody');
-  if (!body) return;
-  const rows = [];
-  for (let minutes = 6*60; minutes <= 23*60; minutes += 30) {
-    const h = Math.floor(minutes/60), m = minutes % 60;
-    const label = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
-    rows.push(`<div class="cs-row ${m === 30 ? 'cs-meia' : ''}">`
-      + `<div class="cs-time">${label}</div>`
-      + '<div class="cs-slot"></div>'.repeat(7)
-      + '</div>');
-  }
-  body.innerHTML = rows.join('');
-}
-
-function renderCsCapBar() {
-  const bar = document.getElementById('csCapBar');
-  if (!bar) return;
-  const data = loadDisp();
-  const cells = ['<div class="cap-cell cap-corner"></div>'];
-  DISP_DAYS.forEach(day => {
-    const x = Number(data[day.k]) || 0;
-    cells.push(`<div class="cap-cell">0/${x}h</div>`);
-  });
-  bar.innerHTML = cells.join('');
-}
-
 renderDisp();
-renderCsBody();
-renderCsCapBar();
 render();
 </script>
 </body></html>
