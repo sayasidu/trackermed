@@ -148,6 +148,10 @@
 .calendario-semanal .cs-time { font-size: 10px; color: #70757A; padding: 0 8px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; display: flex; align-items: center; justify-content: flex-end; background: var(--paper); border-right: 1px solid #E0E0E0; }
 .calendario-semanal .cs-slot { border-right: 1px solid #F1F1F1; }
 .calendario-semanal .cs-slot:last-child { border-right: none; }
+.calendario-semanal .cs-capbar { display: grid; grid-template-columns: 60px repeat(7, 1fr); border-bottom: 1px solid #E0E0E0; background: var(--paper); }
+.calendario-semanal .cs-capbar .cap-cell { padding: 6px 8px; text-align: center; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--ink2); border-right: 1px solid #F1F1F1; font-weight: 600; letter-spacing: 0.02em; }
+.calendario-semanal .cs-capbar .cap-cell:last-child { border-right: none; }
+.calendario-semanal .cs-capbar .cap-corner { background: var(--paper); }
 
 .avail-setup { background: #fff; border: 1px solid #E0E0E0; padding: 20px 24px; margin-bottom: 20px; }
 .avail-setup h3 { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
@@ -282,6 +286,7 @@
     <div class="cs-cell">Sáb</div>
     <div class="cs-cell">Dom</div>
   </div>
+  <div class="cs-capbar" id="csCapBar"></div>
   <div class="cs-body" id="csBody"></div>
 </div>
 
@@ -1080,8 +1085,21 @@ function renderCsBody() {
   body.innerHTML = rows.join('');
 }
 
+function renderCsCapBar() {
+  const bar = document.getElementById('csCapBar');
+  if (!bar) return;
+  const data = loadDisp();
+  const cells = ['<div class="cap-cell cap-corner"></div>'];
+  DISP_DAYS.forEach(day => {
+    const x = Number(data[day.k]) || 0;
+    cells.push(`<div class="cap-cell">0/${x}h</div>`);
+  });
+  bar.innerHTML = cells.join('');
+}
+
 renderDisp();
 renderCsBody();
+renderCsCapBar();
 render();
 </script>
 </body></html>
