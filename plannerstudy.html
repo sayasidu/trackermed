@@ -141,7 +141,7 @@
 .disp-warn { color: var(--rose); font-weight: 600; }
 .disp-ok { color: #2E7D32; font-weight: 600; }
 .prio-breakdown { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
-.prio-breakdown .pb-row { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: center; padding: 8px 12px; background: var(--paper); border-left: 3px solid var(--cobalt); font-size: 13px; }
+.prio-breakdown .pb-row { display: grid; grid-template-columns: 1fr auto auto auto; gap: 14px; align-items: center; padding: 8px 12px; background: var(--paper); border-left: 3px solid var(--cobalt); font-size: 13px; }
 .prio-breakdown .pb-row.muito-alta { border-left-color: var(--rose); }
 .prio-breakdown .pb-row.alta { border-left-color: var(--cobalt); }
 .prio-breakdown .pb-row.media { border-left-color: #C9A200; }
@@ -149,7 +149,17 @@
 .prio-breakdown .pb-nome { font-weight: 600; }
 .prio-breakdown .pb-prio { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-left: 8px; }
 .prio-breakdown .pb-calc { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.prio-breakdown .pb-calc.manual { color: var(--cobalt); font-weight: 600; }
 .prio-breakdown .pb-tot { font-family: 'Fraunces', serif; font-size: 16px; color: var(--cobalt); font-variant-numeric: tabular-nums; font-weight: 500; }
+.prio-breakdown .pb-acts { display: flex; gap: 4px; }
+.prio-breakdown .pb-acts button { background: transparent; border: 1px solid var(--line); width: 26px; height: 26px; font-size: 13px; cursor: pointer; font-family: inherit; color: var(--muted); display: flex; align-items: center; justify-content: center; padding: 0; line-height: 1; }
+.prio-breakdown .pb-acts button:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.prio-breakdown .pb-acts .pb-rm:hover { background: var(--rose); border-color: var(--rose); color: #fff; }
+.prio-excluidas { margin-top: 10px; font-size: 11px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.prio-excluidas .pe-lbl { font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 4px; }
+.prio-excluidas .pe-tag { background: #F5F5F5; padding: 4px 8px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; border-left: 3px solid var(--line); }
+.prio-excluidas .pe-tag button { background: transparent; border: none; cursor: pointer; color: var(--cobalt); font-weight: 700; padding: 0; font-family: inherit; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; }
+.prio-excluidas .pe-tag button:hover { text-decoration: underline; }
 
 /* Layout com histórico lateral */
 .planner-wrap { display: grid; grid-template-columns: minmax(0,1fr) 280px; gap: 20px; align-items: start; }
@@ -406,26 +416,52 @@ function renderPrioStats(discList) {
   const livresLbl = document.getElementById('dispLivresLbl');
   if (livresLbl) livresLbl.textContent = `${diasLivresCount} dia${diasLivresCount!==1?'s':''} livre${diasLivresCount!==1?'s':''}`;
 
-  const alvo = discList.filter(d => d.status === 'em-curso' || !d.status);
+  const excl = loadExcl();
+  const ativas = discList.filter(d => d.status === 'em-curso' || !d.status);
+  const alvo = ativas.filter(d => !excl.has(d.id));
+  const excluidas = ativas.filter(d => excl.has(d.id));
   const breakdown = document.getElementById('prioBreakdown');
-  if (alvo.length === 0) {
-    breakdown.innerHTML = '';
-  } else {
-    breakdown.innerHTML = alvo.map(d => {
+  let html = '';
+  if (alvo.length > 0) {
+    html += alvo.map(d => {
       const prio = d.prioridade || 'media';
       const min = PRIO_MIN[prio] || 25;
-      const horas = metaPrioHoras(d, diasLivresCount);
+      const manual = Number(d.metaHorasSemana) > 0;
+      const horas = targetHoras(d, diasLivresCount);
       const hH = Math.floor(horas), hM = Math.round((horas-hH)*60);
-      const totStr = diasLivresCount === 0 ? '—' : (hH>0?`${hH}h${hM?String(hM).padStart(2,'0'):''}`:`${hM}min`);
+      const totStr = (diasLivresCount === 0 && !manual)
+        ? '—'
+        : (hH>0 ? `${hH}h${hM?String(hM).padStart(2,'0'):''}` : `${hM}min`);
+      const calcStr = manual
+        ? `meta manual · ${fmtDispHoras(d.metaHorasSemana)}/semana`
+        : `${min}min × ${diasLivresCount} dia${diasLivresCount!==1?'s':''} livre${diasLivresCount!==1?'s':''}`;
       return `<div class="pb-row ${prio}">
-        <div><span class="pb-nome">${d.nome || 'Sem nome'}</span><span class="pb-prio">${PRIO_LBL[prio]}</span></div>
-        <div class="pb-calc">${min}min × ${diasLivresCount} dia${diasLivresCount!==1?'s':''} livre${diasLivresCount!==1?'s':''}</div>
+        <div><span class="pb-nome">${escH(d.nome || 'Sem nome')}</span><span class="pb-prio">${PRIO_LBL[prio]}</span></div>
+        <div class="pb-calc ${manual?'manual':''}">${escH(calcStr)}</div>
         <div class="pb-tot">${totStr}</div>
+        <div class="pb-acts">
+          <button type="button" class="pb-edit" data-act="edit" data-disc-id="${escH(d.id)}" title="Editar horas semanais">✎</button>
+          <button type="button" class="pb-rm" data-act="rm" data-disc-id="${escH(d.id)}" title="Dispensar do planejamento">×</button>
+        </div>
       </div>`;
     }).join('');
   }
+  if (excluidas.length > 0) {
+    html += `<div class="prio-excluidas"><span class="pe-lbl">Dispensadas:</span>` +
+      excluidas.map(d => `<span class="pe-tag">${escH(d.nome || 'Sem nome')} <button type="button" data-act="restore" data-disc-id="${escH(d.id)}">restaurar</button></span>`).join('') +
+      `</div>`;
+  }
+  breakdown.innerHTML = html;
+  breakdown.onclick = (e) => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    const id = btn.dataset.discId;
+    if (btn.dataset.act === 'edit') editMetaHoras(id);
+    else if (btn.dataset.act === 'rm') excluirDisc(id);
+    else if (btn.dataset.act === 'restore') restaurarDisc(id);
+  };
 
-  const calcTot = alvo.reduce((s,d) => s + metaPrioHoras(d, diasLivresCount), 0);
+  const calcTot = alvo.reduce((s,d) => s + targetHoras(d, diasLivresCount), 0);
   document.getElementById('availCalc').textContent = `${calcTot.toFixed(1)}h`;
   const status = document.getElementById('availStatus');
   if (diasLivresCount === 0) {
@@ -439,8 +475,33 @@ function renderPrioStats(discList) {
 }
 
 function loadDisc() { try { return JSON.parse(localStorage.getItem(DISC_KEY) || '[]'); } catch { return []; } }
+function saveDisc(list) { localStorage.setItem(DISC_KEY, JSON.stringify(list)); }
 function loadPlan() { try { return JSON.parse(localStorage.getItem(PLAN_KEY) || '{}'); } catch { return {}; } }
 function savePlan(p) { localStorage.setItem(PLAN_KEY, JSON.stringify(p)); }
+const EXCL_KEY = 'trackermed.planner.excluidas.v1';
+function loadExcl() { try { return new Set(JSON.parse(localStorage.getItem(EXCL_KEY) || '[]')); } catch { return new Set(); } }
+function saveExcl(s) { localStorage.setItem(EXCL_KEY, JSON.stringify([...s])); }
+function excluirDisc(discId) { const e = loadExcl(); e.add(discId); saveExcl(e); render(); }
+function restaurarDisc(discId) { const e = loadExcl(); e.delete(discId); saveExcl(e); render(); }
+function editMetaHoras(discId) {
+  const list = loadDisc();
+  const d = list.find(x => x.id === discId);
+  if (!d) return;
+  const atual = Number(d.metaHorasSemana) || 0;
+  const resp = prompt(
+    `Horas de estudo por semana para "${d.nome || 'disciplina'}":\nDeixe vazio (ou 0) pra voltar ao cálculo por prioridade.`,
+    atual > 0 ? String(atual) : ''
+  );
+  if (resp === null) return;
+  const v = parseFloat((resp || '').replace(',', '.'));
+  if (!resp.trim() || isNaN(v) || v <= 0) {
+    delete d.metaHorasSemana;
+  } else {
+    d.metaHorasSemana = Math.min(40, Math.max(0.5, Math.round(v * 2) / 2));
+  }
+  saveDisc(list);
+  render();
+}
 // Avail agora deriva de disp: dias com horas > 0 são "dias livres", total é a meta semanal.
 function loadAvail() {
   const d = loadDisp();
@@ -471,8 +532,9 @@ function targetHoras(d, diasLivresCount) {
 
 function resumoSugestoes(discList, wkKey, plan, diasLivresCount) {
   const blocos = (plan[wkKey] || []);
+  const excl = loadExcl();
   const itens = [];
-  discList.filter(d => d.status === 'em-curso' || !d.status).forEach(d => {
+  discList.filter(d => (d.status === 'em-curso' || !d.status) && !excl.has(d.id)).forEach(d => {
     const agendado = blocos.filter(b => b.discId === d.id).reduce((s,b) => s + (parseTime(b.fim)-parseTime(b.ini)), 0);
     const meta = targetHoras(d, diasLivresCount);
     const falta = Math.max(0, meta - agendado);
@@ -492,7 +554,8 @@ function gerarAuto() {
   const avail = loadAvail();
   const diasLivres = (avail.diasLivres || []).slice();
   if (diasLivres.length === 0) { alert('Preencha ao menos um dia com horas > 0 antes de gerar a sugestão.'); return; }
-  const ativas = discList.filter(d => d.status === 'em-curso' || !d.status);
+  const excl = loadExcl();
+  const ativas = discList.filter(d => (d.status === 'em-curso' || !d.status) && !excl.has(d.id));
   if (ativas.length === 0) { alert('Sem disciplinas ativas pra planejar.'); return; }
 
   const wk = weekKey(anchorDate);
