@@ -445,7 +445,8 @@ function abrirPlayDuracao(discId, discNome, blocoId) {
   durCtx = { modo: 'play', discId, discNome, blocoId };
   document.getElementById('durTitulo').innerHTML = 'Iniciar <i>cronômetro</i>';
   document.getElementById('durSub').textContent = `Quanto tempo pra "${discNome}"?`;
-  document.getElementById('durCustomWrap').style.display = 'none';
+  document.getElementById('durCustom').value = '';
+  document.getElementById('durCustomWrap').style.display = '';
   document.getElementById('durModal').classList.add('open');
 }
 function abrirEditarDuracao(wk, blocoId, discNome, minsAtual) {
