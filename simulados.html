@@ -5,29 +5,77 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
 <style>
-.sim-hero { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
-.sim-next { background: var(--ink); color: var(--paper); padding: 32px; position: relative; overflow: hidden; display: flex; flex-direction: column; }
-.sim-next::after { content: ''; position: absolute; right: -40px; top: -40px; width: 200px; height: 200px; border: 1px solid var(--cobalt); border-radius: 50%; }
-.sim-next .lbl { font-size: 10px; letter-spacing: 0.2em; color: var(--acid); font-weight: 600; text-transform: uppercase; }
-.sim-next h3 { font-family: 'Fraunces', serif; font-size: 40px; font-weight: 500; letter-spacing: -0.035em; line-height: 1.05; margin-top: 12px; }
-.sim-next h3 i { color: var(--cobalt); }
-.sim-next .detail { display: flex; gap: 24px; margin-top: 20px; font-size: 13px; }
-.sim-next .detail b { display: block; font-family: 'Fraunces', serif; font-size: 22px; letter-spacing: -0.02em; font-weight: 500; }
-.sim-next .detail .k { color: var(--acid); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600; }
-.sim-next button { margin-top: auto; padding: 14px 20px; background: var(--acid); color: var(--ink); border: none; font-weight: 700; font-size: 13px; letter-spacing: 0.04em; align-self: flex-start; cursor: pointer; text-transform: uppercase; }
-.sim-stats { background: var(--card); border: 1px solid var(--line); padding: 32px; display: flex; flex-direction: column; gap: 20px; }
-.sim-stats h4 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
-.sim-stats .big-num { font-family: 'Fraunces', serif; font-size: 72px; letter-spacing: -0.04em; line-height: 1; font-weight: 500; color: var(--cobalt); }
-.sim-stats .big-num span { font-size: 20px; color: var(--muted); }
-.mini-bars { display: flex; gap: 4px; align-items: flex-end; height: 40px; }
-.mini-bars i { display: block; flex: 1; background: var(--cobalt); font-style: normal; }
-.sim-catalog { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 24px; }
-.sim-card { background: var(--card); border: 1px solid var(--line); padding: 22px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; transition: all .15s; }
-.sim-card:hover { border-color: var(--ink); transform: translateY(-2px); }
-.sim-card .banner { font-family: 'Fraunces', serif; font-size: 14px; color: var(--cobalt); font-style: italic; }
-.sim-card h5 { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
-.sim-card .detail { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); padding-top: 10px; border-top: 1px dashed var(--line); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
-.score { font-family: 'Fraunces', serif; font-size: 22px; letter-spacing: -0.02em; font-weight: 500; }
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 32px; margin-bottom: 28px; }
+.stat-card { background: #fff; border: 1px solid var(--line); padding: 18px 20px; }
+.stat-card.dark { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.stat-card .lbl { font-size: 10px; letter-spacing: 0.18em; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+.stat-card.dark .lbl { color: var(--acid); }
+.stat-card .val { font-family: 'Fraunces', serif; font-size: 38px; font-weight: 400; letter-spacing: -0.03em; line-height: 1; margin-top: 8px; }
+.stat-card.dark .val { color: var(--acid); }
+.stat-card .sub { font-size: 12px; color: var(--muted); margin-top: 8px; }
+.stat-card.dark .sub { color: rgba(244,241,234,0.6); }
+
+.tool-row { display: flex; gap: 10px; margin-bottom: 22px; align-items: center; flex-wrap: wrap; }
+.tool-row input.search { flex: 1; min-width: 220px; padding: 11px 14px; border: 1px solid var(--line); background: #fff; font-size: 14px; font-family: inherit; }
+.tool-row select { padding: 11px 14px; border: 1px solid var(--line); background: #fff; font-size: 13px; font-family: inherit; }
+.tool-row .add { background: var(--cobalt); color: #fff; border: none; padding: 11px 20px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.tool-row .add:hover { background: #1530b3; }
+
+.sim-row { background: #fff; border: 1px solid var(--line); padding: 20px 24px; margin-bottom: 12px; display: grid; grid-template-columns: 1fr auto auto auto auto; gap: 24px; align-items: center; border-left: 4px solid var(--cobalt); }
+.sim-row.refazer { border-left-color: var(--rose); }
+.sim-row.bom { border-left-color: var(--amber); }
+.sim-row.muito-bom { border-left-color: var(--cobalt); }
+.sim-row.excelente { border-left-color: var(--mint); }
+.sim-row.sensacional { border-left-color: var(--acid); }
+.sim-row .materia { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; letter-spacing: -0.015em; }
+.sim-row .meta { font-size: 12px; color: var(--muted); letter-spacing: 0.04em; margin-top: 4px; }
+.sim-row .col { text-align: right; }
+.sim-row .col .k { font-size: 10px; letter-spacing: 0.15em; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+.sim-row .col .v { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 500; letter-spacing: -0.02em; margin-top: 2px; }
+.sim-row .tag-class { display: inline-flex; align-items: center; padding: 5px 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 3px; }
+.sim-row .actions button { background: transparent; border: 1px solid var(--line); color: var(--ink2); padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; letter-spacing: 0.04em; }
+.sim-row .actions button.del { color: var(--rose); border-color: rgba(255,91,91,0.3); }
+
+.tag-class.refazer { background: var(--rose); color: #fff; }
+.tag-class.bom { background: var(--amber); color: var(--ink); }
+.tag-class.muito-bom { background: var(--cobalt); color: #fff; }
+.tag-class.excelente { background: var(--mint); color: var(--ink); }
+.tag-class.sensacional { background: var(--acid); color: var(--ink); }
+
+.empty-state { text-align: center; padding: 60px 24px; background: #fff; border: 1px dashed var(--line); }
+.empty-state h3 { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 500; color: var(--ink2); }
+.empty-state p { color: var(--muted); margin-top: 8px; font-size: 14px; }
+
+.modal-backdrop { position: fixed; inset: 0; background: rgba(10,19,48,0.55); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.modal-backdrop.open { display: flex; }
+.modal-box { background: #fff; border: 1px solid var(--line); width: 560px; max-width: 100%; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto; }
+.modal-box h2 { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; letter-spacing: -0.02em; }
+.modal-box h2 i { color: var(--cobalt); font-style: italic; }
+.modal-sub { font-size: 13px; color: var(--muted); margin-top: 6px; margin-bottom: 20px; }
+.mbtn-close { position: absolute; right: 20px; top: 20px; background: transparent; border: none; font-size: 24px; cursor: pointer; color: var(--muted); }
+.mfield { margin-bottom: 14px; }
+.mfield label { display: block; font-size: 11px; letter-spacing: 0.12em; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 6px; }
+.mfield input, .mfield select, .mfield textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); background: var(--paper); font-size: 14px; font-family: inherit; color: var(--ink); }
+.mfield.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.mfield.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.mactions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.mbtn-cancel { background: transparent; border: 1px solid var(--line); padding: 10px 18px; font-size: 13px; cursor: pointer; font-family: inherit; }
+.mbtn-save { background: var(--cobalt); color: #fff; border: none; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+
+.live-preview { margin-top: 6px; padding: 14px 16px; background: var(--paper); border-left: 3px solid var(--line); font-size: 13px; color: var(--muted); }
+.live-preview.on { border-left-color: var(--cobalt); }
+.live-preview b { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
+.live-preview .tag-class { margin-left: 8px; }
+
+.criterios { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 24px; margin-bottom: 24px; }
+.crit { background: #fff; border: 1px solid var(--line); padding: 14px 16px; border-top: 3px solid var(--line); }
+.crit.refazer { border-top-color: var(--rose); }
+.crit.bom { border-top-color: var(--amber); }
+.crit.muito-bom { border-top-color: var(--cobalt); }
+.crit.excelente { border-top-color: var(--mint); }
+.crit.sensacional { border-top-color: var(--acid); }
+.crit .range { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 500; letter-spacing: -0.01em; }
+.crit .label { font-size: 10px; letter-spacing: 0.18em; color: var(--muted); font-weight: 700; text-transform: uppercase; margin-top: 4px; }
 </style></head><body>
 <div class="app">
 <aside class="sidebar">
@@ -44,29 +92,265 @@
 <div class="sidebar-foot">v0.1 · pessoal</div>
 </aside>
 <main class="main">
-<div class="topbar"><div class="crumb">Home <i>›</i> Simulados</div><div class="topbar-right"><span class="pill">12 disponíveis</span><button class="btn ghost">Filtrar</button></div></div>
-<div><div class="kicker">Treine como se fosse a prova</div><h1 class="page-title">Seus <i>simulados</i>.</h1><p class="page-lede">Provas completas cronometradas. Simula o dia real.</p></div>
-<div class="sim-hero">
-<div class="sim-next"><div class="lbl">Próximo na agenda</div><h3>Simulado <i>USP</i> 2024<br>— completo</h3><div class="detail"><div><div class="k">Questões</div><b>120</b></div><div><div class="k">Duração</div><b>5h</b></div><div><div class="k">Agendado</div><b>Sáb 26 abr</b></div></div><button>▶ Iniciar agora</button></div>
-<div class="sim-stats"><h4>Sua <i style="color:var(--cobalt)">média</i> nos simulados</h4><div class="big-num">76<span>% acerto</span></div><div style="font-size:12px;color:var(--muted)">Últimos 7 simulados — tendência crescente</div><div class="mini-bars"><i style="height:55%"></i><i style="height:62%"></i><i style="height:58%"></i><i style="height:70%"></i><i style="height:75%"></i><i style="height:78%"></i><i style="height:82%;background:var(--mint)"></i></div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;font-weight:600">jan → abr · 2026</div></div>
+<div class="topbar">
+  <div class="crumb">Home <i>›</i> Simulados</div>
+  <div class="topbar-right"><span class="pill" id="totalPill">0 simulados</span></div>
 </div>
-<div class="section"><div class="section-head"><div class="section-title">Catálogo <i>de provas</i></div><div class="kicker">Últimos 5 anos</div></div>
-<div class="sim-catalog">
-<div class="sim-card"><div class="banner">USP · 2024</div><h5>120 questões · 5h</h5><div class="detail"><span>não feito</span><span>disponível</span></div></div>
-<div class="sim-card"><div class="banner">USP · 2023</div><h5>120 questões · 5h</h5><div class="detail"><span>✓ feito · 78%</span><span>refazer</span></div></div>
-<div class="sim-card"><div class="banner">UNIFESP · 2024</div><h5>100 questões · 4h</h5><div class="detail"><span>não feito</span><span>disponível</span></div></div>
-<div class="sim-card"><div class="banner">UNIFESP · 2023</div><h5>100 questões · 4h</h5><div class="detail"><span>✓ feito · 71%</span><span>refazer</span></div></div>
-<div class="sim-card"><div class="banner">SUS-SP · 2024</div><h5>80 questões · 3h</h5><div class="detail"><span>não feito</span><span>disponível</span></div></div>
-<div class="sim-card"><div class="banner">SUS-SP · 2023</div><h5>80 questões · 3h</h5><div class="detail"><span>✓ feito · 82%</span><span>refazer</span></div></div>
-</div></div>
-<div class="section"><div class="section-head"><div class="section-title">Resultados <i>anteriores</i></div><button class="btn ghost">Ver todos</button></div>
-<table><thead><tr><th>Data</th><th>Prova</th><th>Questões</th><th>Tempo</th><th style="text-align:right">Pontos fortes</th><th style="text-align:right">Score</th></tr></thead><tbody>
-<tr><td>12 abr</td><td>SUS-SP 2023</td><td>80</td><td>2h 48m</td><td style="text-align:right;font-size:12px;color:var(--mint)">Emergências, Saúde Coletiva</td><td style="text-align:right"><span class="score" style="color:var(--mint)">82%</span></td></tr>
-<tr><td>5 abr</td><td>USP 2023</td><td>120</td><td>4h 32m</td><td style="text-align:right;font-size:12px;color:var(--mint)">Morfofuncional</td><td style="text-align:right"><span class="score">78%</span></td></tr>
-<tr><td>29 mar</td><td>UNIFESP 2023</td><td>100</td><td>3h 50m</td><td style="text-align:right;font-size:12px">Hematológicas</td><td style="text-align:right"><span class="score" style="color:var(--amber)">71%</span></td></tr>
-<tr><td>22 mar</td><td>USP 2022</td><td>120</td><td>4h 45m</td><td style="text-align:right;font-size:12px">Emergências</td><td style="text-align:right"><span class="score">75%</span></td></tr>
-<tr><td>15 mar</td><td>SUS-SP 2022</td><td>80</td><td>2h 55m</td><td style="text-align:right;font-size:12px">Saúde Coletiva</td><td style="text-align:right"><span class="score" style="color:var(--amber)">70%</span></td></tr>
-<tr><td>8 mar</td><td>USP 2021</td><td>120</td><td>4h 58m</td><td style="text-align:right;font-size:12px;color:var(--rose)">Farmacologia fraca</td><td style="text-align:right"><span class="score" style="color:var(--rose)">62%</span></td></tr>
-</tbody></table>
+
+<div>
+  <div class="kicker">Treine como se fosse a prova</div>
+  <h1 class="page-title">Seus <i>simulados</i>.</h1>
+  <p class="page-lede">Registre cada simulado com matéria, número de questões, acertos e tempo. O site classifica seu desempenho automaticamente.</p>
 </div>
-</main></div></body></html>
+
+<div class="stats-row">
+  <div class="stat-card"><div class="lbl">Total</div><div class="val" id="sTotal" style="color:var(--cobalt)">0</div><div class="sub">simulados feitos</div></div>
+  <div class="stat-card"><div class="lbl">Média de acerto</div><div class="val" id="sMedia">—</div><div class="sub" id="sMediaSub">sem dados ainda</div></div>
+  <div class="stat-card"><div class="lbl">Total de questões</div><div class="val" id="sQ" style="color:var(--ink2)">0</div><div class="sub" id="sQSub">nenhuma respondida</div></div>
+  <div class="stat-card dark"><div class="lbl">Melhor desempenho</div><div class="val" id="sBest" style="font-size:22px">—</div><div class="sub" id="sBestSub">—</div></div>
+</div>
+
+<div class="criterios">
+  <div class="crit refazer"><div class="range">≤ 74%</div><div class="label">Refazer</div></div>
+  <div class="crit bom"><div class="range">75%</div><div class="label">Bom</div></div>
+  <div class="crit muito-bom"><div class="range">76–84%</div><div class="label">Muito bom</div></div>
+  <div class="crit excelente"><div class="range">85–94%</div><div class="label">Excelente</div></div>
+  <div class="crit sensacional"><div class="range">95–100%</div><div class="label">Sensacional</div></div>
+</div>
+
+<div class="tool-row">
+  <input type="text" class="search" id="searchInput" placeholder="Buscar por matéria…"/>
+  <select id="filterClass">
+    <option value="">Todas classificações</option>
+    <option value="refazer">Refazer</option>
+    <option value="bom">Bom</option>
+    <option value="muito-bom">Muito bom</option>
+    <option value="excelente">Excelente</option>
+    <option value="sensacional">Sensacional</option>
+  </select>
+  <button class="add" onclick="abrirModal()">+ Adicionar simulado</button>
+</div>
+
+<div id="lista"></div>
+
+</main></div>
+
+<!-- Modal -->
+<div class="modal-backdrop" id="modal" onclick="if(event.target===this) fecharModal()">
+  <div class="modal-box">
+    <button class="mbtn-close" onclick="fecharModal()">×</button>
+    <h2 id="mTitulo">Adicionar <i>simulado</i></h2>
+    <div class="modal-sub">Preencha os dados do simulado. O percentual e a classificação são calculados automaticamente.</div>
+    <form id="sForm" onsubmit="event.preventDefault(); salvar()">
+      <input type="hidden" id="sId"/>
+      <div class="mfield">
+        <label>Matéria *</label>
+        <input type="text" id="sMateria" required placeholder="ex: Clínica Médica, Cirurgia, Pediatria…"/>
+      </div>
+      <div class="mfield row2">
+        <div>
+          <label>Quantidade de questões *</label>
+          <input type="number" id="sQuestoes" required min="1" step="1" placeholder="ex: 60"/>
+        </div>
+        <div>
+          <label>Acertos *</label>
+          <input type="number" id="sAcertos" required min="0" step="1" placeholder="ex: 48"/>
+        </div>
+      </div>
+      <div class="mfield row2">
+        <div>
+          <label>Tempo gasto *</label>
+          <input type="time" id="sTempo" required step="60"/>
+        </div>
+        <div>
+          <label>Data</label>
+          <input type="date" id="sData"/>
+        </div>
+      </div>
+      <div class="live-preview" id="preview">Preencha questões e acertos para ver o resultado.</div>
+      <div class="mactions">
+        <button type="button" class="mbtn-cancel" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="mbtn-save">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const SIM_KEY = 'trackermed.simulados.v2';
+
+// Remove dados antigos de simulados (versões anteriores / mocks).
+['trackermed.simulados', 'trackermed.simulados.v1'].forEach(k => localStorage.removeItem(k));
+
+function loadSims() { try { return JSON.parse(localStorage.getItem(SIM_KEY) || '[]'); } catch { return []; } }
+function saveSims(s) { localStorage.setItem(SIM_KEY, JSON.stringify(s)); }
+function uid() { return 'sm-'+Date.now()+'-'+Math.random().toString(36).slice(2,6); }
+function esc(s) { return String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function classificar(pct) {
+  if (pct <= 74) return { key: 'refazer', label: 'Refazer' };
+  if (pct <= 75) return { key: 'bom', label: 'Bom' };
+  if (pct <= 84) return { key: 'muito-bom', label: 'Muito bom' };
+  if (pct <= 94) return { key: 'excelente', label: 'Excelente' };
+  return { key: 'sensacional', label: 'Sensacional' };
+}
+
+function fmtTempo(t) {
+  if (!t) return '—';
+  const [h, m] = t.split(':').map(Number);
+  if (h && m) return `${h}h ${String(m).padStart(2,'0')}min`;
+  if (h) return `${h}h`;
+  return `${m}min`;
+}
+
+function fmtData(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+}
+
+function atualizarPreview() {
+  const q = parseInt(document.getElementById('sQuestoes').value);
+  const a = parseInt(document.getElementById('sAcertos').value);
+  const preview = document.getElementById('preview');
+  if (!q || isNaN(a)) {
+    preview.className = 'live-preview';
+    preview.textContent = 'Preencha questões e acertos para ver o resultado.';
+    return;
+  }
+  if (a > q) {
+    preview.className = 'live-preview';
+    preview.innerHTML = '<span style="color:var(--rose)">Acertos não pode ser maior que o total de questões.</span>';
+    return;
+  }
+  const pct = Math.round((a / q) * 100);
+  const c = classificar(pct);
+  preview.className = 'live-preview on';
+  preview.innerHTML = `Aproveitamento <b>${pct}%</b> <span class="tag-class ${c.key}">${c.label}</span>`;
+}
+
+function abrirModal(id) {
+  document.getElementById('sForm').reset();
+  document.getElementById('sId').value = '';
+  document.getElementById('sData').value = new Date().toISOString().slice(0,10);
+  if (id) {
+    const s = loadSims().find(x => x.id === id);
+    if (s) {
+      document.getElementById('mTitulo').innerHTML = 'Editar <i>simulado</i>';
+      document.getElementById('sId').value = s.id;
+      document.getElementById('sMateria').value = s.materia;
+      document.getElementById('sQuestoes').value = s.questoes;
+      document.getElementById('sAcertos').value = s.acertos;
+      document.getElementById('sTempo').value = s.tempo;
+      document.getElementById('sData').value = s.data || new Date().toISOString().slice(0,10);
+    }
+  } else {
+    document.getElementById('mTitulo').innerHTML = 'Adicionar <i>simulado</i>';
+  }
+  atualizarPreview();
+  document.getElementById('modal').classList.add('open');
+}
+function fecharModal() { document.getElementById('modal').classList.remove('open'); }
+
+function salvar() {
+  const id = document.getElementById('sId').value;
+  const materia = document.getElementById('sMateria').value.trim();
+  const questoes = parseInt(document.getElementById('sQuestoes').value);
+  const acertos = parseInt(document.getElementById('sAcertos').value);
+  const tempo = document.getElementById('sTempo').value;
+  const data = document.getElementById('sData').value;
+  if (!materia || !questoes || isNaN(acertos) || !tempo) return;
+  if (acertos > questoes) { alert('Acertos não pode ser maior que o total de questões.'); return; }
+  const dados = { materia, questoes, acertos, tempo, data };
+  const sims = loadSims();
+  if (id) {
+    const i = sims.findIndex(x => x.id === id);
+    if (i >= 0) sims[i] = { ...sims[i], ...dados };
+  } else {
+    sims.unshift({ id: uid(), ...dados, ts: Date.now() });
+  }
+  saveSims(sims);
+  fecharModal();
+  render();
+}
+
+function apagar(id) {
+  if (!confirm('Apagar esse simulado?')) return;
+  saveSims(loadSims().filter(s => s.id !== id));
+  render();
+}
+
+function render() {
+  const sims = loadSims();
+  const search = document.getElementById('searchInput').value.toLowerCase().trim();
+  const fc = document.getElementById('filterClass').value;
+
+  // Stats
+  const total = sims.length;
+  document.getElementById('sTotal').textContent = total;
+  document.getElementById('totalPill').textContent = `${total} simulado${total!==1?'s':''}`;
+  const totalQ = sims.reduce((s, x) => s + x.questoes, 0);
+  const totalA = sims.reduce((s, x) => s + x.acertos, 0);
+  document.getElementById('sQ').textContent = totalQ;
+  document.getElementById('sQSub').textContent = totalQ ? `${totalA} acertos` : 'nenhuma respondida';
+  if (total > 0) {
+    const media = Math.round((totalA / totalQ) * 100);
+    document.getElementById('sMedia').textContent = media + '%';
+    document.getElementById('sMedia').style.color = 'var(--cobalt)';
+    document.getElementById('sMediaSub').textContent = classificar(media).label.toLowerCase();
+    const best = sims.reduce((b, x) => {
+      const p = x.acertos / x.questoes;
+      return (!b || p > b.p) ? { p, x } : b;
+    }, null);
+    if (best) {
+      const bp = Math.round(best.p * 100);
+      document.getElementById('sBest').textContent = `${bp}%`;
+      document.getElementById('sBestSub').textContent = best.x.materia;
+    }
+  } else {
+    document.getElementById('sMedia').textContent = '—';
+    document.getElementById('sMedia').style.color = '';
+    document.getElementById('sMediaSub').textContent = 'sem dados ainda';
+    document.getElementById('sBest').textContent = '—';
+    document.getElementById('sBestSub').textContent = '—';
+  }
+
+  let lista = sims.slice();
+  if (search) lista = lista.filter(s => s.materia.toLowerCase().includes(search));
+  if (fc) lista = lista.filter(s => classificar(Math.round(s.acertos/s.questoes*100)).key === fc);
+
+  const listaEl = document.getElementById('lista');
+  if (lista.length === 0) {
+    if (total === 0) {
+      listaEl.innerHTML = `<div class="empty-state"><h3>Nenhum simulado registrado ainda.</h3><p>Clica em <b>+ Adicionar simulado</b> ali em cima pra começar.</p></div>`;
+    } else {
+      listaEl.innerHTML = `<div class="empty-state"><h3>Nada aqui.</h3><p>Nenhum simulado bate com os filtros atuais.</p></div>`;
+    }
+    return;
+  }
+
+  listaEl.innerHTML = lista.map(s => {
+    const pct = Math.round((s.acertos / s.questoes) * 100);
+    const c = classificar(pct);
+    return `<div class="sim-row ${c.key}">
+      <div>
+        <div class="materia">${esc(s.materia)}</div>
+        <div class="meta">${s.acertos}/${s.questoes} acertos · ${fmtTempo(s.tempo)}${s.data ? ' · '+fmtData(s.data) : ''}</div>
+      </div>
+      <div class="col"><div class="k">Aproveitamento</div><div class="v">${pct}%</div></div>
+      <div class="col"><div class="k">Tempo</div><div class="v" style="font-size:18px">${fmtTempo(s.tempo)}</div></div>
+      <div><span class="tag-class ${c.key}">${c.label}</span></div>
+      <div class="actions" style="display:flex;gap:6px">
+        <button onclick="abrirModal('${s.id}')">Editar</button>
+        <button class="del" onclick="apagar('${s.id}')">Apagar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+['sQuestoes','sAcertos'].forEach(id => document.getElementById(id).addEventListener('input', atualizarPreview));
+document.getElementById('searchInput').addEventListener('input', render);
+document.getElementById('filterClass').addEventListener('change', render);
+render();
+</script>
+</body></html>
