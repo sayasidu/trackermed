@@ -44,6 +44,13 @@
 .dur-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
 .dur-btn { background: var(--paper); border: 1px solid #E0E0E0; padding: 16px 8px; font-family: 'Fraunces', serif; font-size: 22px; cursor: pointer; font-style: italic; color: var(--cobalt); font-variant-numeric: tabular-nums; transition: all 0.12s; }
 .dur-btn:hover { background: var(--cobalt); color: #fff; border-color: var(--cobalt); }
+
+.opt-grid { display: grid; gap: 6px; }
+.opt-grid.c4 { grid-template-columns: repeat(4, 1fr); }
+.opt-grid.c3 { grid-template-columns: repeat(3, 1fr); }
+.opt-btn { background: var(--paper); border: 1px solid #E0E0E0; padding: 10px 6px; font-family: inherit; font-size: 13px; cursor: pointer; font-weight: 600; color: var(--ink2); transition: all 0.12s; }
+.opt-btn:hover { border-color: var(--cobalt); color: var(--cobalt); }
+.opt-btn.active { background: var(--cobalt); color: #fff; border-color: var(--cobalt); }
 .dur-custom { display: flex; gap: 8px; align-items: center; }
 .dur-custom input { flex: 1; padding: 10px 12px; border: 1px solid #E0E0E0; background: var(--paper); font-size: 14px; font-family: inherit; }
 .dur-custom button { background: var(--ink); color: var(--paper); border: none; padding: 10px 18px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; letter-spacing: 0.04em; text-transform: uppercase; }
@@ -68,6 +75,12 @@
 .timer-float.open { display: block; }
 .timer-float .t-label { font-size: 10px; letter-spacing: 0.2em; color: var(--acid); text-transform: uppercase; font-weight: 700; }
 .timer-float .t-disc { font-size: 15px; font-weight: 600; margin-top: 4px; }
+.timer-float .t-phase { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(244,241,234,0.6); margin-top: 6px; font-weight: 600; display: none; }
+.timer-float .t-phase.show { display: block; }
+.timer-float .t-phase.pause { color: var(--acid); }
+.timer-float.pausing { border-left-color: var(--rose); }
+.timer-float.pausing .t-label { color: var(--rose); }
+.timer-float.pausing .t-clock { color: var(--rose); }
 .timer-float .t-clock { font-family: 'Fraunces', serif; font-size: 64px; font-weight: 500; letter-spacing: -0.03em; margin: 14px 0; font-variant-numeric: tabular-nums; line-height: 1; text-align: center; color: var(--acid); }
 .timer-float .t-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
 .timer-float .t-actions button { background: rgba(244,241,234,0.08); color: var(--paper); border: 1px solid rgba(244,241,234,0.15); padding: 9px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; letter-spacing: 0.06em; text-transform: uppercase; }
@@ -146,8 +159,9 @@
 <!-- Timer flutuante -->
 <div class="timer-float" id="timerFloat">
   <button class="t-close" onclick="timerClose()">×</button>
-  <div class="t-label">Foco ativo</div>
+  <div class="t-label" id="tLabel">Foco ativo</div>
   <div class="t-disc" id="tDisc">—</div>
+  <div class="t-phase" id="tPhase"></div>
   <div class="t-clock" id="tClock">25:00</div>
   <div class="t-actions">
     <button id="tPlayBtn" onclick="timerToggle()">Iniciar</button>
@@ -173,6 +187,25 @@
       <div class="dur-custom">
         <input type="number" id="durCustom" min="1" max="360" placeholder="ex: 90">
         <button type="button" onclick="escolherDurCustom()">Aplicar</button>
+      </div>
+    </div>
+    <div id="secOptsWrap">
+      <div class="mfield">
+        <label>Seções</label>
+        <div class="opt-grid c4" id="secBtns">
+          <button type="button" class="opt-btn active" data-sec="1" onclick="setSecoes(1)">1</button>
+          <button type="button" class="opt-btn" data-sec="2" onclick="setSecoes(2)">2</button>
+          <button type="button" class="opt-btn" data-sec="3" onclick="setSecoes(3)">3</button>
+          <button type="button" class="opt-btn" data-sec="4" onclick="setSecoes(4)">4</button>
+        </div>
+      </div>
+      <div class="mfield" id="pausaWrap" style="display:none">
+        <label>Pausa entre seções</label>
+        <div class="opt-grid c3" id="pausaBtns">
+          <button type="button" class="opt-btn active" data-pausa="5" onclick="setPausa(5)">5min</button>
+          <button type="button" class="opt-btn" data-pausa="10" onclick="setPausa(10)">10min</button>
+          <button type="button" class="opt-btn" data-pausa="15" onclick="setPausa(15)">15min</button>
+        </div>
       </div>
     </div>
   </div>
@@ -285,57 +318,154 @@ function blocoDate(wk, b) {
 function plural(n, singular, plural_) { return n === 1 ? singular : plural_; }
 
 // Timer state
-let timerState = { discId: null, discNome: '', totalSec: 0, leftSec: 0, running: false, intervalId: null, linkedBlocoId: null, fromModal: false, revisar: false };
+function makeTimerState() {
+  return { discId: null, discNome: '', focusSec: 0, pauseSec: 0, sections: 1, currentSection: 1, mode: 'focus', leftSec: 0, running: false, intervalId: null, linkedBlocoId: null, fromModal: false, revisar: false, studiedSec: 0 };
+}
+let timerState = makeTimerState();
+function beep() {
+  try { new Audio('data:audio/wav;base64,UklGRjYEAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YRIEAAB/f3+Af39/f39/f39/f39/f39/').play(); } catch(e){}
+}
 function timerOpen(discId, discNome, mins, linkedBlocoId, opts) {
   opts = opts || {};
   if (timerState.running && !confirm('Já tem um cronômetro rodando. Substituir?')) return;
   if (timerState.intervalId) clearInterval(timerState.intervalId);
-  timerState = { discId, discNome, totalSec: mins*60, leftSec: mins*60, running: false, intervalId: null, linkedBlocoId: linkedBlocoId || null, fromModal: !!opts.fromModal, revisar: !!opts.revisar };
+  const sections = Math.max(1, Math.min(4, parseInt(opts.sections) || 1));
+  const pauseMins = sections > 1 ? Math.max(0, parseInt(opts.pauseMins) || 0) : 0;
+  timerState = {
+    discId, discNome,
+    focusSec: mins*60, pauseSec: pauseMins*60,
+    sections, currentSection: 1, mode: 'focus',
+    leftSec: mins*60,
+    running: false, intervalId: null,
+    linkedBlocoId: linkedBlocoId || null,
+    fromModal: !!opts.fromModal, revisar: !!opts.revisar,
+    studiedSec: 0
+  };
   document.getElementById('tDisc').textContent = discNome;
   document.getElementById('tPlayBtn').textContent = 'Iniciar';
+  updatePhaseUI();
   updateClock();
   document.getElementById('timerFloat').classList.add('open');
   // auto-iniciar
   timerToggle();
 }
+function updatePhaseUI() {
+  const fl = document.getElementById('timerFloat');
+  const ph = document.getElementById('tPhase');
+  const lb = document.getElementById('tLabel');
+  if (timerState.mode === 'pause') {
+    fl.classList.add('pausing');
+    lb.textContent = 'Pausa';
+    ph.classList.add('show', 'pause');
+    ph.textContent = `Pausa · próxima seção ${timerState.currentSection + 1}/${timerState.sections}`;
+  } else {
+    fl.classList.remove('pausing');
+    lb.textContent = 'Foco ativo';
+    ph.classList.remove('pause');
+    if (timerState.sections > 1) {
+      ph.classList.add('show');
+      ph.textContent = `Seção ${timerState.currentSection}/${timerState.sections}`;
+    } else {
+      ph.classList.remove('show');
+      ph.textContent = '';
+    }
+  }
+}
 function updateClock() {
   const m = Math.floor(Math.max(0,timerState.leftSec)/60), s = Math.max(0,timerState.leftSec)%60;
-  document.getElementById('tClock').textContent = String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
-  document.title = timerState.running ? `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} · Foco` : 'Histórico · TrackerMed';
+  const txt = String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  document.getElementById('tClock').textContent = txt;
+  if (timerState.running) {
+    const tag = timerState.mode === 'pause' ? 'Pausa' : 'Foco';
+    document.title = `${txt} · ${tag}`;
+  } else {
+    document.title = 'Histórico · TrackerMed';
+  }
 }
 function timerClose() {
   if (timerState.intervalId) clearInterval(timerState.intervalId);
-  timerState = { discId:null, discNome:'', totalSec:0, leftSec:0, running:false, intervalId:null, linkedBlocoId:null, fromModal:false, revisar:false };
-  document.getElementById('timerFloat').classList.remove('open');
+  timerState = makeTimerState();
+  const fl = document.getElementById('timerFloat');
+  fl.classList.remove('open', 'pausing');
+  document.getElementById('tPhase').classList.remove('show', 'pause');
   document.title = 'Histórico · TrackerMed';
 }
 function timerToggle() {
   if (!timerState.running) {
     timerState.running = true;
     document.getElementById('tPlayBtn').textContent = 'Pausar';
-    timerState.intervalId = setInterval(() => {
-      timerState.leftSec--;
-      updateClock();
-      if (timerState.leftSec <= 0) {
-        clearInterval(timerState.intervalId);
-        timerState.running = false;
-        try { new Audio('data:audio/wav;base64,UklGRjYEAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YRIEAAB/f3+Af39/f39/f39/f39/f39/').play(); } catch(e){}
-        timerFinish(true);
-      }
-    }, 1000);
+    timerState.intervalId = setInterval(onTick, 1000);
   } else {
     clearInterval(timerState.intervalId);
     timerState.running = false;
     document.getElementById('tPlayBtn').textContent = 'Retomar';
   }
 }
-function timerReset() { if (timerState.intervalId) clearInterval(timerState.intervalId); timerState.running=false; timerState.leftSec=timerState.totalSec; updateClock(); document.getElementById('tPlayBtn').textContent='Iniciar'; }
+function onTick() {
+  timerState.leftSec--;
+  updateClock();
+  if (timerState.leftSec <= 0) {
+    clearInterval(timerState.intervalId);
+    timerState.running = false;
+    beep();
+    if (timerState.mode === 'focus') {
+      if (timerState.currentSection < timerState.sections) {
+        timerState.studiedSec += timerState.focusSec;
+        if (timerState.pauseSec > 0) {
+          timerState.mode = 'pause';
+          timerState.leftSec = timerState.pauseSec;
+          updatePhaseUI();
+          updateClock();
+          document.getElementById('tPlayBtn').textContent = 'Pausar';
+          timerState.running = true;
+          timerState.intervalId = setInterval(onTick, 1000);
+        } else {
+          timerState.currentSection++;
+          timerState.leftSec = timerState.focusSec;
+          updatePhaseUI();
+          updateClock();
+          document.getElementById('tPlayBtn').textContent = 'Pausar';
+          timerState.running = true;
+          timerState.intervalId = setInterval(onTick, 1000);
+        }
+      } else {
+        // última seção: timerFinish soma o tempo restante (focusSec - 0 = focusSec)
+        timerFinish(true);
+      }
+    } else {
+      // fim da pausa -> próxima seção de foco
+      timerState.mode = 'focus';
+      timerState.currentSection++;
+      timerState.leftSec = timerState.focusSec;
+      updatePhaseUI();
+      updateClock();
+      document.getElementById('tPlayBtn').textContent = 'Pausar';
+      timerState.running = true;
+      timerState.intervalId = setInterval(onTick, 1000);
+    }
+  }
+}
+function timerReset() {
+  if (timerState.intervalId) clearInterval(timerState.intervalId);
+  timerState.running = false;
+  timerState.mode = 'focus';
+  timerState.currentSection = 1;
+  timerState.studiedSec = 0;
+  timerState.leftSec = timerState.focusSec;
+  updatePhaseUI();
+  updateClock();
+  document.getElementById('tPlayBtn').textContent = 'Iniciar';
+}
 function timerFinish(auto) {
   if (timerState.intervalId) clearInterval(timerState.intervalId);
   timerState.running = false;
-  const studied = Math.round((timerState.totalSec - Math.max(0,timerState.leftSec))/60);
+  // soma o tempo da seção de foco em andamento (se houver)
+  let studiedSec = timerState.studiedSec;
+  if (timerState.mode === 'focus') studiedSec += Math.max(0, timerState.focusSec - Math.max(0, timerState.leftSec));
+  const studied = Math.round(studiedSec/60);
+  const totalPlannedSec = timerState.focusSec * timerState.sections;
   if (studied < 1) { timerClose(); return; }
-  const concluidoNatural = timerState.leftSec <= 0;
+  const concluidoNatural = !!auto && timerState.mode === 'focus' && timerState.currentSection >= timerState.sections && timerState.leftSec <= 0;
 
   if (timerState.linkedBlocoId) {
     // Marca bloco existente como feito
@@ -360,13 +490,13 @@ function timerFinish(auto) {
     pushHist({
       data: fmtDataBR(new Date()),
       materia: timerState.discNome,
-      minutos: Math.round(timerState.totalSec/60),
+      minutos: Math.round(totalPlannedSec/60),
       concluido: concluidoNatural,
       revisar: !!timerState.revisar
     });
   }
 
-  if (auto) alert(`🎉 Sessão de ${Math.round(timerState.totalSec/60)}min completa! Registrada.`);
+  if (auto) alert(`🎉 Sessão de ${Math.round(totalPlannedSec/60)}min completa! Registrada.`);
   timerClose();
   render();
 }
@@ -441,12 +571,30 @@ function salvarExtraTimer() {
 
 // Modal duração (escolher antes do play, ou editar duração planejada)
 let durCtx = null;
+function setSecoes(n) {
+  if (!durCtx) return;
+  durCtx.sections = n;
+  document.querySelectorAll('#secBtns .opt-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.sec) === n);
+  });
+  document.getElementById('pausaWrap').style.display = n > 1 ? '' : 'none';
+}
+function setPausa(m) {
+  if (!durCtx) return;
+  durCtx.pauseMins = m;
+  document.querySelectorAll('#pausaBtns .opt-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.pausa) === m);
+  });
+}
 function abrirPlayDuracao(discId, discNome, blocoId) {
-  durCtx = { modo: 'play', discId, discNome, blocoId };
+  durCtx = { modo: 'play', discId, discNome, blocoId, sections: 1, pauseMins: 5 };
   document.getElementById('durTitulo').innerHTML = 'Iniciar <i>cronômetro</i>';
   document.getElementById('durSub').textContent = `Quanto tempo pra "${discNome}"?`;
   document.getElementById('durCustom').value = '';
   document.getElementById('durCustomWrap').style.display = '';
+  document.getElementById('secOptsWrap').style.display = '';
+  setSecoes(1);
+  setPausa(5);
   document.getElementById('durModal').classList.add('open');
 }
 function abrirEditarDuracao(wk, blocoId, discNome, minsAtual) {
@@ -455,15 +603,19 @@ function abrirEditarDuracao(wk, blocoId, discNome, minsAtual) {
   document.getElementById('durSub').textContent = `"${discNome}" — atual: ${fmtHrange(minsAtual)}`;
   document.getElementById('durCustom').value = minsAtual;
   document.getElementById('durCustomWrap').style.display = '';
+  document.getElementById('secOptsWrap').style.display = 'none';
   document.getElementById('durModal').classList.add('open');
 }
 function fecharDur() { document.getElementById('durModal').classList.remove('open'); durCtx = null; }
+function iniciarPlayCom(mins) {
+  const { discId, discNome, blocoId, sections, pauseMins } = durCtx;
+  fecharDur();
+  timerOpen(discId, discNome, mins, blocoId, { sections, pauseMins });
+}
 function escolherDur(mins) {
   if (!durCtx) return;
   if (durCtx.modo === 'play') {
-    const { discId, discNome, blocoId } = durCtx;
-    fecharDur();
-    timerOpen(discId, discNome, mins, blocoId);
+    iniciarPlayCom(mins);
   } else {
     aplicarEdicaoDuracao(mins);
   }
@@ -473,9 +625,7 @@ function escolherDurCustom() {
   if (!v || v < 1) { alert('Informe um número de minutos válido.'); return; }
   if (!durCtx) return;
   if (durCtx.modo === 'play') {
-    const { discId, discNome, blocoId } = durCtx;
-    fecharDur();
-    timerOpen(discId, discNome, v, blocoId);
+    iniciarPlayCom(v);
   } else {
     aplicarEdicaoDuracao(v);
   }
