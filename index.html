@@ -147,18 +147,18 @@
     <div class="hero-preview" role="group" aria-label="Preview do dashboard">
       <div class="mini-card">
         <div class="mini-label">TEMPO DE ESTUDO</div>
-        <div class="mini-num">40h<span>45m</span></div>
-        <div class="mini-sub">68% da meta mensal</div>
+        <div class="mini-num" id="kSemanaVal">0<span>h00</span></div>
+        <div class="mini-sub" id="kSemanaSub">sem meta semanal</div>
       </div>
       <div class="mini-card">
-        <div class="mini-label">DESEMPENHO</div>
-        <div class="mini-num" style="color:var(--mint)">85%</div>
-        <div class="mini-sub">128 acertos · 14 erros</div>
+        <div class="mini-label">STREAK</div>
+        <div class="mini-num" style="color:var(--mint)" id="kStreakVal">0</div>
+        <div class="mini-sub" id="kStreakSub">dias seguidos</div>
       </div>
       <div class="mini-card dark">
         <div class="mini-label">PRÓXIMA PROVA</div>
-        <div class="mini-num" style="color:var(--acid);font-style:italic">9</div>
-        <div class="mini-sub" style="color:rgba(244,241,234,0.6)">dias · Morfofuncional II</div>
+        <div class="mini-num" style="color:var(--acid);font-style:italic" id="kProvaVal">—</div>
+        <div class="mini-sub" style="color:rgba(244,241,234,0.6)" id="kProvaSub">sem prova cadastrada</div>
       </div>
     </div>
   </div>
@@ -223,6 +223,8 @@
 
 <script>
   const NOME_KEY = 'trackermed.nome.v1';
+  const PROVA_KEY = 'trackermed.prova.v1';
+  const PLAN_KEY = 'trackermed.plan.v1';
 
   function lerNome() {
     try { return localStorage.getItem(NOME_KEY); } catch (_) { return null; }
@@ -233,6 +235,14 @@
   function apagarNome() {
     try { localStorage.removeItem(NOME_KEY); } catch (_) {}
   }
+  function loadJSON(k, d) {
+    try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(d)); } catch { return d; }
+  }
+  function parseTime(t) { const [h,m] = t.split(':').map(Number); return h + m/60; }
+  function startOfWeek(d) { const x=new Date(d); x.setHours(0,0,0,0); const w=(x.getDay()+6)%7; x.setDate(x.getDate()-w); return x; }
+  function weekKey(d) { return startOfWeek(d).toISOString().slice(0,10); }
+  function addDays(d,n) { const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+  function blocoMin(b) { return b.minutos || Math.round((parseTime(b.fim) - parseTime(b.ini)) * 60); }
 
   function init() {
     const nome = lerNome();
@@ -242,6 +252,56 @@
       document.getElementById('accessHint').style.display = 'none';
       document.getElementById('savedName').textContent = nome;
       document.getElementById('welcomeBack').classList.add('show');
+    }
+  }
+
+  function renderPreview() {
+    const plan = loadJSON(PLAN_KEY, {});
+    const prova = loadJSON(PROVA_KEY, {});
+    const hoje = new Date();
+    const wk = weekKey(hoje);
+
+    // Semana
+    const blocosSemana = plan[wk] || [];
+    const semanaMin = blocosSemana.filter(b => b.feito).reduce((s,b) => s + blocoMin(b), 0);
+    const semanaPlan = blocosSemana.reduce((s,b) => s + blocoMin(b), 0);
+    const h = Math.floor(semanaMin/60), m = semanaMin%60;
+    document.getElementById('kSemanaVal').innerHTML = `${h}<span>h${String(m).padStart(2,'0')}</span>`;
+    document.getElementById('kSemanaSub').textContent = semanaPlan > 0
+      ? `${Math.round(semanaMin/semanaPlan*100)}% do plano da semana`
+      : 'sem meta semanal';
+
+    // Streak
+    const diasEstudo = new Set();
+    Object.entries(plan).forEach(([wkS, blocos]) => {
+      const inicioSem = new Date(wkS + 'T00:00');
+      (blocos || []).filter(b => b.feito).forEach(b => {
+        const d = addDays(inicioSem, (b.dia + 6) % 7);
+        diasEstudo.add(d.toISOString().slice(0,10));
+      });
+    });
+    let streak = 0;
+    for (let i = 0; i < 365; i++) {
+      const d = addDays(hoje, -i);
+      const key = d.toISOString().slice(0,10);
+      if (diasEstudo.has(key)) streak++;
+      else if (i > 0) break;
+    }
+    document.getElementById('kStreakVal').textContent = streak;
+    document.getElementById('kStreakSub').textContent = streak === 1 ? 'dia seguido' : 'dias seguidos';
+
+    // Próxima prova
+    if (prova.nome && prova.data) {
+      const [py, pm, pd] = prova.data.split('-').map(Number);
+      const examDate = new Date(py, pm-1, pd);
+      const todayDate = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+      const diff = Math.round((examDate - todayDate) / 86400000);
+      const dias = Math.max(0, diff);
+      document.getElementById('kProvaVal').textContent = dias;
+      document.getElementById('kProvaSub').textContent = `${dias === 1 ? 'dia' : 'dias'} · ${prova.nome}`;
+    } else {
+      document.getElementById('kProvaVal').textContent = '—';
+      document.getElementById('kProvaSub').textContent = 'sem prova cadastrada';
     }
   }
 
@@ -265,6 +325,7 @@
   }
 
   init();
+  renderPreview();
 </script>
 </body>
 </html>
