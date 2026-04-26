@@ -5,7 +5,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
 <style>
-.plano-card { background: var(--card); border: 1px solid var(--line); padding: 26px 28px; margin-top: 16px; position: relative; display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: flex-start; }
+.plano-card { background: var(--card); border: 1px solid var(--line); padding: 26px 28px; margin-top: 16px; position: relative; display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: flex-start; cursor: pointer; transition: border-color .12s, transform .12s; }
+.plano-card:hover { border-color: var(--ink2); }
+.plano-card:active { transform: translateY(1px); }
 .plano-card.residencia { border-left: 4px solid var(--cobalt); }
 .plano-card.semestre { border-left: 4px solid var(--mint); }
 .plano-card.enamed { border-left: 4px solid var(--amber); }
@@ -34,6 +36,37 @@
 .add-more { margin-top: 18px; text-align: center; }
 .add-more button { background: transparent; border: 1.5px dashed var(--line); color: var(--ink2); padding: 14px 24px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; width: 100%; transition: all .15s; }
 .add-more button:hover { border-color: var(--cobalt); color: var(--cobalt); border-style: solid; }
+
+/* Detalhe do plano */
+#detalheView { display: none; }
+#detalheView.show { display: block; }
+.det-back { background: transparent; border: none; color: var(--muted); font-size: 12px; cursor: pointer; padding: 6px 0; font-family: inherit; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 18px; }
+.det-back:hover { color: var(--cobalt); }
+.det-header { display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: flex-start; padding-bottom: 28px; border-bottom: 1px solid var(--line); margin-bottom: 32px; }
+.det-tipo { font-size: 11px; letter-spacing: 0.18em; font-weight: 700; text-transform: uppercase; margin-bottom: 10px; }
+.det-tipo.residencia { color: var(--cobalt); }
+.det-tipo.semestre { color: var(--mint); }
+.det-tipo.enamed { color: var(--amber); }
+.det-titulo { font-family: 'Fraunces', serif; font-size: 52px; font-weight: 500; letter-spacing: -0.035em; line-height: 1.02; margin-bottom: 12px; }
+.det-titulo i { color: var(--cobalt); font-style: italic; }
+.det-meta { font-size: 14px; color: var(--ink2); margin-bottom: 20px; }
+.det-meta b { font-variant-numeric: tabular-nums; }
+.det-edit-btn { background: transparent; border: 1px solid var(--line); padding: 9px 16px; font-size: 13px; cursor: pointer; font-family: inherit; font-weight: 600; color: var(--ink); display: inline-flex; align-items: center; gap: 8px; }
+.det-edit-btn:hover { border-color: var(--ink); }
+.det-countdown { text-align: right; min-width: 180px; }
+.det-countdown .num { font-family: 'Fraunces', serif; font-size: 96px; font-weight: 500; letter-spacing: -0.05em; line-height: 0.95; color: var(--cobalt); font-style: italic; }
+.det-countdown.semestre .num { color: var(--mint); }
+.det-countdown.enamed .num { color: var(--amber); }
+.det-countdown .lbl { font-size: 12px; color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; margin-top: 10px; }
+.det-section-title { font-size: 11px; letter-spacing: 0.2em; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 18px; }
+.det-materias { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.det-mat-card { background: var(--card); border: 1px solid var(--line); padding: 22px 22px 24px; min-height: 140px; display: flex; flex-direction: column; transition: border-color .12s; }
+.det-mat-card:hover { border-color: var(--ink2); }
+.det-mat-num { font-size: 11px; letter-spacing: 0.13em; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 10px; font-variant-numeric: tabular-nums; }
+.det-mat-nome { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.15; color: var(--ink); }
+.det-mat-vazio { margin-top: auto; padding-top: 18px; font-size: 11px; color: var(--muted); font-style: italic; letter-spacing: 0.02em; }
+.det-no-mat { padding: 40px 24px; text-align: center; background: var(--card); border: 2px dashed var(--line); }
+.det-no-mat p { color: var(--muted); font-size: 13px; }
 
 /* Modal */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(10,19,48,0.55); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
@@ -81,18 +114,21 @@
 </aside>
 <main class="main">
 <div class="topbar">
-  <div class="crumb">Home <i>›</i> Planos</div>
+  <div class="crumb" id="crumb">Home <i>›</i> Planos</div>
   <div class="topbar-right">
     <span class="pill" id="statusPill">0 planos</span>
     <button class="btn" onclick="abrirNovo()">+ Novo plano</button>
   </div>
 </div>
-<div>
-  <div class="kicker">Longo prazo</div>
-  <h1 class="page-title">Seus <i>planos</i> de estudo.</h1>
-  <p class="page-lede">Cadastre o semestre que está cursando ou uma prova de residência — ele vira a base do seu cronograma.</p>
+<div id="listaView">
+  <div>
+    <div class="kicker">Longo prazo</div>
+    <h1 class="page-title">Seus <i>planos</i> de estudo.</h1>
+    <p class="page-lede">Cadastre o semestre que está cursando ou uma prova de residência — ele vira a base do seu cronograma.</p>
+  </div>
+  <div class="section" id="listaContainer"></div>
 </div>
-<div class="section" id="listaContainer"></div>
+<div id="detalheView"></div>
 </main></div>
 
 <!-- Modal -->
@@ -281,15 +317,17 @@ function salvar() {
   else list.push(p);
   save(list);
   fechar();
-  render();
+  refreshView();
 }
 
 function apagar() {
   if (!editingId) return;
   if (!confirm('Apagar esse plano?')) return;
+  const wasOpen = location.hash.slice(1) === editingId;
   save(load().filter(x => x.id !== editingId));
   fechar();
-  render();
+  if (wasOpen) location.hash = '';
+  else refreshView();
 }
 
 function fmtData(d) { if(!d) return '—'; const [y,m,dd]=d.split('-'); return `${parseInt(dd)} ${MESES[parseInt(m)-1]} ${y.slice(2)}`; }
@@ -342,10 +380,10 @@ function render() {
 
     const tipoLabel = p.tipo === 'residencia' ? '🏥 Residência' : (p.tipo === 'enamed' ? '📋 ENAMED' : '🎓 Semestre');
 
-    return `<div class="plano-card ${p.tipo}">
+    return `<div class="plano-card ${p.tipo}" onclick="clicarCard(event, '${p.id}')">
       <div class="plano-actions">
-        <button onclick="abrirEdit('${p.id}')" title="Editar">✎</button>
-        <button class="del" onclick="if(confirm('Apagar esse plano?')){ save(load().filter(x=>x.id!=='${p.id}')); render(); }" title="Apagar">×</button>
+        <button onclick="event.stopPropagation(); abrirEdit('${p.id}')" title="Editar">✎</button>
+        <button class="del" onclick="event.stopPropagation(); if(confirm('Apagar esse plano?')){ save(load().filter(x=>x.id!=='${p.id}')); render(); }" title="Apagar">×</button>
       </div>
       <div>
         <div class="tipo">${tipoLabel}</div>
@@ -360,10 +398,104 @@ function render() {
   cont.innerHTML = cards + `<div class="add-more"><button onclick="abrirNovo()">+ Adicionar outro plano</button></div>`;
 }
 
+function clicarCard(ev, id) {
+  if (ev.target.closest('.plano-actions')) return;
+  abrirDetalhe(id);
+}
+
+function abrirDetalhe(id) {
+  if (location.hash.slice(1) !== id) location.hash = id;
+  else renderDetalhe(id);
+}
+
+function voltarLista() {
+  if (location.hash) location.hash = '';
+  else refreshView();
+}
+
+function renderDetalhe(id) {
+  const p = load().find(x => x.id === id);
+  if (!p) { location.hash = ''; return; }
+
+  const lista = document.getElementById('listaView');
+  const det = document.getElementById('detalheView');
+  lista.style.display = 'none';
+  det.classList.add('show');
+
+  const tipoLabel = p.tipo === 'residencia' ? '🏥 Residência' : (p.tipo === 'enamed' ? '📋 ENAMED' : '🎓 Semestre');
+  document.getElementById('crumb').innerHTML = `<a href="#" onclick="event.preventDefault(); voltarLista()" style="color:inherit;text-decoration:none">Home <i>›</i> Planos</a> <i>›</i> ${esc(p.nome)}`;
+
+  let metaInfo = '';
+  let countdown = '';
+  if (p.tipo === 'residencia') {
+    const dias = diasAte(p.dataProva);
+    metaInfo = `${p.instituicao ? esc(p.instituicao) + ' · ' : ''}Prova: <b>${fmtData(p.dataProva)}</b>${p.inicio ? ` · início <b>${fmtData(p.inicio)}</b>` : ''}`;
+    countdown = dias !== null
+      ? `<div class="num">${Math.max(0,dias)}</div><div class="lbl">${dias < 0 ? 'prova passou' : (dias === 1 ? 'dia até a prova' : 'dias até a prova')}</div>`
+      : '<div class="lbl">sem data</div>';
+  } else if (p.tipo === 'enamed') {
+    const dias = diasAte(p.dataProva);
+    metaInfo = `ENAMED: <b>${fmtData(p.dataProva)}</b>${p.inicio ? ` · início <b>${fmtData(p.inicio)}</b>` : ''}`;
+    countdown = dias !== null
+      ? `<div class="num">${Math.max(0,dias)}</div><div class="lbl">${dias < 0 ? 'enamed passou' : (dias === 1 ? 'dia até o enamed' : 'dias até o enamed')}</div>`
+      : '<div class="lbl">sem data</div>';
+  } else {
+    const diasFim = diasAte(p.fim);
+    metaInfo = `${p.instituicao ? esc(p.instituicao) + ' · ' : ''}<b>${fmtData(p.inicio)}</b> — <b>${fmtData(p.fim)}</b>`;
+    countdown = diasFim !== null
+      ? `<div class="num">${Math.max(0,diasFim)}</div><div class="lbl">${diasFim < 0 ? 'semestre acabou' : (diasFim === 1 ? 'dia restante' : 'dias restantes')}</div>`
+      : '<div class="lbl">sem data</div>';
+  }
+
+  const mats = p.materias || [];
+  const matsHTML = mats.length
+    ? `<div class="det-materias">${mats.map((m, i) => `
+        <div class="det-mat-card">
+          <div class="det-mat-num">Matéria ${String(i+1).padStart(2,'0')}</div>
+          <div class="det-mat-nome">${esc(m)}</div>
+          <div class="det-mat-vazio">em breve · tópicos, progresso, anotações</div>
+        </div>`).join('')}</div>`
+    : `<div class="det-no-mat"><p>Nenhuma matéria cadastrada nesse plano ainda.<br>Edita o plano pra adicionar.</p></div>`;
+
+  det.innerHTML = `
+    <button class="det-back" onclick="voltarLista()">← Voltar pros planos</button>
+    <div class="det-header">
+      <div>
+        <div class="det-tipo ${p.tipo}">${tipoLabel}</div>
+        <h1 class="det-titulo">${esc(p.nome)}</h1>
+        <div class="det-meta">${metaInfo}</div>
+        <button class="det-edit-btn" onclick="abrirEdit('${p.id}')">✎ Editar plano</button>
+      </div>
+      <div class="det-countdown ${p.tipo}">${countdown}</div>
+    </div>
+    <div>
+      <div class="det-section-title">Matérias${mats.length ? ` · ${mats.length}` : ''}</div>
+      ${matsHTML}
+    </div>`;
+
+  document.getElementById('statusPill').textContent = `${load().length} plano${load().length!==1?'s':''}`;
+}
+
+function showLista() {
+  document.getElementById('detalheView').classList.remove('show');
+  document.getElementById('detalheView').innerHTML = '';
+  document.getElementById('listaView').style.display = '';
+  document.getElementById('crumb').innerHTML = 'Home <i>›</i> Planos';
+  render();
+}
+
+function refreshView() {
+  const h = location.hash.slice(1);
+  if (h) renderDetalhe(h);
+  else showLista();
+}
+
+window.addEventListener('hashchange', refreshView);
+
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && document.getElementById('planoModal').classList.contains('open')) fechar();
 });
 
-render();
+refreshView();
 </script>
 </body></html>
