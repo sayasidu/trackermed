@@ -67,6 +67,12 @@
 .det-mat-vazio { margin-top: auto; padding-top: 18px; font-size: 11px; color: var(--muted); font-style: italic; letter-spacing: 0.02em; }
 .det-no-mat { padding: 40px 24px; text-align: center; background: var(--card); border: 2px dashed var(--line); }
 .det-no-mat p { color: var(--muted); font-size: 13px; }
+.det-notas-wrap { margin-top: 40px; }
+.det-notas { width: 100%; min-height: 220px; padding: 18px 20px; border: 1px solid var(--line); background: var(--card); font-family: inherit; font-size: 14px; line-height: 1.55; color: var(--ink); resize: vertical; }
+.det-notas:focus { outline: 2px solid var(--cobalt); outline-offset: -1px; }
+.det-notas::placeholder { color: var(--muted); font-style: italic; }
+.det-notas-hint { font-size: 11px; color: var(--muted); margin-top: 8px; font-style: italic; letter-spacing: 0.02em; }
+.det-notas-hint.saved { color: var(--mint); font-style: normal; }
 
 /* Modal */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(10,19,48,0.55); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
@@ -471,9 +477,36 @@ function renderDetalhe(id) {
     <div>
       <div class="det-section-title">Matérias${mats.length ? ` · ${mats.length}` : ''}</div>
       ${matsHTML}
+    </div>
+    <div class="det-notas-wrap">
+      <div class="det-section-title">Planejamento e notas</div>
+      <textarea class="det-notas" id="planoNotas" placeholder="Escreve aqui o que tu quiser sobre esse plano — cronograma, prioridades, o que estudar primeiro, observações…" onblur="salvarNotas('${p.id}')">${esc(p.notas || '')}</textarea>
+      <div class="det-notas-hint" id="notasHint">As notas salvam automaticamente quando você clica fora do campo.</div>
     </div>`;
 
   document.getElementById('statusPill').textContent = `${load().length} plano${load().length!==1?'s':''}`;
+}
+
+function salvarNotas(id) {
+  const ta = document.getElementById('planoNotas');
+  if (!ta) return;
+  const list = load();
+  const idx = list.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  const nova = ta.value;
+  if ((list[idx].notas || '') === nova) return;
+  list[idx].notas = nova;
+  save(list);
+  const hint = document.getElementById('notasHint');
+  if (hint) {
+    hint.textContent = 'Salvo.';
+    hint.classList.add('saved');
+    setTimeout(() => {
+      if (!hint.isConnected) return;
+      hint.textContent = 'As notas salvam automaticamente quando você clica fora do campo.';
+      hint.classList.remove('saved');
+    }, 1600);
+  }
 }
 
 function showLista() {
