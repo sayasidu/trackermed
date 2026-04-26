@@ -64,6 +64,37 @@
 .mbtn-cancel { background: transparent; border: 1px solid var(--line); padding: 10px 18px; font-size: 13px; cursor: pointer; font-family: inherit; }
 .mbtn-save { background: var(--cobalt); color: #fff; border: none; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
 .mbtn-delete { background: transparent; border: none; color: var(--rose); padding: 10px 0; font-size: 12px; cursor: pointer; font-family: inherit; font-weight: 600; }
+
+/* Card clicável */
+.plano-card { cursor: pointer; transition: border-color .15s; }
+.plano-card:hover { border-color: var(--ink2); }
+
+/* Detalhe inline */
+.detalhe-back { margin-top: -8px; margin-bottom: 18px; }
+.detalhe-back button { background: transparent; border: none; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; padding: 6px 0; font-family: inherit; }
+.detalhe-back button:hover { color: var(--cobalt); }
+.detalhe-header { display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: flex-start; padding: 32px; background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--cobalt); }
+.detalhe-header.semestre { border-left-color: var(--mint); }
+.detalhe-header.residencia { border-left-color: var(--cobalt); }
+.detalhe-header.enamed { border-left-color: var(--amber); }
+.detalhe-header .tipo-badge { display: inline-block; font-size: 11px; letter-spacing: 0.18em; font-weight: 700; text-transform: uppercase; padding: 5px 10px; }
+.detalhe-header.semestre .tipo-badge { background: var(--mint); color: var(--ink); }
+.detalhe-header.residencia .tipo-badge { background: var(--cobalt); color: #fff; }
+.detalhe-header.enamed .tipo-badge { background: var(--amber); color: var(--ink); }
+.detalhe-header h1 { font-family: 'Fraunces', serif; font-size: 48px; font-weight: 500; letter-spacing: -0.035em; line-height: 1.05; margin-top: 14px; }
+.detalhe-header .meta { font-size: 14px; color: var(--ink2); margin-top: 10px; }
+.detalhe-header .meta b { font-variant-numeric: tabular-nums; }
+.detalhe-header .actions { margin-top: 20px; display: flex; gap: 8px; }
+.detalhe-countdown { text-align: right; min-width: 160px; }
+.detalhe-countdown .num { font-family: 'Fraunces', serif; font-size: 86px; font-weight: 500; letter-spacing: -0.04em; line-height: 1; font-style: italic; color: var(--cobalt); }
+.detalhe-header.semestre .detalhe-countdown .num { color: var(--mint); }
+.detalhe-header.enamed .detalhe-countdown .num { color: var(--amber); }
+.detalhe-countdown .lbl { font-size: 11px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; margin-top: 8px; }
+
+.materias-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 18px; }
+.materia-bloco { background: var(--card); border: 1px solid var(--line); padding: 20px; }
+.materia-bloco .nome { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 500; letter-spacing: -0.015em; line-height: 1.2; }
+.materia-bloco .sub { font-size: 11px; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; font-weight: 600; margin-top: 10px; }
 </style></head><body>
 <div class="app">
 <aside class="sidebar">
@@ -81,13 +112,13 @@
 </aside>
 <main class="main">
 <div class="topbar">
-  <div class="crumb">Home <i>›</i> Planos</div>
+  <div class="crumb" id="crumb">Home <i>›</i> Planos</div>
   <div class="topbar-right">
     <span class="pill" id="statusPill">0 planos</span>
     <button class="btn" onclick="abrirNovo()">+ Novo plano</button>
   </div>
 </div>
-<div>
+<div id="listHeader">
   <div class="kicker">Longo prazo</div>
   <h1 class="page-title">Seus <i>planos</i> de estudo.</h1>
   <p class="page-lede">Cadastre o semestre que está cursando ou uma prova de residência — ele vira a base do seu cronograma.</p>
@@ -302,9 +333,67 @@ function diasAte(d) {
   return Math.round((t-n)/86400000);
 }
 
+const TIPO_LABEL = { semestre: '🎓 Semestre', residencia: '🏥 Residência', enamed: '📋 ENAMED' };
+const MATERIAS_LABEL = { semestre: 'Matérias do semestre', residencia: 'Áreas do edital', enamed: 'Áreas do ENAMED' };
+
+function metaInfoFor(p) {
+  if (p.tipo === 'residencia') {
+    return `${p.instituicao ? esc(p.instituicao) + ' · ' : ''}Prova: <b>${fmtData(p.dataProva)}</b>${p.inicio ? ` · início <b>${fmtData(p.inicio)}</b>` : ''}`;
+  }
+  if (p.tipo === 'enamed') {
+    return `ENAMED: <b>${fmtData(p.dataProva)}</b>${p.inicio ? ` · início <b>${fmtData(p.inicio)}</b>` : ''}`;
+  }
+  return `${p.instituicao ? esc(p.instituicao) + ' · ' : ''}<b>${fmtData(p.inicio)}</b> — <b>${fmtData(p.fim)}</b>`;
+}
+
+function countdownFor(p) {
+  let dias, label;
+  if (p.tipo === 'residencia') {
+    dias = diasAte(p.dataProva);
+    if (dias === null) return null;
+    label = dias < 0 ? 'prova passou' : (dias === 1 ? 'dia até a prova' : 'dias até a prova');
+  } else if (p.tipo === 'enamed') {
+    dias = diasAte(p.dataProva);
+    if (dias === null) return null;
+    label = dias < 0 ? 'enamed passou' : (dias === 1 ? 'dia até o enamed' : 'dias até o enamed');
+  } else {
+    dias = diasAte(p.fim);
+    if (dias === null) return null;
+    label = dias < 0 ? 'semestre acabou' : (dias === 1 ? 'dia restante' : 'dias restantes');
+  }
+  return { dias: Math.max(0, dias), label };
+}
+
+function getRoute() {
+  const m = (location.hash || '').match(/^#\/plano\/(.+)$/);
+  if (!m) return { view: 'lista' };
+  let id; try { id = decodeURIComponent(m[1]); } catch { id = m[1]; }
+  return { view: 'detalhe', id };
+}
+
+function irParaLista() { location.hash = ''; }
+function irParaDetalhe(id) { location.hash = '#/plano/' + encodeURIComponent(id); }
+
 function render() {
+  const route = getRoute();
+  if (route.view === 'detalhe') {
+    const p = load().find(x => x.id === route.id);
+    if (!p) {
+      history.replaceState(null, '', location.pathname + location.search);
+      renderLista();
+      return;
+    }
+    renderDetalhe(p);
+  } else {
+    renderLista();
+  }
+}
+
+function renderLista() {
   const list = load();
   const cont = document.getElementById('listaContainer');
+  document.getElementById('crumb').innerHTML = 'Home <i>›</i> Planos';
+  document.getElementById('listHeader').style.display = '';
   document.getElementById('statusPill').textContent = `${list.length} plano${list.length!==1?'s':''}`;
 
   if (list.length === 0) {
@@ -318,39 +407,21 @@ function render() {
 
   const cards = list.map(p => {
     const materias = (p.materias || []).map(m => `<span>${esc(m)}</span>`).join('');
-    let rightCol = '';
-    let metaInfo = '';
-    if (p.tipo === 'residencia') {
-      const dias = diasAte(p.dataProva);
-      rightCol = `<div class="plano-countdown">
-        ${dias !== null ? `<div class="num">${Math.max(0,dias)}</div><div class="lbl">${dias < 0 ? 'prova passou' : (dias === 1 ? 'dia até a prova' : 'dias até a prova')}</div>` : '<div class="lbl">sem data</div>'}
-      </div>`;
-      metaInfo = `${p.instituicao ? esc(p.instituicao) + ' · ' : ''}Prova: <b>${fmtData(p.dataProva)}</b>${p.inicio ? ` · início <b>${fmtData(p.inicio)}</b>` : ''}`;
-    } else if (p.tipo === 'enamed') {
-      const dias = diasAte(p.dataProva);
-      rightCol = `<div class="plano-countdown">
-        ${dias !== null ? `<div class="num" style="color:var(--amber)">${Math.max(0,dias)}</div><div class="lbl">${dias < 0 ? 'enamed passou' : (dias === 1 ? 'dia até o enamed' : 'dias até o enamed')}</div>` : '<div class="lbl">sem data</div>'}
-      </div>`;
-      metaInfo = `ENAMED: <b>${fmtData(p.dataProva)}</b>${p.inicio ? ` · início <b>${fmtData(p.inicio)}</b>` : ''}`;
-    } else {
-      const diasFim = diasAte(p.fim);
-      rightCol = `<div class="plano-countdown">
-        ${diasFim !== null ? `<div class="num" style="color:var(--mint)">${Math.max(0,diasFim)}</div><div class="lbl">${diasFim < 0 ? 'semestre acabou' : (diasFim === 1 ? 'dia restante' : 'dias restantes')}</div>` : '<div class="lbl">sem data</div>'}
-      </div>`;
-      metaInfo = `${p.instituicao ? esc(p.instituicao) + ' · ' : ''}<b>${fmtData(p.inicio)}</b> — <b>${fmtData(p.fim)}</b>`;
-    }
+    const cd = countdownFor(p);
+    const cor = p.tipo === 'enamed' ? 'var(--amber)' : (p.tipo === 'semestre' ? 'var(--mint)' : 'var(--cobalt)');
+    const rightCol = `<div class="plano-countdown">${cd
+      ? `<div class="num" style="color:${cor}">${cd.dias}</div><div class="lbl">${cd.label}</div>`
+      : '<div class="lbl">sem data</div>'}</div>`;
 
-    const tipoLabel = p.tipo === 'residencia' ? '🏥 Residência' : (p.tipo === 'enamed' ? '📋 ENAMED' : '🎓 Semestre');
-
-    return `<div class="plano-card ${p.tipo}">
+    return `<div class="plano-card ${p.tipo}" onclick="irParaDetalhe('${p.id}')">
       <div class="plano-actions">
-        <button onclick="abrirEdit('${p.id}')" title="Editar">✎</button>
-        <button class="del" onclick="if(confirm('Apagar esse plano?')){ save(load().filter(x=>x.id!=='${p.id}')); render(); }" title="Apagar">×</button>
+        <button onclick="event.stopPropagation(); abrirEdit('${p.id}')" title="Editar">✎</button>
+        <button class="del" onclick="event.stopPropagation(); if(confirm('Apagar esse plano?')){ save(load().filter(x=>x.id!=='${p.id}')); render(); }" title="Apagar">×</button>
       </div>
       <div>
-        <div class="tipo">${tipoLabel}</div>
+        <div class="tipo">${TIPO_LABEL[p.tipo]}</div>
         <h3>${esc(p.nome)}</h3>
-        <div class="meta">${metaInfo}</div>
+        <div class="meta">${metaInfoFor(p)}</div>
         ${materias ? `<div class="plano-materias">${materias}</div>` : ''}
       </div>
       ${rightCol}
@@ -360,10 +431,58 @@ function render() {
   cont.innerHTML = cards + `<div class="add-more"><button onclick="abrirNovo()">+ Adicionar outro plano</button></div>`;
 }
 
+function renderDetalhe(p) {
+  const cont = document.getElementById('listaContainer');
+  document.getElementById('crumb').innerHTML = `Home <i>›</i> Planos <i>›</i> ${esc(p.nome)}`;
+  document.getElementById('listHeader').style.display = 'none';
+  document.getElementById('statusPill').textContent = TIPO_LABEL[p.tipo];
+
+  const cd = countdownFor(p);
+  const countdownHtml = `<div class="detalhe-countdown">${cd
+    ? `<div class="num">${cd.dias}</div><div class="lbl">${cd.label}</div>`
+    : '<div class="lbl">sem data</div>'}</div>`;
+
+  const materias = p.materias || [];
+  const materiasHtml = materias.length
+    ? `<div class="materias-grid">${materias.map(m => `
+        <div class="materia-bloco">
+          <div class="nome">${esc(m)}</div>
+          <div class="sub">a planejar</div>
+        </div>`).join('')}</div>`
+    : `<div class="empty">
+        <h3>Nenhuma matéria cadastrada.</h3>
+        <p>Adicione as matérias / áreas pra começar a planejar o estudo desse plano.</p>
+        <button onclick="abrirEdit('${p.id}')">Editar pra adicionar</button>
+      </div>`;
+
+  cont.innerHTML = `
+    <div class="detalhe-back">
+      <button onclick="irParaLista()">← voltar pros planos</button>
+    </div>
+    <div class="detalhe-header ${p.tipo}">
+      <div>
+        <span class="tipo-badge">${TIPO_LABEL[p.tipo]}</span>
+        <h1>${esc(p.nome)}</h1>
+        <div class="meta">${metaInfoFor(p)}</div>
+        <div class="actions">
+          <button class="btn" onclick="abrirEdit('${p.id}')">Editar</button>
+        </div>
+      </div>
+      ${countdownHtml}
+    </div>
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">${MATERIAS_LABEL[p.tipo]}</div>
+      </div>
+      ${materiasHtml}
+    </div>`;
+}
+
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && document.getElementById('planoModal').classList.contains('open')) fechar();
 });
 
+window.addEventListener('hashchange', render);
 render();
 </script>
 </body></html>
