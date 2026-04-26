@@ -229,6 +229,24 @@
           <option value="60">60 min</option>
         </select>
       </div>
+      <div class="mfield"><label>Plano do aluno (em minutos)</label>
+        <input type="number" id="ePlanoMin" min="1" max="600" placeholder="ex: 120">
+      </div>
+      <div class="mfield"><label>Dividir em sessões</label>
+        <div class="opt-grid c4" id="eSecBtns">
+          <button type="button" class="opt-btn active" data-sec="2" onclick="setSecExtra(2)">2</button>
+          <button type="button" class="opt-btn" data-sec="3" onclick="setSecExtra(3)">3</button>
+          <button type="button" class="opt-btn" data-sec="4" onclick="setSecExtra(4)">4</button>
+          <button type="button" class="opt-btn" data-sec="5" onclick="setSecExtra(5)">5</button>
+        </div>
+      </div>
+      <div class="mfield"><label>Pausa entre sessões</label>
+        <div class="opt-grid c3" id="ePausaBtns">
+          <button type="button" class="opt-btn active" data-pausa="5" onclick="setPausaExtra(5)">5 min</button>
+          <button type="button" class="opt-btn" data-pausa="10" onclick="setPausaExtra(10)">10 min</button>
+          <button type="button" class="opt-btn" data-pausa="15" onclick="setPausaExtra(15)">15 min</button>
+        </div>
+      </div>
       <div class="mfield row2">
         <div>
           <label>Concluiu o planejado?</label>
@@ -329,7 +347,7 @@ function timerOpen(discId, discNome, mins, linkedBlocoId, opts) {
   opts = opts || {};
   if (timerState.running && !confirm('Já tem um cronômetro rodando. Substituir?')) return;
   if (timerState.intervalId) clearInterval(timerState.intervalId);
-  const sections = Math.max(1, Math.min(4, parseInt(opts.sections) || 1));
+  const sections = Math.max(1, Math.min(5, parseInt(opts.sections) || 1));
   const pauseMins = sections > 1 ? Math.max(0, parseInt(opts.pauseMins) || 0) : 0;
   timerState = {
     discId, discNome,
@@ -520,41 +538,67 @@ function apagarBloco(wk, blocoId) {
 }
 
 // Modal extra
+let extraSecoes = 2;
+let extraPausa = 5;
+function setSecExtra(n) {
+  extraSecoes = n;
+  document.querySelectorAll('#eSecBtns .opt-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.sec) === n);
+  });
+}
+function setPausaExtra(m) {
+  extraPausa = m;
+  document.querySelectorAll('#ePausaBtns .opt-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.pausa) === m);
+  });
+}
 function abrirExtra() {
   const sel = document.getElementById('eDisc');
   sel.innerHTML = loadDisc().filter(d=>d.status==='em-curso'||!d.status).map(d => `<option value="${d.id}">${d.nome}</option>`).join('');
   if (!sel.options.length) { alert('Cadastre uma disciplina primeiro.'); return; }
   document.getElementById('eMins').value = '25';
+  document.getElementById('ePlanoMin').value = '';
   document.getElementById('eConcluido').value = 'sim';
   document.getElementById('eRevisar').value = 'nao';
+  setSecExtra(2);
+  setPausaExtra(5);
   document.getElementById('extraModal').classList.add('open');
 }
 function fecharExtra() { document.getElementById('extraModal').classList.remove('open'); }
 function getMinsSelected() { return parseInt(document.getElementById('eMins').value); }
+function getPlanoMinSelected() {
+  const v = parseInt(document.getElementById('ePlanoMin').value);
+  return (!isNaN(v) && v > 0) ? v : null;
+}
 function getConcluidoSelected() { return document.getElementById('eConcluido').value === 'sim'; }
 function getRevisarSelected() { return document.getElementById('eRevisar').value === 'sim'; }
 function salvarExtraManual() {
   const discId = document.getElementById('eDisc').value;
   const disc = loadDisc().find(d => d.id === discId);
   const mins = getMinsSelected();
+  const planoMin = getPlanoMinSelected();
   const concluido = getConcluidoSelected();
   const revisar = getRevisarSelected();
+  const minsRegistrados = planoMin || mins;
   const plan = loadPlan();
   const wk = weekKey(new Date());
   if (!plan[wk]) plan[wk] = [];
   const now = new Date();
   const endH = now.getHours() + now.getMinutes()/60;
-  const startH = Math.max(0, endH - mins/60);
-  plan[wk].push({ id: uid(), tipo:'estudo', discId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: concluido, minutos: mins, extra: true, data: todayKey(), revisar });
+  const startH = Math.max(0, endH - minsRegistrados/60);
+  plan[wk].push({ id: uid(), tipo:'estudo', discId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: concluido, minutos: minsRegistrados, extra: true, data: todayKey(), revisar, planoMin, sessoes: extraSecoes, pausaMin: extraPausa });
   savePlan(plan);
 
   // Feed de revisões
   pushHist({
     data: fmtDataBR(now),
     materia: disc ? disc.nome : 'Estudo',
-    minutos: mins,
+    minutos: minsRegistrados,
     concluido,
-    revisar
+    revisar,
+    planoMin,
+    sessoes: extraSecoes,
+    pausaMin: extraPausa
   });
 
   fecharExtra();
@@ -563,10 +607,12 @@ function salvarExtraManual() {
 function salvarExtraTimer() {
   const discId = document.getElementById('eDisc').value;
   const disc = loadDisc().find(d => d.id === discId);
-  const mins = getMinsSelected();
+  const planoMin = getPlanoMinSelected();
+  // Se o aluno informou o plano total, cada sessão = plano / sessões. Senão, usa Duração.
+  const minsPorSessao = planoMin ? Math.max(1, Math.round(planoMin / extraSecoes)) : getMinsSelected();
   const revisar = getRevisarSelected();
   fecharExtra();
-  timerOpen(discId, disc.nome, mins, null, { fromModal: true, revisar });
+  timerOpen(discId, disc.nome, minsPorSessao, null, { fromModal: true, revisar, sections: extraSecoes, pauseMins: extraPausa });
 }
 
 // Modal duração (escolher antes do play, ou editar duração planejada)
