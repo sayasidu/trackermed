@@ -8,9 +8,11 @@
 .plano-card { background: var(--card); border: 1px solid var(--line); padding: 26px 28px; margin-top: 16px; position: relative; display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: flex-start; }
 .plano-card.residencia { border-left: 4px solid var(--cobalt); }
 .plano-card.semestre { border-left: 4px solid var(--mint); }
+.plano-card.enamed { border-left: 4px solid var(--amber); }
 .plano-card .tipo { font-size: 11px; letter-spacing: 0.18em; color: var(--muted); font-weight: 700; text-transform: uppercase; margin-bottom: 6px; }
 .plano-card.residencia .tipo { color: var(--cobalt); }
 .plano-card.semestre .tipo { color: var(--mint); }
+.plano-card.enamed .tipo { color: var(--amber); }
 .plano-card h3 { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 500; letter-spacing: -0.025em; line-height: 1.05; }
 .plano-card .meta { font-size: 13px; color: var(--ink2); margin-top: 6px; }
 .plano-card .meta b { font-variant-numeric: tabular-nums; }
@@ -47,14 +49,14 @@
 .mfield textarea { min-height: 80px; resize: vertical; }
 .mfield input:focus, .mfield select:focus, .mfield textarea:focus { outline: 2px solid var(--cobalt); outline-offset: -1px; }
 .mfield.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.type-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.type-choice label { cursor: pointer; padding: 14px; border: 1.5px solid var(--line); background: var(--paper); transition: all .15s; display: flex; flex-direction: column; gap: 4px; position: relative; }
+.type-choice { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.type-choice label { cursor: pointer; padding: 12px 10px; border: 1.5px solid var(--line); background: var(--paper); transition: all .15s; display: flex; flex-direction: column; gap: 3px; position: relative; }
 .type-choice label:hover { border-color: var(--ink2); }
 .type-choice input { position: absolute; opacity: 0; }
 .type-choice label:has(input:checked) { border-color: var(--cobalt); background: #DDE3FF; }
-.type-choice .t-icon { font-size: 22px; }
-.type-choice .t-title { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 500; }
-.type-choice .t-desc { font-size: 11px; color: var(--muted); }
+.type-choice .t-icon { font-size: 20px; }
+.type-choice .t-title { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 500; }
+.type-choice .t-desc { font-size: 10px; color: var(--muted); line-height: 1.35; }
 .conditional { display: none; }
 .conditional.show { display: block; }
 .mhelp { font-size: 11px; color: var(--muted); margin-top: 5px; font-style: italic; }
@@ -116,6 +118,12 @@
             <div class="t-title">Residência</div>
             <div class="t-desc">Preparação pra prova.</div>
           </label>
+          <label>
+            <input type="radio" name="tipo" value="enamed" onchange="toggleTipo()">
+            <div class="t-icon">📋</div>
+            <div class="t-title">ENAMED</div>
+            <div class="t-desc">Avaliação nacional.</div>
+          </label>
         </div>
       </div>
 
@@ -155,6 +163,18 @@
         </div>
       </div>
 
+      <div class="conditional" id="camposEnamed">
+        <div class="mfield row2">
+          <div><label>Data do ENAMED</label><input type="date" id="eData"></div>
+          <div><label>Início dos estudos</label><input type="date" id="eInicio"></div>
+        </div>
+        <div class="mfield">
+          <label>Áreas / temas do ENAMED</label>
+          <textarea id="eMaterias" placeholder="Uma por linha.&#10;Clínica Médica&#10;Cirurgia&#10;Pediatria&#10;Ginecologia/Obstetrícia&#10;Saúde Coletiva"></textarea>
+          <div class="mhelp">Uma por linha.</div>
+        </div>
+      </div>
+
       <div class="mactions">
         <button type="button" class="mbtn-delete" id="btnDel" onclick="apagar()" style="display:none">Apagar plano</button>
         <div style="display:flex;gap:10px;margin-left:auto">
@@ -180,6 +200,7 @@ function toggleTipo() {
   const t = document.querySelector('input[name="tipo"]:checked').value;
   document.getElementById('camposSemestre').classList.toggle('show', t === 'semestre');
   document.getElementById('camposResidencia').classList.toggle('show', t === 'residencia');
+  document.getElementById('camposEnamed').classList.toggle('show', t === 'enamed');
 }
 
 function abrirNovo() {
@@ -211,11 +232,15 @@ function abrirEdit(id) {
     document.getElementById('sFim').value = p.fim || '';
     document.getElementById('sInst').value = p.instituicao || '';
     document.getElementById('sMaterias').value = (p.materias || []).join('\n');
-  } else {
+  } else if (p.tipo === 'residencia') {
     document.getElementById('rData').value = p.dataProva || '';
     document.getElementById('rInicio').value = p.inicio || '';
     document.getElementById('rInst').value = p.instituicao || '';
     document.getElementById('rMaterias').value = (p.materias || []).join('\n');
+  } else {
+    document.getElementById('eData').value = p.dataProva || '';
+    document.getElementById('eInicio').value = p.inicio || '';
+    document.getElementById('eMaterias').value = (p.materias || []).join('\n');
   }
   document.getElementById('planoModal').classList.add('open');
 }
@@ -235,7 +260,7 @@ function salvar() {
     }
     p.instituicao = document.getElementById('sInst').value.trim();
     p.materias = document.getElementById('sMaterias').value.split('\n').map(x=>x.trim()).filter(Boolean);
-  } else {
+  } else if (tipo === 'residencia') {
     p.dataProva = document.getElementById('rData').value;
     p.inicio = document.getElementById('rInicio').value;
     if (p.inicio && p.dataProva && p.inicio > p.dataProva) {
@@ -243,6 +268,13 @@ function salvar() {
     }
     p.instituicao = document.getElementById('rInst').value.trim();
     p.materias = document.getElementById('rMaterias').value.split('\n').map(x=>x.trim()).filter(Boolean);
+  } else {
+    p.dataProva = document.getElementById('eData').value;
+    p.inicio = document.getElementById('eInicio').value;
+    if (p.inicio && p.dataProva && p.inicio > p.dataProva) {
+      alert('O início dos estudos precisa ser antes da data do ENAMED.'); return;
+    }
+    p.materias = document.getElementById('eMaterias').value.split('\n').map(x=>x.trim()).filter(Boolean);
   }
   let list = load();
   if (editingId) list = list.map(x => x.id === editingId ? p : x);
@@ -294,6 +326,12 @@ function render() {
         ${dias !== null ? `<div class="num">${Math.max(0,dias)}</div><div class="lbl">${dias < 0 ? 'prova passou' : (dias === 1 ? 'dia até a prova' : 'dias até a prova')}</div>` : '<div class="lbl">sem data</div>'}
       </div>`;
       metaInfo = `${p.instituicao ? esc(p.instituicao) + ' · ' : ''}Prova: <b>${fmtData(p.dataProva)}</b>${p.inicio ? ` · início <b>${fmtData(p.inicio)}</b>` : ''}`;
+    } else if (p.tipo === 'enamed') {
+      const dias = diasAte(p.dataProva);
+      rightCol = `<div class="plano-countdown">
+        ${dias !== null ? `<div class="num" style="color:var(--amber)">${Math.max(0,dias)}</div><div class="lbl">${dias < 0 ? 'enamed passou' : (dias === 1 ? 'dia até o enamed' : 'dias até o enamed')}</div>` : '<div class="lbl">sem data</div>'}
+      </div>`;
+      metaInfo = `ENAMED: <b>${fmtData(p.dataProva)}</b>${p.inicio ? ` · início <b>${fmtData(p.inicio)}</b>` : ''}`;
     } else {
       const diasFim = diasAte(p.fim);
       rightCol = `<div class="plano-countdown">
@@ -302,13 +340,15 @@ function render() {
       metaInfo = `${p.instituicao ? esc(p.instituicao) + ' · ' : ''}<b>${fmtData(p.inicio)}</b> — <b>${fmtData(p.fim)}</b>`;
     }
 
+    const tipoLabel = p.tipo === 'residencia' ? '🏥 Residência' : (p.tipo === 'enamed' ? '📋 ENAMED' : '🎓 Semestre');
+
     return `<div class="plano-card ${p.tipo}">
       <div class="plano-actions">
         <button onclick="abrirEdit('${p.id}')" title="Editar">✎</button>
         <button class="del" onclick="if(confirm('Apagar esse plano?')){ save(load().filter(x=>x.id!=='${p.id}')); render(); }" title="Apagar">×</button>
       </div>
       <div>
-        <div class="tipo">${p.tipo === 'residencia' ? '🏥 Residência' : '🎓 Semestre'}</div>
+        <div class="tipo">${tipoLabel}</div>
         <h3>${esc(p.nome)}</h3>
         <div class="meta">${metaInfo}</div>
         ${materias ? `<div class="plano-materias">${materias}</div>` : ''}
