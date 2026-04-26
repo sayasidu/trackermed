@@ -41,9 +41,11 @@
 .blk-item .edit-btn:hover { color: var(--cobalt); }
 .blk-item.done .edit-btn { display: none; }
 
-.dur-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+.dur-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
 .dur-btn { background: var(--paper); border: 1px solid #E0E0E0; padding: 16px 8px; font-family: 'Fraunces', serif; font-size: 22px; cursor: pointer; font-style: italic; color: var(--cobalt); font-variant-numeric: tabular-nums; transition: all 0.12s; }
 .dur-btn:hover { background: var(--cobalt); color: #fff; border-color: var(--cobalt); }
+.dur-free-btn { width: 100%; background: var(--ink); color: var(--acid); border: none; padding: 13px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 14px; }
+.dur-free-btn:hover { background: var(--cobalt); color: #fff; }
 
 .opt-grid { display: grid; gap: 6px; }
 .opt-grid.c4 { grid-template-columns: repeat(4, 1fr); }
@@ -104,6 +106,8 @@
 .mbtn-cancel { background: transparent; border: 1px solid #E0E0E0; padding: 10px 18px; font-size: 13px; cursor: pointer; font-family: inherit; }
 .mbtn-save { background: var(--cobalt); color: #fff; border: none; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
 .mbtn-timer { background: var(--acid); color: var(--ink); border: none; padding: 10px 22px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; letter-spacing: 0.03em; }
+.mbtn-timer-free { background: var(--ink); color: var(--acid); border: none; padding: 10px 22px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; letter-spacing: 0.03em; }
+.mbtn-timer-free:hover { background: var(--cobalt); color: #fff; }
 </style></head><body>
 <div class="app">
 <aside class="sidebar">
@@ -182,6 +186,7 @@
       <button type="button" class="dur-btn" onclick="escolherDur(45)">45min</button>
       <button type="button" class="dur-btn" onclick="escolherDur(60)">60min</button>
     </div>
+    <button type="button" id="durFreeBtn" class="dur-free-btn" onclick="escolherDurLivre()">▶ Cronômetro livre · sem limite</button>
     <div class="mfield" id="durCustomWrap" style="display:none">
       <label>Outro valor (em minutos)</label>
       <div class="dur-custom">
@@ -273,6 +278,7 @@
         <button type="button" class="mbtn-cancel" onclick="fecharExtra()">Cancelar</button>
         <button type="button" class="mbtn-save" onclick="salvarExtraManual()">Registrar agora</button>
         <button type="button" class="mbtn-timer" onclick="salvarExtraTimer()">▶ Cronômetro</button>
+        <button type="button" class="mbtn-timer-free" onclick="salvarExtraTimerLivre()" title="Cronômetro livre (sem limite, conta a vontade)">▶ Livre</button>
       </div>
     </form>
   </div>
@@ -343,7 +349,7 @@ function plural(n, singular, plural_) { return n === 1 ? singular : plural_; }
 
 // Timer state
 function makeTimerState() {
-  return { discId: null, discNome: '', focusSec: 0, pauseSec: 0, sections: 1, currentSection: 1, mode: 'focus', leftSec: 0, running: false, intervalId: null, linkedBlocoId: null, fromModal: false, revisar: false, studiedSec: 0 };
+  return { discId: null, discNome: '', focusSec: 0, pauseSec: 0, sections: 1, currentSection: 1, mode: 'focus', leftSec: 0, running: false, intervalId: null, linkedBlocoId: null, fromModal: false, revisar: false, studiedSec: 0, freeMode: false, elapsedSec: 0 };
 }
 let timerState = makeTimerState();
 function beep() {
@@ -363,7 +369,8 @@ function timerOpen(discId, discNome, mins, linkedBlocoId, opts) {
     running: false, intervalId: null,
     linkedBlocoId: linkedBlocoId || null,
     fromModal: !!opts.fromModal, revisar: !!opts.revisar,
-    studiedSec: 0
+    studiedSec: 0,
+    freeMode: false, elapsedSec: 0
   };
   document.getElementById('tDisc').textContent = discNome;
   document.getElementById('tPlayBtn').textContent = 'Iniciar';
@@ -373,10 +380,39 @@ function timerOpen(discId, discNome, mins, linkedBlocoId, opts) {
   // auto-iniciar
   timerToggle();
 }
+function timerOpenFree(discId, discNome, linkedBlocoId, opts) {
+  opts = opts || {};
+  if (timerState.running && !confirm('Já tem um cronômetro rodando. Substituir?')) return;
+  if (timerState.intervalId) clearInterval(timerState.intervalId);
+  timerState = {
+    discId, discNome,
+    focusSec: 0, pauseSec: 0,
+    sections: 1, currentSection: 1, mode: 'focus',
+    leftSec: 0,
+    running: false, intervalId: null,
+    linkedBlocoId: linkedBlocoId || null,
+    fromModal: !!opts.fromModal, revisar: !!opts.revisar,
+    studiedSec: 0,
+    freeMode: true, elapsedSec: 0
+  };
+  document.getElementById('tDisc').textContent = discNome;
+  document.getElementById('tPlayBtn').textContent = 'Iniciar';
+  updatePhaseUI();
+  updateClock();
+  document.getElementById('timerFloat').classList.add('open');
+  timerToggle();
+}
 function updatePhaseUI() {
   const fl = document.getElementById('timerFloat');
   const ph = document.getElementById('tPhase');
   const lb = document.getElementById('tLabel');
+  if (timerState.freeMode) {
+    fl.classList.remove('pausing');
+    lb.textContent = 'Cronômetro livre';
+    ph.classList.remove('show', 'pause');
+    ph.textContent = '';
+    return;
+  }
   if (timerState.mode === 'pause') {
     fl.classList.add('pausing');
     lb.textContent = 'Pausa';
@@ -396,11 +432,20 @@ function updatePhaseUI() {
   }
 }
 function updateClock() {
-  const m = Math.floor(Math.max(0,timerState.leftSec)/60), s = Math.max(0,timerState.leftSec)%60;
-  const txt = String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  let txt;
+  if (timerState.freeMode) {
+    const total = Math.max(0, timerState.elapsedSec);
+    const h = Math.floor(total/3600);
+    const m = Math.floor((total%3600)/60);
+    const s = total%60;
+    txt = (h > 0 ? String(h).padStart(2,'0')+':' : '') + String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  } else {
+    const m = Math.floor(Math.max(0,timerState.leftSec)/60), s = Math.max(0,timerState.leftSec)%60;
+    txt = String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  }
   document.getElementById('tClock').textContent = txt;
   if (timerState.running) {
-    const tag = timerState.mode === 'pause' ? 'Pausa' : 'Foco';
+    const tag = timerState.freeMode ? 'Livre' : (timerState.mode === 'pause' ? 'Pausa' : 'Foco');
     document.title = `${txt} · ${tag}`;
   } else {
     document.title = 'Histórico · TrackerMed';
@@ -426,6 +471,11 @@ function timerToggle() {
   }
 }
 function onTick() {
+  if (timerState.freeMode) {
+    timerState.elapsedSec++;
+    updateClock();
+    return;
+  }
   timerState.leftSec--;
   updateClock();
   if (timerState.leftSec <= 0) {
@@ -476,6 +526,7 @@ function timerReset() {
   timerState.currentSection = 1;
   timerState.studiedSec = 0;
   timerState.leftSec = timerState.focusSec;
+  timerState.elapsedSec = 0;
   updatePhaseUI();
   updateClock();
   document.getElementById('tPlayBtn').textContent = 'Iniciar';
@@ -483,13 +534,19 @@ function timerReset() {
 function timerFinish(auto) {
   if (timerState.intervalId) clearInterval(timerState.intervalId);
   timerState.running = false;
-  // soma o tempo da seção de foco em andamento (se houver)
-  let studiedSec = timerState.studiedSec;
-  if (timerState.mode === 'focus') studiedSec += Math.max(0, timerState.focusSec - Math.max(0, timerState.leftSec));
-  const studied = Math.round(studiedSec/60);
-  const totalPlannedSec = timerState.focusSec * timerState.sections;
+  let studied, totalPlannedSec;
+  if (timerState.freeMode) {
+    studied = Math.round(timerState.elapsedSec/60);
+    totalPlannedSec = timerState.elapsedSec;
+  } else {
+    // soma o tempo da seção de foco em andamento (se houver)
+    let studiedSec = timerState.studiedSec;
+    if (timerState.mode === 'focus') studiedSec += Math.max(0, timerState.focusSec - Math.max(0, timerState.leftSec));
+    studied = Math.round(studiedSec/60);
+    totalPlannedSec = timerState.focusSec * timerState.sections;
+  }
   if (studied < 1) { timerClose(); return; }
-  const concluidoNatural = !!auto && timerState.mode === 'focus' && timerState.currentSection >= timerState.sections && timerState.leftSec <= 0;
+  const concluidoNatural = !timerState.freeMode && !!auto && timerState.mode === 'focus' && timerState.currentSection >= timerState.sections && timerState.leftSec <= 0;
 
   if (timerState.linkedBlocoId) {
     // Marca bloco existente como feito
@@ -635,6 +692,14 @@ function salvarExtraTimer() {
   fecharExtra();
   timerOpen(discId, disc.nome, minsPorSessao, null, { fromModal: true, revisar, sections: sessoesUso, pauseMins: pausaUso });
 }
+function salvarExtraTimerLivre() {
+  const discId = document.getElementById('eDisc').value;
+  const disc = loadDisc().find(d => d.id === discId);
+  if (!disc) return;
+  const revisar = getRevisarSelected();
+  fecharExtra();
+  timerOpenFree(discId, disc.nome, null, { fromModal: true, revisar });
+}
 
 // Modal duração (escolher antes do play, ou editar duração planejada)
 let durCtx = null;
@@ -660,6 +725,7 @@ function abrirPlayDuracao(discId, discNome, blocoId) {
   document.getElementById('durCustom').value = '';
   document.getElementById('durCustomWrap').style.display = '';
   document.getElementById('secOptsWrap').style.display = '';
+  document.getElementById('durFreeBtn').style.display = '';
   setSecoes(1);
   setPausa(5);
   document.getElementById('durModal').classList.add('open');
@@ -671,6 +737,7 @@ function abrirEditarDuracao(wk, blocoId, discNome, minsAtual) {
   document.getElementById('durCustom').value = minsAtual;
   document.getElementById('durCustomWrap').style.display = '';
   document.getElementById('secOptsWrap').style.display = 'none';
+  document.getElementById('durFreeBtn').style.display = 'none';
   document.getElementById('durModal').classList.add('open');
 }
 function fecharDur() { document.getElementById('durModal').classList.remove('open'); durCtx = null; }
@@ -696,6 +763,12 @@ function escolherDurCustom() {
   } else {
     aplicarEdicaoDuracao(v);
   }
+}
+function escolherDurLivre() {
+  if (!durCtx || durCtx.modo !== 'play') return;
+  const { discId, discNome, blocoId } = durCtx;
+  fecharDur();
+  timerOpenFree(discId, discNome, blocoId);
 }
 function aplicarEdicaoDuracao(mins) {
   const { wk, blocoId } = durCtx;
