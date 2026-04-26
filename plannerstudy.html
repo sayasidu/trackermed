@@ -179,9 +179,13 @@
 .gerar-card h3 i { color: var(--acid); font-style: italic; }
 .gerar-card .help { font-size: 12px; color: rgba(244,241,234,0.65); margin-top: 4px; max-width: 460px; line-height: 1.45; }
 .gerar-card .g-info { flex: 1; min-width: 260px; }
+.gerar-card .g-acts { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .gerar-btn { background: var(--acid); color: var(--ink); border: none; padding: 14px 22px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
 .gerar-btn:hover { filter: brightness(0.95); }
 .gerar-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.limpar-btn { background: transparent; color: var(--paper); border: 1px solid rgba(244,241,234,0.35); padding: 14px 18px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+.limpar-btn:hover { background: rgba(244,241,234,0.08); border-color: rgba(244,241,234,0.6); }
+.limpar-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .gerar-card .g-status { font-size: 11px; color: var(--acid); margin-top: 8px; letter-spacing: 0.04em; min-height: 14px; font-variant-numeric: tabular-nums; }
 
 /* Bloco: drag + resize */
@@ -745,6 +749,17 @@ function gerarAuto() {
   render();
 }
 
+function limparSemana() {
+  const plan = loadPlan();
+  const wk = weekKey(anchorDate);
+  const blocos = (plan[wk] || []).filter(b => b.tipo === 'estudo');
+  if (blocos.length === 0) return;
+  if (!confirm(`Limpar os ${blocos.length} bloco${blocos.length!==1?'s':''} de estudo desta semana? Você poderá montar o planejamento manualmente depois.`)) return;
+  plan[wk] = (plan[wk] || []).filter(b => b.tipo !== 'estudo');
+  savePlan(plan);
+  render();
+}
+
 function abrirEditBloco(blocoId) {
   const plan = loadPlan();
   const wk = weekKey(anchorDate);
@@ -1093,6 +1108,7 @@ function render() {
   const faltaTot = itens.reduce((s,i) => s + i.falta, 0);
   const urgs = itens.filter(i => i.urgente && i.falta > 0.1).length;
   const metaBatida = faltaTot < 0.1;
+  const blocosSemana = (plan[wk] || []).filter(b => b.tipo === 'estudo').length;
   const statusLine = metaBatida
     ? 'Meta da semana batida — todas as horas já estão no calendário.'
     : `Faltam ${faltaTot.toFixed(1)}h p/ bater a meta${urgs ? ` · ${urgs} prova${urgs!==1?'s':''} próxima${urgs!==1?'s':''}` : ''}.`;
@@ -1102,7 +1118,10 @@ function render() {
       <div class="help">Distribui blocos automaticamente na semana respeitando prioridade (alta → manhã, baixa → noite), meta de horas e horários já ocupados.</div>
       <div class="g-status">${escH(statusLine)}</div>
     </div>
-    <button class="gerar-btn" onclick="gerarAuto()" ${diasLivresCount===0?'disabled':''}>${metaBatida ? '↻ Regenerar' : '✦ Gerar sugestão'}</button>
+    <div class="g-acts">
+      <button class="limpar-btn" onclick="limparSemana()" ${blocosSemana===0?'disabled':''} title="Remove todos os blocos de estudo desta semana pra você modificar manualmente">✕ Limpar semana</button>
+      <button class="gerar-btn" onclick="gerarAuto()" ${diasLivresCount===0?'disabled':''}>${metaBatida ? '↻ Regenerar' : '✦ Gerar sugestão'}</button>
+    </div>
   </div>`;
   document.getElementById('sugContainer').innerHTML = sugHtml;
   document.getElementById('gradeContainer').innerHTML = renderGrade(discList);
