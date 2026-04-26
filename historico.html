@@ -229,10 +229,16 @@
           <option value="60">60 min</option>
         </select>
       </div>
-      <div class="mfield"><label>Plano do aluno (em minutos)</label>
+      <div class="mfield"><label>Tempo máximo planejado (em minutos)</label>
         <input type="number" id="ePlanoMin" min="1" max="600" placeholder="ex: 120">
       </div>
-      <div class="mfield"><label>Dividir em sessões</label>
+      <div class="mfield"><label>Será em mais de uma sessão?</label>
+        <div class="opt-grid c2" id="eMultiBtns" style="grid-template-columns:repeat(2,1fr)">
+          <button type="button" class="opt-btn active" data-multi="nao" onclick="setMultiExtra('nao')">Não</button>
+          <button type="button" class="opt-btn" data-multi="sim" onclick="setMultiExtra('sim')">Sim</button>
+        </div>
+      </div>
+      <div class="mfield" id="eSecWrap" style="display:none"><label>Dividir em sessões</label>
         <div class="opt-grid c4" id="eSecBtns">
           <button type="button" class="opt-btn active" data-sec="2" onclick="setSecExtra(2)">2</button>
           <button type="button" class="opt-btn" data-sec="3" onclick="setSecExtra(3)">3</button>
@@ -240,7 +246,7 @@
           <button type="button" class="opt-btn" data-sec="5" onclick="setSecExtra(5)">5</button>
         </div>
       </div>
-      <div class="mfield"><label>Pausa entre sessões</label>
+      <div class="mfield" id="ePausaWrap" style="display:none"><label>Pausa entre sessões</label>
         <div class="opt-grid c3" id="ePausaBtns">
           <button type="button" class="opt-btn active" data-pausa="5" onclick="setPausaExtra(5)">5 min</button>
           <button type="button" class="opt-btn" data-pausa="10" onclick="setPausaExtra(10)">10 min</button>
@@ -540,6 +546,7 @@ function apagarBloco(wk, blocoId) {
 // Modal extra
 let extraSecoes = 2;
 let extraPausa = 5;
+let extraMulti = 'nao';
 function setSecExtra(n) {
   extraSecoes = n;
   document.querySelectorAll('#eSecBtns .opt-btn').forEach(b => {
@@ -552,6 +559,15 @@ function setPausaExtra(m) {
     b.classList.toggle('active', parseInt(b.dataset.pausa) === m);
   });
 }
+function setMultiExtra(v) {
+  extraMulti = v;
+  document.querySelectorAll('#eMultiBtns .opt-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.multi === v);
+  });
+  const mostrar = v === 'sim';
+  document.getElementById('eSecWrap').style.display = mostrar ? '' : 'none';
+  document.getElementById('ePausaWrap').style.display = mostrar ? '' : 'none';
+}
 function abrirExtra() {
   const sel = document.getElementById('eDisc');
   sel.innerHTML = loadDisc().filter(d=>d.status==='em-curso'||!d.status).map(d => `<option value="${d.id}">${d.nome}</option>`).join('');
@@ -562,6 +578,7 @@ function abrirExtra() {
   document.getElementById('eRevisar').value = 'nao';
   setSecExtra(2);
   setPausaExtra(5);
+  setMultiExtra('nao');
   document.getElementById('extraModal').classList.add('open');
 }
 function fecharExtra() { document.getElementById('extraModal').classList.remove('open'); }
@@ -580,13 +597,15 @@ function salvarExtraManual() {
   const concluido = getConcluidoSelected();
   const revisar = getRevisarSelected();
   const minsRegistrados = planoMin || mins;
+  const sessoesReg = extraMulti === 'sim' ? extraSecoes : 1;
+  const pausaReg = extraMulti === 'sim' ? extraPausa : 0;
   const plan = loadPlan();
   const wk = weekKey(new Date());
   if (!plan[wk]) plan[wk] = [];
   const now = new Date();
   const endH = now.getHours() + now.getMinutes()/60;
   const startH = Math.max(0, endH - minsRegistrados/60);
-  plan[wk].push({ id: uid(), tipo:'estudo', discId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: concluido, minutos: minsRegistrados, extra: true, data: todayKey(), revisar, planoMin, sessoes: extraSecoes, pausaMin: extraPausa });
+  plan[wk].push({ id: uid(), tipo:'estudo', discId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: concluido, minutos: minsRegistrados, extra: true, data: todayKey(), revisar, planoMin, sessoes: sessoesReg, pausaMin: pausaReg });
   savePlan(plan);
 
   // Feed de revisões
@@ -597,8 +616,8 @@ function salvarExtraManual() {
     concluido,
     revisar,
     planoMin,
-    sessoes: extraSecoes,
-    pausaMin: extraPausa
+    sessoes: sessoesReg,
+    pausaMin: pausaReg
   });
 
   fecharExtra();
@@ -608,11 +627,13 @@ function salvarExtraTimer() {
   const discId = document.getElementById('eDisc').value;
   const disc = loadDisc().find(d => d.id === discId);
   const planoMin = getPlanoMinSelected();
+  const sessoesUso = extraMulti === 'sim' ? extraSecoes : 1;
+  const pausaUso = extraMulti === 'sim' ? extraPausa : 0;
   // Se o aluno informou o plano total, cada sessão = plano / sessões. Senão, usa Duração.
-  const minsPorSessao = planoMin ? Math.max(1, Math.round(planoMin / extraSecoes)) : getMinsSelected();
+  const minsPorSessao = planoMin ? Math.max(1, Math.round(planoMin / sessoesUso)) : getMinsSelected();
   const revisar = getRevisarSelected();
   fecharExtra();
-  timerOpen(discId, disc.nome, minsPorSessao, null, { fromModal: true, revisar, sections: extraSecoes, pauseMins: extraPausa });
+  timerOpen(discId, disc.nome, minsPorSessao, null, { fromModal: true, revisar, sections: sessoesUso, pauseMins: pausaUso });
 }
 
 // Modal duração (escolher antes do play, ou editar duração planejada)
