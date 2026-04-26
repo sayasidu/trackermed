@@ -405,6 +405,26 @@ function periodoHorasTotal(periodo, disp) {
   }
   return tot;
 }
+// Lista os dias do período com horas > 0, com chave da semana e dia da semana
+function computePeriodoDias(periodo, disp) {
+  const a = fromISODate(periodo.ini), b = fromISODate(periodo.fim);
+  if (!a || !b || b < a) return [];
+  const dias = [];
+  for (const cur = new Date(a); cur <= b; cur.setDate(cur.getDate()+1)) {
+    const cfg = DISP_DAYS.find(x => x.wd === cur.getDay());
+    if (!cfg) continue;
+    const cap = Number(disp[cfg.k]) || 0;
+    if (cap <= 0) continue;
+    dias.push({
+      date: new Date(cur),
+      wkKey: weekKey(cur),
+      wd: cur.getDay(),
+      dayKey: cfg.k,
+      capHoras: cap
+    });
+  }
+  return dias;
+}
 
 function loadDisp() {
   const base = { seg: 0, ter: 0, qua: 0, qui: 0, sex: 0, sab: 0, dom: 0 };
@@ -483,7 +503,17 @@ function renderPeriodo() {
   if (statusLbl) {
     if (dias <= 0) statusLbl.innerHTML = '<span class="warn">data final precisa ser ≥ inicial</span>';
     else if (total === 0) statusLbl.innerHTML = '<span class="warn">preencha horas nos dias da semana abaixo</span>';
-    else statusLbl.textContent = '';
+    else {
+      const excl = loadExcl();
+      const ativas = loadDisc().filter(d => (d.status === 'em-curso' || !d.status) && !excl.has(d.id));
+      const diasLivresWds = [...new Set(computePeriodoDias(p, disp).map(x => x.wd))];
+      const totalMetas = ativas.reduce((s, d) => s + targetHoras(d, diasLivresWds.length), 0);
+      if (totalMetas > total + 0.05) {
+        statusLbl.innerHTML = `<span class="warn">metas (${fmtDispHoras(totalMetas)}) ultrapassam ${fmtDispHoras(totalMetas - total)} a disponibilidade — distribuição proporcional</span>`;
+      } else {
+        statusLbl.textContent = '';
+      }
+    }
   }
 }
 function bindPeriodoInputs() {
@@ -642,41 +672,112 @@ function resumoSugestoes(discList, wkKey, plan, diasLivresCount) {
   return itens;
 }
 
-// Distribui blocos no calendário respeitando prioridade, aulas existentes e blocos já agendados.
-// Prioridade alta recebe manhã; baixa recebe noite. 1h por bloco, spread entre dias livres.
+// Pesos de prioridade para distribuição proporcional quando metas excedem disponibilidade
+const PESO_PRIO = { 'muito-alta': 4, 'alta': 3, 'media': 2, 'baixa': 1 };
+
+// Calcula a alocação por disciplina considerando metas e disponibilidade do período.
+// Se a soma das metas semanais excede o total disponível, redistribui proporcionalmente
+// ponderado pela prioridade. Retorna {alocacoes, excede, totalMetas, totalDisponivel}.
+function calcularAlocacaoPeriodo(ativas, diasLivresWdsCount, totalDisponivel) {
+  const metas = ativas.map(d => ({
+    disc: d,
+    meta: targetHoras(d, diasLivresWdsCount),
+    peso: PESO_PRIO[d.prioridade || 'media'] || 2
+  }));
+  const totalMetas = metas.reduce((s, m) => s + m.meta, 0);
+  const excede = totalMetas > totalDisponivel + 0.05;
+  let alocacoes;
+  if (!excede || totalDisponivel <= 0) {
+    alocacoes = metas.map(m => ({ ...m, alvo: m.meta }));
+  } else {
+    const totWeighted = metas.reduce((s, m) => s + m.meta * m.peso, 0);
+    alocacoes = metas.map(m => ({
+      ...m,
+      alvo: totWeighted > 0
+        ? Math.round((m.meta * m.peso / totWeighted) * totalDisponivel * 2) / 2
+        : 0
+    }));
+    // Ajuste fino: corrige arredondamentos pra que o total não passe da disponibilidade
+    let somaAlvo = alocacoes.reduce((s, a) => s + a.alvo, 0);
+    const ordemPrio = [...alocacoes].sort((a, b) =>
+      (PESO_PRIO[a.disc.prioridade || 'media'] || 2) - (PESO_PRIO[b.disc.prioridade || 'media'] || 2)
+    );
+    let i = 0;
+    while (somaAlvo > totalDisponivel + 0.001 && i < ordemPrio.length * 4) {
+      const cand = ordemPrio[i % ordemPrio.length];
+      if (cand.alvo >= 0.5) { cand.alvo -= 0.5; somaAlvo -= 0.5; }
+      i++;
+    }
+  }
+  return { alocacoes, excede, totalMetas, totalDisponivel };
+}
+
+// Distribui blocos no período respeitando prioridade, aulas, blocos manuais,
+// limite diário (disp[dayKey]) e meta semanal por disciplina.
+// Quando metas > disponibilidade do período, faz distribuição proporcional ponderada por prioridade.
 function gerarAuto() {
   const discList = loadDisc();
-  const avail = loadAvail();
-  const diasLivres = (avail.diasLivres || []).slice();
-  if (diasLivres.length === 0) { alert('Preencha ao menos um dia com horas > 0 antes de gerar a sugestão.'); return; }
+  const disp = loadDisp();
+  const periodo = loadPeriodo();
+  const dias = computePeriodoDias(periodo, disp);
+  if (dias.length === 0) {
+    alert('Sem dias disponíveis no período. Verifique as datas e as horas dos dias da semana.');
+    return;
+  }
   const excl = loadExcl();
   const ativas = discList.filter(d => (d.status === 'em-curso' || !d.status) && !excl.has(d.id));
   if (ativas.length === 0) { alert('Sem disciplinas ativas pra planejar.'); return; }
 
-  const wk = weekKey(anchorDate);
-  const plan = loadPlan();
-  const existentesTodos = (plan[wk] || []).slice();
-  // Se a meta global já está batida, assume-se "Regenerar": descarta blocos marcados como auto (preserva edições manuais).
-  const agendSumPorDisc = {};
-  existentesTodos.forEach(b => { agendSumPorDisc[b.discId] = (agendSumPorDisc[b.discId]||0) + (parseTime(b.fim)-parseTime(b.ini)); });
-  const metaBatida = ativas.every(d => (agendSumPorDisc[d.id] || 0) >= targetHoras(d, diasLivres.length) - 0.1);
-  const existentes = metaBatida
-    ? existentesTodos.filter(b => !b.auto)
-    : existentesTodos;
-  // Ocupação: dia -> Set de meias-horas ocupadas (step 0.5h)
-  const ocup = {};
-  for (let d = 0; d < 7; d++) ocup[d] = new Set();
-  const marcar = (dia, ini, fim) => {
-    if (ocup[dia] === undefined) return;
-    for (let t = ini; t < fim - 0.001; t += 0.5) ocup[dia].add(Math.round(t*2)/2);
-  };
-  discList.forEach(d => (d.aulas || []).forEach(a => {
-    const dia = DIA_IDX[a.dia];
-    if (a.inicio && a.fim) marcar(dia, parseTime(a.inicio), parseTime(a.fim));
-  }));
-  existentes.forEach(b => marcar(b.dia, parseTime(b.ini), parseTime(b.fim)));
+  const totalDisponivel = dias.reduce((s, d) => s + d.capHoras, 0);
+  const diasLivresWds = [...new Set(dias.map(d => d.wd))];
+  const wksTocadas = [...new Set(dias.map(d => d.wkKey))];
 
-  // Faixa preferencial por prioridade (ordem importa)
+  const { alocacoes, excede, totalMetas } = calcularAlocacaoPeriodo(
+    ativas, diasLivresWds.length, totalDisponivel
+  );
+
+  const plan = loadPlan();
+  // Marca como inválidos os blocos auto previamente colocados em dias dentro do período;
+  // blocos manuais (auto:false) e blocos fora do período ficam preservados.
+  const diasSetPeriodo = new Set(dias.map(d => `${d.wkKey}#${d.wd}`));
+  wksTocadas.forEach(wk => {
+    plan[wk] = (plan[wk] || []).filter(b => {
+      if (b.tipo !== 'estudo') return true;
+      const k = `${wk}#${b.dia}`;
+      if (b.auto && diasSetPeriodo.has(k)) return false;
+      return true;
+    });
+  });
+
+  // Ocupação por (wkKey, dia) -> Set de meias-horas ocupadas
+  const ocup = {};
+  const ocupKey = (wk, dia) => `${wk}#${dia}`;
+  const ensureOcup = (wk, dia) => {
+    const k = ocupKey(wk, dia);
+    if (!ocup[k]) ocup[k] = new Set();
+    return ocup[k];
+  };
+  const marcar = (wk, dia, ini, fim) => {
+    const set = ensureOcup(wk, dia);
+    for (let t = ini; t < fim - 0.001; t += 0.5) set.add(Math.round(t * 2) / 2);
+  };
+  wksTocadas.forEach(wk => {
+    discList.forEach(d => (d.aulas || []).forEach(a => {
+      const dia = DIA_IDX[a.dia];
+      if (a.inicio && a.fim) marcar(wk, dia, parseTime(a.inicio), parseTime(a.fim));
+    }));
+    (plan[wk] || []).forEach(b => marcar(wk, b.dia, parseTime(b.ini), parseTime(b.fim)));
+  });
+
+  // Uso por dia (em horas), conta blocos manuais existentes
+  const usoDia = {};
+  dias.forEach(d => {
+    const k = ocupKey(d.wkKey, d.wd);
+    const existentes = (plan[d.wkKey] || []).filter(b => b.dia === d.wd && b.tipo === 'estudo');
+    usoDia[k] = existentes.reduce((s, b) => s + (parseTime(b.fim) - parseTime(b.ini)), 0);
+  });
+
+  // Faixas preferenciais por prioridade (manhã/tarde/noite)
   const FAIXAS = {
     'muito-alta': [[7,12],[14,18],[18,22]],
     'alta':       [[8,12],[14,18],[18,22]],
@@ -684,68 +785,119 @@ function gerarAuto() {
     'baixa':      [[18,22],[14,18]]
   };
   const ORDEM = { 'muito-alta': 0, 'alta': 1, 'media': 2, 'baixa': 3 };
-  const alvo = ativas.slice().sort((a,b) => (ORDEM[a.prioridade||'media']) - (ORDEM[b.prioridade||'media']));
+  const alvoOrdem = alocacoes.slice().sort((a, b) =>
+    (ORDEM[a.disc.prioridade || 'media']) - (ORDEM[b.disc.prioridade || 'media'])
+  );
 
-  const novos = [];
-  // contador por dia pra espalhar melhor
-  const usoDia = {}; diasLivres.forEach(d => usoDia[d] = 0);
+  const novosPorWk = {};
+  const toHHMM = (h) => String(Math.floor(h)).padStart(2, '0') + ':' + (h % 1 ? '30' : '00');
 
-  alvo.forEach(d => {
-    const meta = targetHoras(d, diasLivres.length);
-    let jaDaDisc = existentes.filter(b => b.discId === d.id).reduce((s,b)=>s + (parseTime(b.fim)-parseTime(b.ini)), 0);
-    let falta = meta - jaDaDisc;
+  alvoOrdem.forEach(item => {
+    const d = item.disc;
+    const jaAgendado = wksTocadas.reduce((s, wk) =>
+      s + (plan[wk] || [])
+        .filter(b => b.discId === d.id && b.tipo === 'estudo')
+        .reduce((ss, b) => ss + (parseTime(b.fim) - parseTime(b.ini)), 0)
+    , 0);
+    let falta = item.alvo - jaAgendado;
     if (falta <= 0.1) return;
     const faixas = FAIXAS[d.prioridade || 'media'] || FAIXAS.media;
-    let guarda = 50;
+
+    let guarda = 400;
     while (falta > 0.1 && guarda-- > 0) {
-      // dia com menor uso (ties: ordem original)
-      const ord = [...diasLivres].sort((a,b) => usoDia[a] - usoDia[b]);
+      // Candidatos: dias do período com folga (não ultrapassam o limite diário)
+      const candidatos = dias
+        .filter(dd => (dd.capHoras - usoDia[ocupKey(dd.wkKey, dd.wd)]) >= 0.5 - 0.001)
+        .sort((a, b) => {
+          const ua = usoDia[ocupKey(a.wkKey, a.wd)];
+          const ub = usoDia[ocupKey(b.wkKey, b.wd)];
+          if (ua !== ub) return ua - ub;
+          return a.date - b.date;
+        });
+      if (candidatos.length === 0) break;
       let colocou = false;
-      for (const dia of ord) {
-        for (const [h1,h2] of faixas) {
-          for (let t = h1; t + 1 <= h2 + 0.001; t += 0.5) {
-            const s1 = Math.round(t*2)/2, s2 = s1 + 0.5;
-            if (ocup[dia].has(s1) || ocup[dia].has(s2)) continue;
-            ocup[dia].add(s1); ocup[dia].add(s2);
-            const toHHMM = (h) => String(Math.floor(h)).padStart(2,'0') + ':' + (h%1 ? '30' : '00');
-            const dur = Math.min(1, falta < 1 ? 0.5 : 1);
-            if (dur < 1) { ocup[dia].delete(s2); }
-            novos.push({
-              id: uid(), tipo: 'estudo', discId: d.id, dia,
-              ini: toHHMM(t), fim: toHHMM(t + dur), feito: false, auto: true
-            });
-            falta -= dur;
-            usoDia[dia] += dur;
-            colocou = true;
-            break;
+      for (const dd of candidatos) {
+        const dKey = ocupKey(dd.wkKey, dd.wd);
+        const folga = dd.capHoras - usoDia[dKey];
+        if (folga < 0.5 - 0.001) continue;
+        const ocupSet = ensureOcup(dd.wkKey, dd.wd);
+        for (const [h1, h2] of faixas) {
+          for (let t = h1; t + 0.5 <= h2 + 0.001; t += 0.5) {
+            const s1 = Math.round(t * 2) / 2;
+            const podeHora = (folga >= 1 - 0.001) && (falta >= 1 - 0.001) && (t + 1 <= h2 + 0.001);
+            if (podeHora) {
+              const s2 = s1 + 0.5;
+              if (ocupSet.has(s1) || ocupSet.has(s2)) continue;
+              ocupSet.add(s1); ocupSet.add(s2);
+              const novo = {
+                id: uid(), tipo: 'estudo', discId: d.id, dia: dd.wd,
+                ini: toHHMM(t), fim: toHHMM(t + 1), feito: false, auto: true
+              };
+              (novosPorWk[dd.wkKey] = novosPorWk[dd.wkKey] || []).push(novo);
+              falta -= 1;
+              usoDia[dKey] += 1;
+              colocou = true;
+              break;
+            } else {
+              if (ocupSet.has(s1)) continue;
+              ocupSet.add(s1);
+              const novo = {
+                id: uid(), tipo: 'estudo', discId: d.id, dia: dd.wd,
+                ini: toHHMM(t), fim: toHHMM(t + 0.5), feito: false, auto: true
+              };
+              (novosPorWk[dd.wkKey] = novosPorWk[dd.wkKey] || []).push(novo);
+              falta -= 0.5;
+              usoDia[dKey] += 0.5;
+              colocou = true;
+              break;
+            }
           }
           if (colocou) break;
         }
         if (colocou) break;
       }
-      if (!colocou) break; // sem espaço disponível
+      if (!colocou) break;
     }
   });
 
-  if (novos.length === 0) {
-    alert('Sem espaço livre nos dias escolhidos — abre espaço ou ajusta a meta.');
+  const todosNovos = Object.values(novosPorWk).flat();
+  if (todosNovos.length === 0) {
+    alert('Sem espaço livre nos dias do período — abra espaço, ajuste as metas ou amplie o período.');
     return;
   }
-  plan[wk] = [...existentes, ...novos];
+  Object.keys(novosPorWk).forEach(wk => {
+    plan[wk] = [...(plan[wk] || []), ...novosPorWk[wk]];
+  });
   savePlan(plan);
 
-  // snapshot no histórico
+  // Snapshot no histórico (foca na semana ancorada se houver blocos lá; caso contrário usa todos)
+  const wkAnchor = weekKey(anchorDate);
+  const blocosAnchor = novosPorWk[wkAnchor] || [];
+  const snapBlocos = blocosAnchor.length > 0 ? blocosAnchor : todosNovos;
+  const horasTot = todosNovos.reduce((s, b) => s + (parseTime(b.fim) - parseTime(b.ini)), 0);
+  const discIds = new Set(todosNovos.map(b => b.discId));
   const hist = loadHist();
-  const horasTot = novos.reduce((s,b) => s + (parseTime(b.fim)-parseTime(b.ini)), 0);
-  const discIds = new Set(novos.map(b => b.discId));
   hist.unshift({
     id: uid(),
     geradoEm: new Date().toISOString(),
-    wkKey: wk,
-    blocos: novos.map(b => ({...b})),
-    resumo: { horas: horasTot, discs: discIds.size }
+    wkKey: wkAnchor,
+    blocos: snapBlocos.map(b => ({ ...b })),
+    resumo: { horas: horasTot, discs: discIds.size },
+    aviso: excede
+      ? { totalMetas, totalDisponivel, excedente: totalMetas - totalDisponivel }
+      : null
   });
   saveHist(hist.slice(0, 30));
+
+  if (excede) {
+    alert(
+      `Aviso: as metas semanais somam ${totalMetas.toFixed(1)}h, mas o período tem ` +
+      `apenas ${totalDisponivel.toFixed(1)}h disponíveis ` +
+      `(excesso de ${(totalMetas - totalDisponivel).toFixed(1)}h).\n\n` +
+      `As horas foram distribuídas proporcionalmente, priorizando matérias de maior prioridade, ` +
+      `sem ultrapassar o limite diário.`
+    );
+  }
   render();
 }
 
@@ -1109,14 +1261,24 @@ function render() {
   const urgs = itens.filter(i => i.urgente && i.falta > 0.1).length;
   const metaBatida = faltaTot < 0.1;
   const blocosSemana = (plan[wk] || []).filter(b => b.tipo === 'estudo').length;
+  const periodo = loadPeriodo();
+  const dispAtual = loadDisp();
+  const periodoTotal = periodoHorasTotal(periodo, dispAtual);
+  const ativasParaPeriodo = discList.filter(d => (d.status === 'em-curso' || !d.status) && !loadExcl().has(d.id));
+  const totalMetasPeriodo = ativasParaPeriodo.reduce((s,d) => s + targetHoras(d, diasLivresCount), 0);
+  const excedePeriodo = periodoTotal > 0 && totalMetasPeriodo > periodoTotal + 0.05;
   const statusLine = metaBatida
     ? 'Meta da semana batida — todas as horas já estão no calendário.'
     : `Faltam ${faltaTot.toFixed(1)}h p/ bater a meta${urgs ? ` · ${urgs} prova${urgs!==1?'s':''} próxima${urgs!==1?'s':''}` : ''}.`;
+  const avisoPeriodo = excedePeriodo
+    ? `<div class="g-status" style="color:#FF8A8A">⚠ Metas (${totalMetasPeriodo.toFixed(1)}h) ultrapassam ${(totalMetasPeriodo - periodoTotal).toFixed(1)}h a disponibilidade do período (${periodoTotal.toFixed(1)}h). A sugestão será proporcional, priorizando matérias de maior prioridade.</div>`
+    : '';
   const sugHtml = `<div class="gerar-card">
     <div class="g-info">
       <h3>Gerar <i>sugestão</i> de estudo</h3>
-      <div class="help">Distribui blocos automaticamente na semana respeitando prioridade (alta → manhã, baixa → noite), meta de horas e horários já ocupados.</div>
+      <div class="help">Distribui blocos no período respeitando prioridade (alta → manhã, baixa → noite), meta semanal, limite diário e horários já ocupados. Se as metas excederem a disponibilidade do período, a distribuição é feita proporcionalmente, com peso maior para prioridades altas.</div>
       <div class="g-status">${escH(statusLine)}</div>
+      ${avisoPeriodo}
     </div>
     <div class="g-acts">
       <button class="limpar-btn" onclick="limparSemana()" ${blocosSemana===0?'disabled':''} title="Remove todos os blocos de estudo desta semana pra você modificar manualmente">✕ Limpar semana</button>
