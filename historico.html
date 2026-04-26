@@ -224,7 +224,13 @@
     <div class="modal-sub">Registre um bloco fora do planejamento — manual ou com cronômetro.</div>
     <form id="extraForm" onsubmit="event.preventDefault();">
       <div class="mfield"><label>Matéria</label>
-        <select id="eDisc" required></select>
+        <select id="eDisc" required onchange="onDiscChangeExtra()"></select>
+      </div>
+      <div class="mfield" id="eDiscOutraWrap" style="display:none"><label>Nome da matéria</label>
+        <input type="text" id="eDiscOutra" maxlength="80" placeholder="ex: Inglês, Programação, Direito…">
+      </div>
+      <div class="mfield"><label>Conteúdo (opcional)</label>
+        <input type="text" id="eConteudo" maxlength="160" placeholder="ex: capítulo 3, exercícios de fisiologia…">
       </div>
       <div class="mfield"><label>Duração (Pomodoro)</label>
         <select id="eMins">
@@ -346,10 +352,11 @@ function blocoDate(wk, b) {
   return dateKey(addDays(monday, offset));
 }
 function plural(n, singular, plural_) { return n === 1 ? singular : plural_; }
+function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // Timer state
 function makeTimerState() {
-  return { discId: null, discNome: '', focusSec: 0, pauseSec: 0, sections: 1, currentSection: 1, mode: 'focus', leftSec: 0, running: false, intervalId: null, linkedBlocoId: null, fromModal: false, revisar: false, studiedSec: 0, freeMode: false, elapsedSec: 0 };
+  return { discId: null, discNome: '', conteudo: '', focusSec: 0, pauseSec: 0, sections: 1, currentSection: 1, mode: 'focus', leftSec: 0, running: false, intervalId: null, linkedBlocoId: null, fromModal: false, revisar: false, studiedSec: 0, freeMode: false, elapsedSec: 0 };
 }
 let timerState = makeTimerState();
 function beep() {
@@ -363,6 +370,7 @@ function timerOpen(discId, discNome, mins, linkedBlocoId, opts) {
   const pauseMins = sections > 1 ? Math.max(0, parseInt(opts.pauseMins) || 0) : 0;
   timerState = {
     discId, discNome,
+    conteudo: opts.conteudo || '',
     focusSec: mins*60, pauseSec: pauseMins*60,
     sections, currentSection: 1, mode: 'focus',
     leftSec: mins*60,
@@ -386,6 +394,7 @@ function timerOpenFree(discId, discNome, linkedBlocoId, opts) {
   if (timerState.intervalId) clearInterval(timerState.intervalId);
   timerState = {
     discId, discNome,
+    conteudo: opts.conteudo || '',
     focusSec: 0, pauseSec: 0,
     sections: 1, currentSection: 1, mode: 'focus',
     leftSec: 0,
@@ -562,7 +571,7 @@ function timerFinish(auto) {
     const now = new Date();
     const endH = now.getHours() + now.getMinutes()/60;
     const startH = Math.max(0, endH - studied/60);
-    plan[wk].push({ id: uid(), tipo:'estudo', discId: timerState.discId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: true, fromTimer: true, minutos: studied, extra: true, data: todayKey(), revisar: timerState.revisar });
+    plan[wk].push({ id: uid(), tipo:'estudo', discId: timerState.discId, matNome: timerState.discNome, conteudo: timerState.conteudo || '', dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: true, fromTimer: true, minutos: studied, extra: true, data: todayKey(), revisar: timerState.revisar });
     savePlan(plan);
   }
 
@@ -571,6 +580,7 @@ function timerFinish(auto) {
     pushHist({
       data: fmtDataBR(new Date()),
       materia: timerState.discNome,
+      conteudo: timerState.conteudo || '',
       minutos: Math.round(totalPlannedSec/60),
       concluido: concluidoNatural,
       revisar: !!timerState.revisar
@@ -627,8 +637,12 @@ function setMultiExtra(v) {
 }
 function abrirExtra() {
   const sel = document.getElementById('eDisc');
-  sel.innerHTML = loadDisc().filter(d=>d.status==='em-curso'||!d.status).map(d => `<option value="${d.id}">${d.nome}</option>`).join('');
-  if (!sel.options.length) { alert('Cadastre uma disciplina primeiro.'); return; }
+  const opts = loadDisc().filter(d=>d.status==='em-curso'||!d.status).map(d => `<option value="${d.id}">${d.nome}</option>`);
+  opts.push('<option value="__outra__">+ Outra matéria…</option>');
+  sel.innerHTML = opts.join('');
+  document.getElementById('eDiscOutra').value = '';
+  document.getElementById('eDiscOutraWrap').style.display = 'none';
+  document.getElementById('eConteudo').value = '';
   document.getElementById('eMins').value = '25';
   document.getElementById('ePlanoMin').value = '';
   document.getElementById('eConcluido').value = 'sim';
@@ -637,6 +651,24 @@ function abrirExtra() {
   setPausaExtra(5);
   setMultiExtra('nao');
   document.getElementById('extraModal').classList.add('open');
+}
+function onDiscChangeExtra() {
+  const v = document.getElementById('eDisc').value;
+  document.getElementById('eDiscOutraWrap').style.display = v === '__outra__' ? '' : 'none';
+}
+function getMateriaExtra() {
+  const v = document.getElementById('eDisc').value;
+  if (v === '__outra__') {
+    const nome = (document.getElementById('eDiscOutra').value || '').trim();
+    if (!nome) { alert('Informe o nome da matéria.'); return null; }
+    return { discId: null, nome };
+  }
+  const disc = loadDisc().find(d => d.id === v);
+  if (!disc) { alert('Selecione uma matéria.'); return null; }
+  return { discId: disc.id, nome: disc.nome };
+}
+function getConteudoExtra() {
+  return (document.getElementById('eConteudo').value || '').trim();
 }
 function fecharExtra() { document.getElementById('extraModal').classList.remove('open'); }
 function getMinsSelected() { return parseInt(document.getElementById('eMins').value); }
@@ -647,8 +679,9 @@ function getPlanoMinSelected() {
 function getConcluidoSelected() { return document.getElementById('eConcluido').value === 'sim'; }
 function getRevisarSelected() { return document.getElementById('eRevisar').value === 'sim'; }
 function salvarExtraManual() {
-  const discId = document.getElementById('eDisc').value;
-  const disc = loadDisc().find(d => d.id === discId);
+  const mat = getMateriaExtra();
+  if (!mat) return;
+  const conteudo = getConteudoExtra();
   const mins = getMinsSelected();
   const planoMin = getPlanoMinSelected();
   const concluido = getConcluidoSelected();
@@ -662,13 +695,14 @@ function salvarExtraManual() {
   const now = new Date();
   const endH = now.getHours() + now.getMinutes()/60;
   const startH = Math.max(0, endH - minsRegistrados/60);
-  plan[wk].push({ id: uid(), tipo:'estudo', discId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: concluido, minutos: minsRegistrados, extra: true, data: todayKey(), revisar, planoMin, sessoes: sessoesReg, pausaMin: pausaReg });
+  plan[wk].push({ id: uid(), tipo:'estudo', discId: mat.discId, matNome: mat.nome, conteudo, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: concluido, minutos: minsRegistrados, extra: true, data: todayKey(), revisar, planoMin, sessoes: sessoesReg, pausaMin: pausaReg });
   savePlan(plan);
 
   // Feed de revisões
   pushHist({
     data: fmtDataBR(now),
-    materia: disc ? disc.nome : 'Estudo',
+    materia: mat.nome,
+    conteudo,
     minutos: minsRegistrados,
     concluido,
     revisar,
@@ -681,8 +715,9 @@ function salvarExtraManual() {
   render();
 }
 function salvarExtraTimer() {
-  const discId = document.getElementById('eDisc').value;
-  const disc = loadDisc().find(d => d.id === discId);
+  const mat = getMateriaExtra();
+  if (!mat) return;
+  const conteudo = getConteudoExtra();
   const planoMin = getPlanoMinSelected();
   const sessoesUso = extraMulti === 'sim' ? extraSecoes : 1;
   const pausaUso = extraMulti === 'sim' ? extraPausa : 0;
@@ -690,15 +725,15 @@ function salvarExtraTimer() {
   const minsPorSessao = planoMin ? Math.max(1, Math.round(planoMin / sessoesUso)) : getMinsSelected();
   const revisar = getRevisarSelected();
   fecharExtra();
-  timerOpen(discId, disc.nome, minsPorSessao, null, { fromModal: true, revisar, sections: sessoesUso, pauseMins: pausaUso });
+  timerOpen(mat.discId, mat.nome, minsPorSessao, null, { fromModal: true, revisar, sections: sessoesUso, pauseMins: pausaUso, conteudo });
 }
 function salvarExtraTimerLivre() {
-  const discId = document.getElementById('eDisc').value;
-  const disc = loadDisc().find(d => d.id === discId);
-  if (!disc) return;
+  const mat = getMateriaExtra();
+  if (!mat) return;
+  const conteudo = getConteudoExtra();
   const revisar = getRevisarSelected();
   fecharExtra();
-  timerOpenFree(discId, disc.nome, null, { fromModal: true, revisar });
+  timerOpenFree(mat.discId, mat.nome, null, { fromModal: true, revisar, conteudo });
 }
 
 // Modal duração (escolher antes do play, ou editar duração planejada)
@@ -852,14 +887,16 @@ function render() {
     blocosHoje.sort((a,b)=>parseTime(a.ini)-parseTime(b.ini)).forEach(b => {
       const d = disc.find(x=>x.id===b.discId);
       const mins = b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60);
-      const discNome = d ? d.nome : 'Estudo';
+      const discNome = d ? d.nome : (b.matNome || 'Estudo');
       const discNomeAttr = JSON.stringify(discNome).replace(/"/g,'&quot;');
+      const conteudoLine = b.conteudo ? ` · ${escHtml(b.conteudo)}` : '';
       const editBtn = b.feito ? '' : `<button class="edit-btn" onclick="abrirEditarDuracao('${wk}','${b.id}', ${discNomeAttr}, ${mins})" title="Editar duração">✎</button>`;
+      const playBtn = b.discId ? `<button class="play-btn" onclick="abrirPlayDuracao('${b.discId}', ${discNomeAttr}, '${b.id}')" title="Iniciar cronômetro">▶</button>` : '<div></div>';
       itens.push(`<div class="blk-item ${b.feito?'done':''}">
         <div class="horario">${b.ini}—${b.fim}</div>
-        <div><div class="nome">${b.extra?'✦ ':''}${discNome}</div><div class="motivo">${b.feito?'concluído':'planejado'}${b.extra?' · extra':''}</div></div>
+        <div><div class="nome">${b.extra?'✦ ':''}${discNome}</div><div class="motivo">${b.feito?'concluído':'planejado'}${b.extra?' · extra':''}${conteudoLine}</div></div>
         <div class="mins"><span class="mins-wrap">${fmtHrange(mins)}${editBtn}</span></div>
-        <button class="play-btn" onclick="abrirPlayDuracao('${b.discId}', ${discNomeAttr}, '${b.id}')" title="Iniciar cronômetro">▶</button>
+        ${playBtn}
         <button class="check-btn" onclick="toggleFeito('${wk}', '${b.id}')" title="Alternar concluído">${b.feito?'✓':'○'}</button>
       </div>`);
     });
