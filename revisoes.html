@@ -89,9 +89,11 @@ function render() {
         ${arr.map(r => {
           const concluido = !!r.concluido;
           const mins = parseInt(r.minutos) || 0;
+          const conteudo = (r.conteudo || '').trim();
           return `<div class="rev-row ${concluido ? 'done' : 'pending'}">
             <div>
               <div class="rev-title">${escapeHtml(r.materia || 'Estudo')}</div>
+              ${conteudo ? `<div class="rev-meta"><span>${escapeHtml(conteudo)}</span></div>` : ''}
               <div class="rev-meta">
                 <span>📅 ${escapeHtml(r.data || '')}</span>
                 <span>· ${mins} min</span>
