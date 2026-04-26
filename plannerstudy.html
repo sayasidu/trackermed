@@ -122,6 +122,14 @@
 .disp-setup h3 { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
 .disp-setup h3 i { color: var(--cobalt); font-style: italic; }
 .disp-setup .help { font-size: 12px; color: #70757A; margin-top: 4px; margin-bottom: 14px; }
+.periodo-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.periodo-row .pf { display: flex; flex-direction: column; gap: 4px; }
+.periodo-row label { font-size: 10px; letter-spacing: 0.12em; color: #70757A; font-weight: 600; text-transform: uppercase; }
+.periodo-row input { padding: 10px; border: 1px solid var(--line); background: var(--paper); font-size: 14px; font-family: inherit; }
+.periodo-row input:focus { outline: none; border-color: var(--cobalt); }
+.periodo-info { font-size: 13px; color: var(--muted); margin-bottom: 14px; padding: 10px 14px; background: var(--paper); border-left: 3px solid var(--cobalt); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.periodo-info b { color: var(--ink); font-weight: 600; font-family: 'Fraunces', serif; font-variant-numeric: tabular-nums; }
+.periodo-info .warn { color: var(--rose); font-weight: 600; }
 .disp-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
 @media (max-width: 720px) { .disp-grid { grid-template-columns: repeat(4, 1fr); } }
 .disp-day { display: flex; flex-direction: column; gap: 4px; }
@@ -244,6 +252,14 @@
 <div class="disp-setup">
   <h3>Suas <i>horas</i> de estudo</h3>
   <div class="help">Quantas horas você tem por dia. Dias com horas &gt; 0 viram <b>dias livres</b> pro cálculo de prioridade (muito alta = 60min, alta = 45min, média = 25min, baixa = 15min por dia livre). Use <b>Sugerir</b> pra preencher a rotina padrão (4h Seg–Sex, 3h Sáb, 2h Dom).</div>
+  <div class="periodo-row">
+    <div class="pf"><label for="dtIni">Data inicial</label><input type="date" id="dtIni"></div>
+    <div class="pf"><label for="dtFim">Data final</label><input type="date" id="dtFim"></div>
+  </div>
+  <div class="periodo-info">
+    <span>Período: <b id="periodoDias">—</b> · Total de horas no período: <b id="periodoTotal">—</b></span>
+    <span id="periodoStatus"></span>
+  </div>
   <div class="disp-grid" id="dispGrid"></div>
   <div class="disp-foot">
     <div class="disp-tot">Total: <b id="dispTot">0h</b> · <span id="dispLivresLbl">0 dias livres</span></div>
@@ -312,6 +328,7 @@ const DISC_KEY = 'trackermed.disciplinas.v1';
 const PLAN_KEY = 'trackermed.plan.v1';
 const HIST_KEY = 'trackermed.planner.historico.v1';
 const DISP_KEY = 'planejamento.disponibilidade';
+const PERIODO_KEY = 'trackermed.planner.periodo.v1';
 const DISP_SUG = { seg: 4, ter: 4, qua: 4, qui: 4, sex: 4, sab: 3, dom: 2 };
 const DISP_DAYS = [
   { k: 'seg', lbl: 'Seg', wd: 1 },
@@ -348,6 +365,42 @@ const PRIO_LBL = { 'muito-alta': 'Muito alta', 'alta': 'Alta', 'media': 'Média'
 
 let anchorDate = new Date();
 let editSlot = null;
+
+function toISODate(d) {
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+function fromISODate(s) {
+  if (!s) return null;
+  const [y,m,d] = s.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m-1, d, 12, 0, 0);
+}
+function loadPeriodo() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PERIODO_KEY) || 'null');
+    if (raw && raw.ini && raw.fim) return raw;
+  } catch {}
+  const wkStart = startOfWeek(new Date());
+  const wkEnd = addDays(wkStart, 6);
+  return { ini: toISODate(wkStart), fim: toISODate(wkEnd) };
+}
+function savePeriodo(p) { localStorage.setItem(PERIODO_KEY, JSON.stringify(p)); }
+function periodoDiasRange(periodo) {
+  const a = fromISODate(periodo.ini), b = fromISODate(periodo.fim);
+  if (!a || !b || b < a) return 0;
+  return Math.round((b - a) / 86400000) + 1;
+}
+function periodoHorasTotal(periodo, disp) {
+  const a = fromISODate(periodo.ini), b = fromISODate(periodo.fim);
+  if (!a || !b || b < a) return 0;
+  let tot = 0;
+  for (const cur = new Date(a); cur <= b; cur.setDate(cur.getDate()+1)) {
+    const day = DISP_DAYS.find(x => x.wd === cur.getDay());
+    if (day) tot += Number(disp[day.k]) || 0;
+  }
+  return tot;
+}
 
 function loadDisp() {
   const base = { seg: 0, ter: 0, qua: 0, qui: 0, sex: 0, sab: 0, dom: 0 };
@@ -406,6 +459,44 @@ function renderDisp() {
     });
     render();
   });
+}
+
+function renderPeriodo() {
+  const dtIni = document.getElementById('dtIni');
+  const dtFim = document.getElementById('dtFim');
+  if (!dtIni || !dtFim) return;
+  const p = loadPeriodo();
+  if (dtIni.value !== p.ini) dtIni.value = p.ini;
+  if (dtFim.value !== p.fim) dtFim.value = p.fim;
+  const disp = loadDisp();
+  const dias = periodoDiasRange(p);
+  const total = periodoHorasTotal(p, disp);
+  const diasLbl = document.getElementById('periodoDias');
+  const totLbl = document.getElementById('periodoTotal');
+  const statusLbl = document.getElementById('periodoStatus');
+  if (diasLbl) diasLbl.textContent = dias > 0 ? `${dias} dia${dias!==1?'s':''}` : 'inválido';
+  if (totLbl) totLbl.textContent = fmtDispHoras(total);
+  if (statusLbl) {
+    if (dias <= 0) statusLbl.innerHTML = '<span class="warn">data final precisa ser ≥ inicial</span>';
+    else if (total === 0) statusLbl.innerHTML = '<span class="warn">preencha horas nos dias da semana abaixo</span>';
+    else statusLbl.textContent = '';
+  }
+}
+function bindPeriodoInputs() {
+  const dtIni = document.getElementById('dtIni');
+  const dtFim = document.getElementById('dtFim');
+  if (!dtIni || !dtFim || dtIni.dataset.bound) return;
+  dtIni.dataset.bound = '1';
+  dtFim.dataset.bound = '1';
+  const onChange = () => {
+    const p = loadPeriodo();
+    if (dtIni.value) p.ini = dtIni.value;
+    if (dtFim.value) p.fim = dtFim.value;
+    savePeriodo(p);
+    render();
+  };
+  dtIni.addEventListener('change', onChange);
+  dtFim.addEventListener('change', onChange);
 }
 
 function renderPrioStats(discList) {
@@ -953,6 +1044,7 @@ function render() {
   const wkStart = startOfWeek(anchorDate);
   const wkEnd = addDays(wkStart, 6);
   document.getElementById('semanaLbl').textContent = `${fmtDate(wkStart)} — ${fmtDate(wkEnd)}`;
+  renderPeriodo();
 
   // Totais
   let aulasTot = 0;
@@ -1019,6 +1111,7 @@ function render() {
 }
 
 renderDisp();
+bindPeriodoInputs();
 render();
 </script>
 </body></html>
