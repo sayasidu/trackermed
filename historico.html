@@ -352,6 +352,11 @@ function blocoDate(wk, b) {
   return dateKey(addDays(monday, offset));
 }
 function plural(n, singular, plural_) { return n === 1 ? singular : plural_; }
+function getPlannedMin(b) { return b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60); }
+function getStudiedMin(b) {
+  if (b.minutosFeitos != null) return b.minutosFeitos;
+  return b.feito ? getPlannedMin(b) : 0;
+}
 function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // Timer state
@@ -558,10 +563,16 @@ function timerFinish(auto) {
   const concluidoNatural = !timerState.freeMode && !!auto && timerState.mode === 'focus' && timerState.currentSection >= timerState.sections && timerState.leftSec <= 0;
 
   if (timerState.linkedBlocoId) {
-    // Marca bloco existente como feito
+    // Atualiza bloco existente: acumula tempo estudado e só marca feito quando atinge o planejado.
     const plan = loadPlan();
     const wk = weekKey(new Date());
-    plan[wk] = (plan[wk]||[]).map(b => b.id === timerState.linkedBlocoId ? {...b, feito: true, minutos: studied, data: todayKey()} : b);
+    plan[wk] = (plan[wk]||[]).map(b => {
+      if (b.id !== timerState.linkedBlocoId) return b;
+      const plannedMin = b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60);
+      const studiedAcum = (b.minutosFeitos || 0) + studied;
+      const feito = concluidoNatural || studiedAcum >= plannedMin;
+      return { ...b, feito, minutos: plannedMin, minutosFeitos: studiedAcum, data: todayKey() };
+    });
     savePlan(plan);
   } else {
     // Novo bloco
@@ -837,18 +848,18 @@ function render() {
   disc.forEach(d => (d.aulas||[]).forEach(a => { if (DIA_IDX[a.dia]===hojeDia) aulasHoje.push({disc:d, aula:a}); }));
 
   // Stats
-  const feitosMin = blocosHoje.filter(b=>b.feito).reduce((s,b)=>s+(b.minutos||Math.round((parseTime(b.fim)-parseTime(b.ini))*60)),0);
-  const planMin = blocosHoje.reduce((s,b)=>s+(b.minutos||Math.round((parseTime(b.fim)-parseTime(b.ini))*60)),0);
+  const feitosMin = blocosHoje.reduce((s,b)=>s+getStudiedMin(b),0);
+  const planMin = blocosHoje.reduce((s,b)=>s+getPlannedMin(b),0);
   document.getElementById('totHoje').innerHTML = fmtH(feitosMin/60);
   document.getElementById('subHoje').textContent = `${blocosHoje.filter(b=>b.feito).length} de ${blocosHoje.length} ${plural(blocosHoje.length, 'sessão', 'sessões')}`;
   document.getElementById('totPlan').innerHTML = fmtH(planMin/60);
   document.getElementById('subPlan').textContent = blocosHoje.length ? `${blocosHoje.filter(b=>!b.feito).length} pendentes` : 'nada agendado';
 
-  // Indexa todos os blocos feitos pela data real (b.data ou fallback via weekKey+dia)
+  // Indexa blocos com qualquer estudo (concluído ou parcial) pela data real.
   const blocosByDate = {};
   Object.entries(plan).forEach(([wkPlan, arr]) => {
     (arr || []).forEach(b => {
-      if (!b.feito) return;
+      if (!b.feito && getStudiedMin(b) <= 0) return;
       const date = blocoDate(wkPlan, b);
       if (!date) return;
       (blocosByDate[date] = blocosByDate[date] || []).push(b);
@@ -886,16 +897,22 @@ function render() {
     // blocos de estudo
     blocosHoje.sort((a,b)=>parseTime(a.ini)-parseTime(b.ini)).forEach(b => {
       const d = disc.find(x=>x.id===b.discId);
-      const mins = b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60);
+      const mins = getPlannedMin(b);
+      const studiedMin = getStudiedMin(b);
+      const parcial = !b.feito && studiedMin > 0;
       const discNome = d ? d.nome : (b.matNome || 'Estudo');
       const discNomeAttr = JSON.stringify(discNome).replace(/"/g,'&quot;');
       const conteudoLine = b.conteudo ? ` · ${escHtml(b.conteudo)}` : '';
       const editBtn = b.feito ? '' : `<button class="edit-btn" onclick="abrirEditarDuracao('${wk}','${b.id}', ${discNomeAttr}, ${mins})" title="Editar duração">✎</button>`;
       const playBtn = b.discId ? `<button class="play-btn" onclick="abrirPlayDuracao('${b.discId}', ${discNomeAttr}, '${b.id}')" title="Iniciar cronômetro">▶</button>` : '<div></div>';
+      const motivoBase = b.feito ? 'concluído' : (parcial ? `parcial · ${fmtHrange(studiedMin)} de ${fmtHrange(mins)}` : 'planejado');
+      const minsLabel = parcial
+        ? `${fmtHrange(studiedMin)}<span style="color:#70757A;font-size:13px"> / ${fmtHrange(mins)}</span>`
+        : fmtHrange(mins);
       itens.push(`<div class="blk-item ${b.feito?'done':''}">
         <div class="horario">${b.ini}—${b.fim}</div>
-        <div><div class="nome">${b.extra?'✦ ':''}${discNome}</div><div class="motivo">${b.feito?'concluído':'planejado'}${b.extra?' · extra':''}${conteudoLine}</div></div>
-        <div class="mins"><span class="mins-wrap">${fmtHrange(mins)}${editBtn}</span></div>
+        <div><div class="nome">${b.extra?'✦ ':''}${discNome}</div><div class="motivo">${motivoBase}${b.extra?' · extra':''}${conteudoLine}</div></div>
+        <div class="mins"><span class="mins-wrap">${minsLabel}${editBtn}</span></div>
         ${playBtn}
         <button class="check-btn" onclick="toggleFeito('${wk}', '${b.id}')" title="Alternar concluído">${b.feito?'✓':'○'}</button>
       </div>`);
@@ -911,7 +928,7 @@ function render() {
     const dDia = d.getDay();
     const key = dateKey(d);
     const blocos = blocosByDate[key] || [];
-    const mins = blocos.reduce((s,b)=>s+(b.minutos||Math.round((parseTime(b.fim)-parseTime(b.ini))*60)),0);
+    const mins = blocos.reduce((s,b)=>s+getStudiedMin(b),0);
     const maxMins = 360; // 6h = 100%
     const pct = Math.min(100, (mins/maxMins)*100);
     const label = i===0 ? 'Hoje' : i===1 ? 'Ontem' : DIAS_LBL[dDia]+', '+d.getDate()+'/'+(d.getMonth()+1);
