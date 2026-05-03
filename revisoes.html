@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="app.css">
 <style>
 .rev-list { display: flex; flex-direction: column; gap: 8px; }
-.rev-row { background: var(--card); border: 1px solid var(--line); padding: 18px 22px; display: grid; grid-template-columns: 1fr auto auto; gap: 20px; align-items: center; transition: border-color .15s; }
+.rev-row { background: var(--card); border: 1px solid var(--line); padding: 18px 22px; display: grid; grid-template-columns: 1fr auto auto auto; gap: 20px; align-items: center; transition: border-color .15s; }
 .rev-row:hover { border-color: var(--ink); }
 .rev-row.done { border-left: 4px solid var(--mint); }
 .rev-row.pending { border-left: 4px solid var(--amber); }
@@ -20,6 +20,27 @@
 .rev-empty { background: var(--card); border: 1px solid var(--line); padding: 60px 32px; text-align: center; color: var(--muted); font-size: 14px; font-style: italic; }
 .rev-empty a { color: var(--cobalt); font-weight: 600; font-style: normal; }
 .rev-empty .sub { font-size: 12px; margin-top: 8px; display: block; }
+.rev-add-btn { background: var(--ink); color: var(--paper); border: none; padding: 11px 20px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; letter-spacing: 0.02em; }
+.rev-add-btn:hover { background: var(--cobalt); }
+.rev-row .rev-del { background: transparent; border: none; color: #bbb; font-size: 16px; cursor: pointer; padding: 6px 8px; }
+.rev-row .rev-del:hover { color: var(--rose); }
+.rev-row .rev-tag { display: inline-block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cobalt); border: 1px solid var(--cobalt); padding: 2px 6px; margin-left: 6px; font-weight: 600; }
+.rev-row .rev-tag.auto { color: var(--muted); border-color: var(--line); }
+
+.modal-backdrop { position: fixed; inset: 0; background: rgba(10,19,48,0.55); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.modal-backdrop.open { display: flex; }
+.modal-box { background: #fff; border: 1px solid #E0E0E0; width: 480px; max-width: 100%; padding: 30px; position: relative; }
+.modal-box h2 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
+.modal-box h2 i { color: var(--cobalt); font-style: italic; }
+.modal-sub { font-size: 13px; color: #70757A; margin-top: 6px; margin-bottom: 18px; }
+.mbtn-close { position: absolute; right: 20px; top: 20px; background: transparent; border: none; font-size: 24px; cursor: pointer; color: #70757A; }
+.mfield { margin-bottom: 14px; }
+.mfield label { display: block; font-size: 11px; letter-spacing: 0.12em; color: #70757A; font-weight: 600; text-transform: uppercase; margin-bottom: 5px; }
+.mfield input, .mfield select { width: 100%; padding: 10px 12px; border: 1px solid #E0E0E0; background: var(--paper); font-size: 14px; font-family: inherit; }
+.mfield.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.mactions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #E0E0E0; }
+.mbtn-cancel { background: transparent; border: 1px solid #E0E0E0; padding: 10px 18px; font-size: 13px; cursor: pointer; font-family: inherit; }
+.mbtn-save { background: var(--cobalt); color: #fff; border: none; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
 </style></head><body>
 <div class="app">
 <aside class="sidebar">
@@ -40,37 +61,173 @@
   <div class="crumb">Home <i>›</i> Revisões</div>
   <div class="topbar-right"><span class="pill" id="revPill">—</span></div>
 </div>
-<div>
-  <div class="kicker">Feed do histórico</div>
-  <h1 class="page-title">Sua <i>revisão</i>.</h1>
-  <p class="page-lede">Tudo que você marcou como “revisar depois” no histórico aparece aqui, agrupado por data.</p>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px">
+  <div>
+    <div class="kicker">Feed do histórico</div>
+    <h1 class="page-title">Sua <i>revisão</i>.</h1>
+    <p class="page-lede">Cadastre revisões manualmente ou deixe o cronômetro do <a href="historico.html" style="color:var(--cobalt);font-weight:600">histórico</a> alimentá-las automaticamente.</p>
+  </div>
+  <button class="rev-add-btn" onclick="abrirNovaRevisao()">+ Nova revisão</button>
 </div>
 <div id="revRoot" style="margin-top:32px"></div>
 </main></div>
+
+<!-- Modal nova revisão -->
+<div class="modal-backdrop" id="revModal" onclick="if(event.target===this) fecharNovaRevisao()">
+  <div class="modal-box">
+    <button class="mbtn-close" onclick="fecharNovaRevisao()">×</button>
+    <h2>Nova <i>revisão</i></h2>
+    <div class="modal-sub">Vincule uma revisão a uma matéria. Ela entra agrupada por data junto com as do histórico.</div>
+    <form id="revForm" onsubmit="event.preventDefault(); salvarNovaRevisao();">
+      <div class="mfield"><label>Matéria</label>
+        <select id="rDisc" required onchange="onRevDiscChange()"></select>
+      </div>
+      <div class="mfield" id="rDiscOutraWrap" style="display:none"><label>Nome da matéria</label>
+        <input type="text" id="rDiscOutra" maxlength="80" placeholder="ex: Inglês, Direito, Programação…">
+      </div>
+      <div class="mfield"><label>Conteúdo / tópico</label>
+        <input type="text" id="rConteudo" maxlength="160" placeholder="ex: capítulo 3 — fisiologia renal" required>
+      </div>
+      <div class="mfield row2">
+        <div>
+          <label>Data</label>
+          <input type="date" id="rData" required>
+        </div>
+        <div>
+          <label>Tempo estimado (min)</label>
+          <input type="number" id="rMinutos" min="0" max="600" placeholder="opcional">
+        </div>
+      </div>
+      <div class="mfield">
+        <label>Status</label>
+        <select id="rStatus">
+          <option value="pendente">◯ Pendente</option>
+          <option value="concluido">✓ Já revisado</option>
+        </select>
+      </div>
+      <div class="mactions">
+        <button type="button" class="mbtn-cancel" onclick="fecharNovaRevisao()">Cancelar</button>
+        <button type="submit" class="mbtn-save">Cadastrar revisão</button>
+      </div>
+    </form>
+  </div>
+</div>
 <script>
 const HIST_KEY = 'historicoEstudos';
+const DISC_KEY = 'trackermed.disciplinas.v1';
 
 function loadHist() {
   try { const v = JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); return Array.isArray(v) ? v : []; }
+  catch { return []; }
+}
+function saveHist(arr) { localStorage.setItem(HIST_KEY, JSON.stringify(arr)); }
+function loadDisc() {
+  try { const v = JSON.parse(localStorage.getItem(DISC_KEY) || '[]'); return Array.isArray(v) ? v : []; }
   catch { return []; }
 }
 function parseBR(s) {
   const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s || '');
   return m ? new Date(+m[3], +m[2]-1, +m[1]) : new Date(0);
 }
+function fmtDataBR(d) { return d.toLocaleDateString('pt-BR'); }
+function isoToBR(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : '';
+}
+function todayISO() {
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 function plural(n, sing, plur) { return n === 1 ? sing : plur; }
 
+function abrirNovaRevisao() {
+  const sel = document.getElementById('rDisc');
+  const opts = loadDisc().filter(d => d.status === 'em-curso' || !d.status).map(d => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.nome)}</option>`);
+  opts.push('<option value="__outra__">+ Outra matéria…</option>');
+  sel.innerHTML = opts.join('');
+  document.getElementById('rDiscOutra').value = '';
+  document.getElementById('rDiscOutraWrap').style.display = 'none';
+  document.getElementById('rConteudo').value = '';
+  document.getElementById('rData').value = todayISO();
+  document.getElementById('rMinutos').value = '';
+  document.getElementById('rStatus').value = 'pendente';
+  document.getElementById('revModal').classList.add('open');
+  setTimeout(() => sel.focus(), 50);
+}
+function fecharNovaRevisao() { document.getElementById('revModal').classList.remove('open'); }
+function onRevDiscChange() {
+  const v = document.getElementById('rDisc').value;
+  document.getElementById('rDiscOutraWrap').style.display = v === '__outra__' ? '' : 'none';
+}
+function salvarNovaRevisao() {
+  const sel = document.getElementById('rDisc').value;
+  let materia = '';
+  if (sel === '__outra__') {
+    materia = (document.getElementById('rDiscOutra').value || '').trim();
+    if (!materia) { alert('Informe o nome da matéria.'); return; }
+  } else {
+    const d = loadDisc().find(x => x.id === sel);
+    if (!d) { alert('Selecione uma matéria.'); return; }
+    materia = d.nome;
+  }
+  const conteudo = (document.getElementById('rConteudo').value || '').trim();
+  if (!conteudo) { alert('Informe o conteúdo da revisão.'); return; }
+  const dataIso = document.getElementById('rData').value;
+  if (!dataIso) { alert('Informe a data.'); return; }
+  const minutos = parseInt(document.getElementById('rMinutos').value) || 0;
+  const concluido = document.getElementById('rStatus').value === 'concluido';
+
+  const arr = loadHist();
+  arr.push({
+    id: 'r-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),
+    data: isoToBR(dataIso),
+    materia,
+    conteudo,
+    minutos,
+    concluido,
+    revisar: true,
+    manual: true
+  });
+  saveHist(arr);
+  fecharNovaRevisao();
+  render();
+}
+function toggleConcluida(id) {
+  const arr = loadHist().map(r => (r && r.id === id) ? { ...r, concluido: !r.concluido } : r);
+  saveHist(arr);
+  render();
+}
+function apagarRevisao(id) {
+  if (!confirm('Apagar essa revisão?')) return;
+  const arr = loadHist().filter(r => !r || r.id !== id);
+  saveHist(arr);
+  render();
+}
+
+function ensureIds() {
+  const arr = loadHist();
+  let mudou = false;
+  arr.forEach(r => {
+    if (r && typeof r === 'object' && !r.id) {
+      r.id = 'r-'+Date.now()+'-'+Math.random().toString(36).slice(2,6);
+      mudou = true;
+    }
+  });
+  if (mudou) saveHist(arr);
+}
+
 function render() {
+  ensureIds();
   const itens = loadHist().filter(x => x && x.revisar === true);
   const root = document.getElementById('revRoot');
   const pill = document.getElementById('revPill');
   pill.textContent = itens.length ? `${itens.length} ${plural(itens.length, 'item', 'itens')}` : 'vazio';
 
   if (itens.length === 0) {
-    root.innerHTML = `<div class="rev-empty">Nenhum conteúdo marcado para revisão ainda.<span class="sub">Marque “Revisar depois?” ao registrar um estudo extra no <a href="historico.html">histórico</a>.</span></div>`;
+    root.innerHTML = `<div class="rev-empty">Nenhuma revisão por aqui ainda.<span class="sub">Use <a href="#" onclick="event.preventDefault();abrirNovaRevisao()">+ Nova revisão</a> para cadastrar manualmente, ou finalize um cronômetro no <a href="historico.html">histórico</a> — ele alimenta esta lista automaticamente.</span></div>`;
     return;
   }
 
@@ -90,17 +247,20 @@ function render() {
           const concluido = !!r.concluido;
           const mins = parseInt(r.minutos) || 0;
           const conteudo = (r.conteudo || '').trim();
+          const idAttr = escapeHtml(r.id || '');
+          const tag = r.manual ? '<span class="rev-tag">manual</span>' : (r.auto ? '<span class="rev-tag auto">cronômetro</span>' : '');
           return `<div class="rev-row ${concluido ? 'done' : 'pending'}">
             <div>
-              <div class="rev-title">${escapeHtml(r.materia || 'Estudo')}</div>
+              <div class="rev-title">${escapeHtml(r.materia || 'Estudo')} ${tag}</div>
               ${conteudo ? `<div class="rev-meta"><span>${escapeHtml(conteudo)}</span></div>` : ''}
               <div class="rev-meta">
                 <span>📅 ${escapeHtml(r.data || '')}</span>
-                <span>· ${mins} min</span>
+                ${mins > 0 ? `<span>· ${mins} min</span>` : ''}
               </div>
             </div>
-            <div class="rev-status ${concluido ? 'ok' : 'pend'}">${concluido ? '✓ Concluído' : '◯ Não concluído'}</div>
+            <div class="rev-status ${concluido ? 'ok' : 'pend'}" onclick="toggleConcluida('${idAttr}')" style="cursor:pointer" title="Alternar status">${concluido ? '✓ Concluído' : '◯ Não concluído'}</div>
             <div class="rev-count">${mins}<br><span>min</span></div>
+            <button class="rev-del" onclick="apagarRevisao('${idAttr}')" title="Apagar">×</button>
           </div>`;
         }).join('')}
       </div>
