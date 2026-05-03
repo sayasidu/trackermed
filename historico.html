@@ -586,17 +586,17 @@ function timerFinish(auto) {
     savePlan(plan);
   }
 
-  // Se veio do modal "Estudo extra", registra também em historicoEstudos (feed de revisões)
-  if (timerState.fromModal) {
-    pushHist({
-      data: fmtDataBR(new Date()),
-      materia: timerState.discNome,
-      conteudo: timerState.conteudo || '',
-      minutos: Math.round(totalPlannedSec/60),
-      concluido: concluidoNatural,
-      revisar: !!timerState.revisar
-    });
-  }
+  // Toda finalização de cronômetro entra no feed de revisões automaticamente,
+  // já marcada como "revisar" para aparecer em revisoes.html.
+  pushHist({
+    data: fmtDataBR(new Date()),
+    materia: timerState.discNome,
+    conteudo: timerState.conteudo || '',
+    minutos: studied,
+    concluido: concluidoNatural,
+    revisar: true,
+    auto: true
+  });
 
   if (auto) alert(`🎉 Sessão de ${Math.round(totalPlannedSec/60)}min completa! Registrada.`);
   timerClose();
