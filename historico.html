@@ -24,6 +24,9 @@
 .blk-item { display: grid; grid-template-columns: auto 1fr auto auto auto; gap: 14px; align-items: center; padding: 12px 16px; background: var(--paper); border-left: 3px solid var(--cobalt); }
 .blk-item.done { opacity: 0.65; background: #E8F5E9; border-left-color: #43A047; }
 .blk-item.done .nome { text-decoration: line-through; }
+.blk-item.revisao { background: #FFF8EE; border-left-color: #FB8C00; }
+.blk-item.revisao .mins { color: #B26A00; }
+.blk-item .rev-pill { display:inline-block; font-size:9px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; background:#FB8C00; color:#fff; padding:2px 6px; margin-right:6px; border-radius:2px; vertical-align:1px; }
 .blk-item .horario { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink2); font-weight: 600; min-width: 85px; }
 .blk-item .nome { font-weight: 600; font-size: 14px; }
 .blk-item .motivo { font-size: 11px; color: #70757A; margin-top: 2px; }
@@ -605,19 +608,32 @@ function timerFinish(auto) {
 
 function toggleFeito(wk, blocoId) {
   const plan = loadPlan();
+  let alvo = null;
   plan[wk] = (plan[wk]||[]).map(b => {
     if (b.id !== blocoId) return b;
     const feito = !b.feito;
-    return { ...b, feito, data: feito ? todayKey() : b.data };
+    alvo = { ...b, feito, data: feito ? todayKey() : b.data };
+    return alvo;
   });
   savePlan(plan);
+  // Se for um bloco de revisão vindo de revisoes.html, sincroniza a entrada do feed.
+  if (alvo && (alvo.tipo === 'revisao' || alvo.revisao) && alvo.revHistId) {
+    const arr = loadHist().map(r => (r && r.id === alvo.revHistId) ? { ...r, concluido: !!alvo.feito } : r);
+    saveHist(arr);
+  }
   render();
 }
 function apagarBloco(wk, blocoId) {
   if (!confirm('Apagar esse registro?')) return;
   const plan = loadPlan();
+  const alvo = (plan[wk]||[]).find(b => b.id === blocoId);
   plan[wk] = (plan[wk]||[]).filter(b => b.id !== blocoId);
   savePlan(plan);
+  // Bloco de revisão: remove também a entrada vinculada no feed de revisões.
+  if (alvo && (alvo.tipo === 'revisao' || alvo.revisao) && alvo.revHistId) {
+    const arr = loadHist().filter(r => !(r && r.id === alvo.revHistId));
+    saveHist(arr);
+  }
   render();
 }
 
@@ -847,13 +863,16 @@ function render() {
   const aulasHoje = [];
   disc.forEach(d => (d.aulas||[]).forEach(a => { if (DIA_IDX[a.dia]===hojeDia) aulasHoje.push({disc:d, aula:a}); }));
 
-  // Stats
-  const feitosMin = blocosHoje.reduce((s,b)=>s+getStudiedMin(b),0);
-  const planMin = blocosHoje.reduce((s,b)=>s+getPlannedMin(b),0);
+  // Stats — revisões agendadas não contam como horas de estudo, mas entram na contagem de itens.
+  const blocosEstudoHoje = blocosHoje.filter(b => !(b.tipo === 'revisao' || b.revisao));
+  const revHoje = blocosHoje.filter(b => b.tipo === 'revisao' || b.revisao);
+  const feitosMin = blocosEstudoHoje.reduce((s,b)=>s+getStudiedMin(b),0);
+  const planMin = blocosEstudoHoje.reduce((s,b)=>s+getPlannedMin(b),0);
   document.getElementById('totHoje').innerHTML = fmtH(feitosMin/60);
-  document.getElementById('subHoje').textContent = `${blocosHoje.filter(b=>b.feito).length} de ${blocosHoje.length} ${plural(blocosHoje.length, 'sessão', 'sessões')}`;
+  const revSub = revHoje.length > 0 ? ` · ${revHoje.filter(b=>b.feito).length}/${revHoje.length} revisões` : '';
+  document.getElementById('subHoje').textContent = `${blocosEstudoHoje.filter(b=>b.feito).length} de ${blocosEstudoHoje.length} ${plural(blocosEstudoHoje.length, 'sessão', 'sessões')}${revSub}`;
   document.getElementById('totPlan').innerHTML = fmtH(planMin/60);
-  document.getElementById('subPlan').textContent = blocosHoje.length ? `${blocosHoje.filter(b=>!b.feito).length} pendentes` : 'nada agendado';
+  document.getElementById('subPlan').textContent = blocosHoje.length ? `${blocosEstudoHoje.filter(b=>!b.feito).length} pendentes${revHoje.length>0?` · ${revHoje.filter(b=>!b.feito).length} revisões`:''}` : 'nada agendado';
 
   // Indexa blocos com qualquer estudo (concluído ou parcial) pela data real.
   const blocosByDate = {};
@@ -894,27 +913,40 @@ function render() {
         <div></div><div></div>
       </div>`);
     });
-    // blocos de estudo
+    // blocos de estudo e revisões agendadas
     blocosHoje.sort((a,b)=>parseTime(a.ini)-parseTime(b.ini)).forEach(b => {
       const d = disc.find(x=>x.id===b.discId);
       const mins = getPlannedMin(b);
       const studiedMin = getStudiedMin(b);
       const parcial = !b.feito && studiedMin > 0;
-      const discNome = d ? d.nome : (b.matNome || 'Estudo');
+      const isRev = b.tipo === 'revisao' || b.revisao;
+      const discNome = d ? d.nome : (b.matNome || (isRev ? 'Revisão' : 'Estudo'));
       const discNomeAttr = JSON.stringify(discNome).replace(/"/g,'&quot;');
       const conteudoLine = b.conteudo ? ` · ${escHtml(b.conteudo)}` : '';
-      const editBtn = b.feito ? '' : `<button class="edit-btn" onclick="abrirEditarDuracao('${wk}','${b.id}', ${discNomeAttr}, ${mins})" title="Editar duração">✎</button>`;
-      const playBtn = b.discId ? `<button class="play-btn" onclick="abrirPlayDuracao('${b.discId}', ${discNomeAttr}, '${b.id}')" title="Iniciar cronômetro">▶</button>` : '<div></div>';
-      const motivoBase = b.feito ? 'concluído' : (parcial ? `parcial · ${fmtHrange(studiedMin)} de ${fmtHrange(mins)}` : 'planejado');
+      const editBtn = (b.feito || isRev) ? '' : `<button class="edit-btn" onclick="abrirEditarDuracao('${wk}','${b.id}', ${discNomeAttr}, ${mins})" title="Editar duração">✎</button>`;
+      const playBtn = (!isRev && b.discId)
+        ? `<button class="play-btn" onclick="abrirPlayDuracao('${b.discId}', ${discNomeAttr}, '${b.id}')" title="Iniciar cronômetro">▶</button>`
+        : '<div></div>';
+      let motivoBase;
+      if (isRev) {
+        const ord = b.revisaoOrdem ? `${b.revisaoOrdem}/${b.revisaoTotal||'?'}` : '';
+        motivoBase = `revisão programada${ord?` · ${ord}`:''}${b.revisaoOffset?` · ${escHtml(b.revisaoOffset)}`:''} · vinda das <a href="revisoes.html" style="color:#FB8C00;font-weight:600">Revisões</a>`;
+      } else {
+        motivoBase = b.feito ? 'concluído' : (parcial ? `parcial · ${fmtHrange(studiedMin)} de ${fmtHrange(mins)}` : 'planejado');
+      }
       const minsLabel = parcial
         ? `${fmtHrange(studiedMin)}<span style="color:#70757A;font-size:13px"> / ${fmtHrange(mins)}</span>`
         : fmtHrange(mins);
-      itens.push(`<div class="blk-item ${b.feito?'done':''}">
+      const cls = `${b.feito?'done':''} ${isRev?'revisao':''}`.trim();
+      const prefix = isRev
+        ? `<span class="rev-pill">↻ rev</span>`
+        : (b.extra ? '✦ ' : '');
+      itens.push(`<div class="blk-item ${cls}">
         <div class="horario">${b.ini}—${b.fim}</div>
-        <div><div class="nome">${b.extra?'✦ ':''}${discNome}</div><div class="motivo">${motivoBase}${b.extra?' · extra':''}${conteudoLine}</div></div>
+        <div><div class="nome">${prefix}${discNome}</div><div class="motivo">${motivoBase}${b.extra && !isRev?' · extra':''}${conteudoLine}</div></div>
         <div class="mins"><span class="mins-wrap">${minsLabel}${editBtn}</span></div>
         ${playBtn}
-        <button class="check-btn" onclick="toggleFeito('${wk}', '${b.id}')" title="Alternar concluído">${b.feito?'✓':'○'}</button>
+        <button class="check-btn" onclick="toggleFeito('${wk}', '${b.id}')" title="${isRev?'Marcar revisão como feita':'Alternar concluído'}">${b.feito?'✓':'○'}</button>
       </div>`);
     });
     plEl.innerHTML = itens.join('');

@@ -86,6 +86,10 @@
 .bloco.estudo { background: #FFF9C4; color: #6b5b00; border-left: 3px solid #C9A200; }
 .bloco.estudo .nome { font-weight: 600; font-size: 12px; }
 .bloco.estudo .tempo { opacity: 0.75; font-size: 11px; margin-top: 1px; font-variant-numeric: tabular-nums; }
+.bloco.revisao { background: #FFF3E0; color: #6b4500; border-left: 3px solid #FB8C00; border-style: dashed; border-width: 1px 1px 1px 3px; }
+.bloco.revisao .nome { font-weight: 600; font-size: 12px; }
+.bloco.revisao .tempo { opacity: 0.8; font-size: 11px; margin-top: 1px; font-variant-numeric: tabular-nums; }
+.bloco.revisao .rev-badge { display:inline-block; font-size:9px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; background:#FB8C00; color:#fff; padding:1px 4px; margin-right:4px; border-radius:2px; vertical-align:1px; }
 .bloco.concluido { opacity: 0.5; text-decoration: line-through; background: #E8F5E9; color: #2E7D32; border-left-color: #43A047; }
 .bloco .check { position: absolute; top: 3px; right: 6px; font-size: 10px; }
 
@@ -93,6 +97,7 @@
 .legenda b { width: 12px; height: 12px; display: inline-block; margin-right: 6px; vertical-align: -1px; border-radius: 2px; }
 .legenda .a b { background: #DDE3FF; border-left: 3px solid var(--cobalt); }
 .legenda .e b { background: #FFF9C4; border-left: 3px solid #C9A200; }
+.legenda .r b { background: #FFF3E0; border-left: 3px solid #FB8C00; }
 .legenda .d b { background: #E8F5E9; border-left: 3px solid #43A047; }
 
 .empty-disc { background: var(--card); border: 2px dashed var(--line); padding: 40px 24px; text-align: center; margin: 24px 0; }
@@ -281,7 +286,7 @@
 <div class="planner-wrap">
   <div>
     <div id="gradeContainer"></div>
-    <div class="legenda"><span class="a"><b></b>Aula</span><span class="e"><b></b>Estudo</span><span class="d"><b></b>Feito</span><span>(clica num bloco pra editar · arrasta pra mover · borda inferior pra redimensionar)</span></div>
+    <div class="legenda"><span class="a"><b></b>Aula</span><span class="e"><b></b>Estudo</span><span class="r"><b></b>Revisão (cadastrada em <a href="revisoes.html" style="color:#FB8C00;font-weight:600">Revisões</a>)</span><span class="d"><b></b>Feito</span><span>(clica num bloco pra editar · arrasta pra mover · borda inferior pra redimensionar)</span></div>
   </div>
   <aside class="hist-panel">
     <h3>Histórico <i>de sugestões</i></h3>
@@ -1050,7 +1055,7 @@ function renderGrade(discList) {
       });
     });
 
-    // Blocos de estudo
+    // Blocos de estudo e de revisão
     const blocos = (plan[wk] || []).filter(b => b.dia === d.getDay());
     blocos.forEach(b => {
       const disc = discList.find(x => x.id === b.discId);
@@ -1058,14 +1063,29 @@ function renderGrade(discList) {
       if (fim <= HORA_INI || ini >= HORA_FIM+1) return;
       const top = Math.max(0, ini - HORA_INI) * 50;
       const h = (fim - ini) * 50;
-      const cor = corDisc(disc);
-      const bg = b.feito ? '#E8F5E9' : cor;
-      const fg = b.feito ? '#2E7D32' : '#fff';
-      const bl = b.feito ? '#43A047' : hexDarken(cor, 30);
-      body += `<div class="bloco estudo ${b.feito?'concluido':''}" data-bloco-id="${escH(b.id)}" style="top:${top}px;height:${h}px;background:${bg};color:${fg};border-left:3px solid ${bl}" title="${disc?escH(disc.nome):'estudo'} — clique p/ editar · arrasta p/ mover">
+      const isRev = b.tipo === 'revisao' || b.revisao;
+      const nomeBase = disc ? disc.nome : (b.matNome || (isRev ? 'Revisão' : 'Estudo'));
+      const titleHint = isRev
+        ? `Revisão${b.revisaoOrdem?` ${b.revisaoOrdem}/${b.revisaoTotal||'?'}`:''} — ${escH(nomeBase)} · cadastrada em Revisões`
+        : `${escH(nomeBase)} — clique p/ editar · arrasta p/ mover`;
+      let bg, fg, bl, cssCls;
+      if (isRev) {
+        cssCls = 'revisao';
+        bg = b.feito ? '#E8F5E9' : '#FFF3E0';
+        fg = b.feito ? '#2E7D32' : '#6b4500';
+        bl = b.feito ? '#43A047' : '#FB8C00';
+      } else {
+        const cor = corDisc(disc);
+        cssCls = 'estudo';
+        bg = b.feito ? '#E8F5E9' : cor;
+        fg = b.feito ? '#2E7D32' : '#fff';
+        bl = b.feito ? '#43A047' : hexDarken(cor, 30);
+      }
+      const badge = isRev ? `<span class="rev-badge">↻ rev${b.revisaoOrdem?` ${b.revisaoOrdem}/${b.revisaoTotal||''}`:''}${b.revisaoOffset?` · ${escH(b.revisaoOffset)}`:''}</span>` : '';
+      body += `<div class="bloco ${cssCls} ${b.feito?'concluido':''}" data-bloco-id="${escH(b.id)}" style="top:${top}px;height:${h}px;background:${bg};color:${fg};border-left:3px solid ${bl}" title="${titleHint}">
         <div class="check">${b.feito?'✓':''}</div>
-        <div class="nome">${disc ? escH(disc.nome) : 'Estudo'}</div>
-        <div class="tempo">${escH(b.ini)}—${escH(b.fim)}</div>
+        <div class="nome">${badge}${escH(nomeBase)}</div>
+        <div class="tempo">${escH(b.ini)}—${escH(b.fim)}${b.conteudo?` · ${escH(b.conteudo)}`:''}</div>
         <div class="resize-handle" data-resize="${escH(b.id)}"></div>
       </div>`;
     });
@@ -1219,7 +1239,10 @@ function render() {
     if (a.inicio && a.fim) aulasTot += parseTime(a.fim) - parseTime(a.inicio);
   }));
   const { diasLivresCount, calcTot, metaTot } = renderPrioStats(discList);
-  const blocos = plan[wk] || [];
+  const blocosTodos = plan[wk] || [];
+  // Revisões não contam nos totais de "estudo" (são tempo de revisão, não estudo novo).
+  const blocos = blocosTodos.filter(b => !(b.tipo === 'revisao' || b.revisao));
+  const revBlocos = blocosTodos.filter(b => b.tipo === 'revisao' || b.revisao);
   const feitoTot = blocos.filter(b => b.feito).reduce((s,b) => s + (parseTime(b.fim) - parseTime(b.ini)), 0);
   const estudoPlan = blocos.reduce((s,b) => s + (parseTime(b.fim) - parseTime(b.ini)), 0);
   const planTot = estudoPlan + aulasTot;
@@ -1227,7 +1250,10 @@ function render() {
   document.getElementById('statPlan').innerHTML = `${planH}<sup>h${String(planM).padStart(2,'0')}m</sup>`;
   document.getElementById('statPlanSub').textContent = `${aulasTot.toFixed(1)}h aula + ${estudoPlan.toFixed(1)}h estudo`;
   document.getElementById('statSess').textContent = blocos.length;
-  document.getElementById('statSessSub').textContent = `${blocos.filter(b=>b.feito).length} feitas · ${feitoTot.toFixed(1)}h`;
+  const revInfo = revBlocos.length > 0
+    ? ` · ${revBlocos.length} revisão${revBlocos.length!==1?'ões':''} agendada${revBlocos.length!==1?'s':''}`
+    : '';
+  document.getElementById('statSessSub').textContent = `${blocos.filter(b=>b.feito).length} feitas · ${feitoTot.toFixed(1)}h${revInfo}`;
   document.getElementById('statMeta').innerHTML = `${calcTot.toFixed(1)}<sup>h</sup>`;
   document.getElementById('statMetaSub').textContent = diasLivresCount === 0
     ? 'selecione dias livres'

@@ -26,6 +26,12 @@
 .rev-row .rev-del:hover { color: var(--rose); }
 .rev-row .rev-tag { display: inline-block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cobalt); border: 1px solid var(--cobalt); padding: 2px 6px; margin-left: 6px; font-weight: 600; }
 .rev-row .rev-tag.auto { color: var(--muted); border-color: var(--line); }
+.rev-row .rev-tag.sched { color: #B26A00; border-color: #FB8C00; }
+.rev-row .rev-tag.parent { color: var(--ink); border-color: var(--ink); }
+.rev-row.scheduled { border-left-color: #FB8C00; }
+.rev-row.scheduled .rev-count { color: #FB8C00; }
+.met-info { font-size: 11px; color: var(--muted); margin-top: 6px; padding: 8px 10px; background: var(--paper); border-left: 2px solid var(--cobalt); display: none; line-height: 1.4; }
+.met-info.show { display: block; }
 
 .modal-backdrop { position: fixed; inset: 0; background: rgba(10,19,48,0.55); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
 .modal-backdrop.open { display: flex; }
@@ -91,7 +97,7 @@
       <div class="mfield row2">
         <div>
           <label>Data</label>
-          <input type="date" id="rData" required>
+          <input type="date" id="rData" required onchange="onMetodologiaChange()">
         </div>
         <div>
           <label>Tempo estimado (min)</label>
@@ -105,6 +111,15 @@
           <option value="concluido">✓ Já revisado</option>
         </select>
       </div>
+      <div class="mfield">
+        <label>Metodologia de revisão espaçada</label>
+        <select id="rMetodologia" onchange="onMetodologiaChange()">
+          <option value="nenhuma">Sem metodologia (revisão única)</option>
+          <option value="4-revisoes">4 revisões · 24h · 7d · 30d · 30d</option>
+          <option value="6-revisoes">6 revisões · 24h · 3d · 7d · 15d · 30d · 30d</option>
+        </select>
+        <div class="met-info" id="metInfo"></div>
+      </div>
       <div class="mactions">
         <button type="button" class="mbtn-cancel" onclick="fecharNovaRevisao()">Cancelar</button>
         <button type="submit" class="mbtn-save">Cadastrar revisão</button>
@@ -115,6 +130,17 @@
 <script>
 const HIST_KEY = 'historicoEstudos';
 const DISC_KEY = 'trackermed.disciplinas.v1';
+const PLAN_KEY = 'trackermed.plan.v1';
+
+// Metodologias de revisão espaçada: offsets em DIAS desde a data base.
+// Ex.: "30 dias e 30 dias" = 30 dias após a base, depois mais 30 dias (60 da base).
+const METODOLOGIAS = {
+  'nenhuma':     { lbl: 'Sem metodologia',                              offsets: [],                   labels: [] },
+  '4-revisoes':  { lbl: '24h · 7d · 30d · 30d',                         offsets: [1, 7, 30, 60],       labels: ['24h','7d','30d','+30d'] },
+  '6-revisoes':  { lbl: '24h · 3d · 7d · 15d · 30d · 30d',              offsets: [1, 3, 7, 15, 30, 60],labels: ['24h','3d','7d','15d','30d','+30d'] }
+};
+const REV_DEFAULT_INI = '21:00';
+const REV_DEFAULT_FIM = '21:30';
 
 function loadHist() {
   try { const v = JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); return Array.isArray(v) ? v : []; }
@@ -125,6 +151,22 @@ function loadDisc() {
   try { const v = JSON.parse(localStorage.getItem(DISC_KEY) || '[]'); return Array.isArray(v) ? v : []; }
   catch { return []; }
 }
+function loadPlan() {
+  try { const v = JSON.parse(localStorage.getItem(PLAN_KEY) || '{}'); return (v && typeof v === 'object') ? v : {}; }
+  catch { return {}; }
+}
+function savePlan(p) { localStorage.setItem(PLAN_KEY, JSON.stringify(p)); }
+function startOfWeek(d) { const x=new Date(d); x.setHours(0,0,0,0); const w=(x.getDay()+6)%7; x.setDate(x.getDate()-w); return x; }
+function weekKey(d) { return startOfWeek(d).toISOString().slice(0,10); }
+function addDays(d,n) { const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function isoOfDate(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function dateFromISO(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+  if (!m) return null;
+  return new Date(+m[1], +m[2]-1, +m[3]);
+}
+function uidBlock() { return 'b-rev-'+Date.now()+'-'+Math.random().toString(36).slice(2,6); }
+function uidRev() { return 'r-'+Date.now()+'-'+Math.random().toString(36).slice(2,6); }
 function parseBR(s) {
   const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s || '');
   return m ? new Date(+m[3], +m[2]-1, +m[1]) : new Date(0);
@@ -154,6 +196,8 @@ function abrirNovaRevisao() {
   document.getElementById('rData').value = todayISO();
   document.getElementById('rMinutos').value = '';
   document.getElementById('rStatus').value = 'pendente';
+  document.getElementById('rMetodologia').value = 'nenhuma';
+  onMetodologiaChange();
   document.getElementById('revModal').classList.add('open');
   setTimeout(() => sel.focus(), 50);
 }
@@ -162,9 +206,23 @@ function onRevDiscChange() {
   const v = document.getElementById('rDisc').value;
   document.getElementById('rDiscOutraWrap').style.display = v === '__outra__' ? '' : 'none';
 }
+function onMetodologiaChange() {
+  const key = document.getElementById('rMetodologia').value;
+  const met = METODOLOGIAS[key] || METODOLOGIAS.nenhuma;
+  const info = document.getElementById('metInfo');
+  if (!met.offsets.length) { info.classList.remove('show'); info.innerHTML = ''; return; }
+  const baseIso = document.getElementById('rData').value || todayISO();
+  const base = dateFromISO(baseIso) || new Date();
+  const previews = met.offsets.map((d, i) => {
+    const dt = addDays(base, d);
+    return `<b>${met.labels[i]}</b> · ${dt.toLocaleDateString('pt-BR')}`;
+  }).join(' &nbsp;·&nbsp; ');
+  info.innerHTML = `Serão geradas <b>${met.offsets.length}</b> revisões agendadas no calendário e no histórico:<br>${previews}`;
+  info.classList.add('show');
+}
 function salvarNovaRevisao() {
   const sel = document.getElementById('rDisc').value;
-  let materia = '';
+  let materia = '', discId = null;
   if (sel === '__outra__') {
     materia = (document.getElementById('rDiscOutra').value || '').trim();
     if (!materia) { alert('Informe o nome da matéria.'); return; }
@@ -172,6 +230,7 @@ function salvarNovaRevisao() {
     const d = loadDisc().find(x => x.id === sel);
     if (!d) { alert('Selecione uma matéria.'); return; }
     materia = d.nome;
+    discId = d.id;
   }
   const conteudo = (document.getElementById('rConteudo').value || '').trim();
   if (!conteudo) { alert('Informe o conteúdo da revisão.'); return; }
@@ -179,31 +238,142 @@ function salvarNovaRevisao() {
   if (!dataIso) { alert('Informe a data.'); return; }
   const minutos = parseInt(document.getElementById('rMinutos').value) || 0;
   const concluido = document.getElementById('rStatus').value === 'concluido';
+  const metodologiaKey = document.getElementById('rMetodologia').value;
+  const metodologia = METODOLOGIAS[metodologiaKey] || METODOLOGIAS.nenhuma;
 
   const arr = loadHist();
+  const parentId = uidRev();
   arr.push({
-    id: 'r-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),
+    id: parentId,
     data: isoToBR(dataIso),
     materia,
     conteudo,
     minutos,
     concluido,
     revisar: true,
-    manual: true
+    manual: true,
+    discId,
+    metodologia: metodologiaKey,
+    isParent: metodologia.offsets.length > 0
   });
+
+  // Gera revisões agendadas (entradas no histórico + blocos no planner)
+  const baseDate = dateFromISO(dataIso) || new Date();
+  const plan = loadPlan();
+  metodologia.offsets.forEach((dias, idx) => {
+    const targetDate = addDays(baseDate, dias);
+    const targetIso = isoOfDate(targetDate);
+    const ordem = idx + 1;
+    const total = metodologia.offsets.length;
+    const offsetLbl = metodologia.labels[idx];
+    const subId = parentId + '-r' + ordem;
+    const blocoId = uidBlock();
+
+    arr.push({
+      id: subId,
+      data: isoToBR(targetIso),
+      materia,
+      conteudo,
+      minutos: 0,
+      concluido: false,
+      revisar: true,
+      scheduled: true,
+      parentId,
+      revisaoOrdem: ordem,
+      revisaoTotal: total,
+      revisaoOffset: offsetLbl,
+      metodologia: metodologiaKey,
+      discId,
+      blocoId
+    });
+
+    const wk = weekKey(targetDate);
+    if (!plan[wk]) plan[wk] = [];
+    plan[wk].push({
+      id: blocoId,
+      tipo: 'revisao',
+      discId,
+      matNome: materia,
+      conteudo,
+      dia: targetDate.getDay(),
+      ini: REV_DEFAULT_INI,
+      fim: REV_DEFAULT_FIM,
+      feito: false,
+      data: targetIso,
+      revisao: true,
+      revisaoOrdem: ordem,
+      revisaoTotal: total,
+      revisaoOffset: offsetLbl,
+      parentId,
+      revHistId: subId,
+      auto: false
+    });
+  });
+
   saveHist(arr);
+  savePlan(plan);
   fecharNovaRevisao();
   render();
 }
+
+// Mantém o bloco de planner sincronizado quando a entrada de revisão muda.
+function syncPlannerBlock(rev, patch) {
+  if (!rev || !rev.blocoId) return;
+  const plan = loadPlan();
+  let mudou = false;
+  Object.keys(plan).forEach(wk => {
+    plan[wk] = (plan[wk] || []).map(b => {
+      if (b && b.id === rev.blocoId) { mudou = true; return { ...b, ...patch }; }
+      return b;
+    });
+  });
+  if (mudou) savePlan(plan);
+}
+function removePlannerBlocks(blocoIds) {
+  if (!blocoIds || !blocoIds.length) return;
+  const set = new Set(blocoIds);
+  const plan = loadPlan();
+  let mudou = false;
+  Object.keys(plan).forEach(wk => {
+    const before = plan[wk].length;
+    plan[wk] = (plan[wk] || []).filter(b => !(b && set.has(b.id)));
+    if (plan[wk].length !== before) mudou = true;
+  });
+  if (mudou) savePlan(plan);
+}
+
 function toggleConcluida(id) {
-  const arr = loadHist().map(r => (r && r.id === id) ? { ...r, concluido: !r.concluido } : r);
-  saveHist(arr);
+  const arr = loadHist();
+  let alvo = null;
+  const novo = arr.map(r => {
+    if (r && r.id === id) {
+      alvo = { ...r, concluido: !r.concluido };
+      return alvo;
+    }
+    return r;
+  });
+  saveHist(novo);
+  if (alvo && alvo.scheduled) {
+    syncPlannerBlock(alvo, { feito: alvo.concluido });
+  }
   render();
 }
 function apagarRevisao(id) {
-  if (!confirm('Apagar essa revisão?')) return;
-  const arr = loadHist().filter(r => !r || r.id !== id);
-  saveHist(arr);
+  const arr = loadHist();
+  const alvo = arr.find(r => r && r.id === id);
+  if (!alvo) return;
+  const filhos = alvo.isParent ? arr.filter(r => r && r.parentId === id) : [];
+  const msg = filhos.length > 0
+    ? `Apagar essa revisão e as ${filhos.length} revisões agendadas vinculadas (calendário e histórico)?`
+    : 'Apagar essa revisão?';
+  if (!confirm(msg)) return;
+  const blocoIds = [];
+  if (alvo.blocoId) blocoIds.push(alvo.blocoId);
+  filhos.forEach(f => { if (f.blocoId) blocoIds.push(f.blocoId); });
+  const idsRemover = new Set([id, ...filhos.map(f => f.id)]);
+  const novo = arr.filter(r => r && !idsRemover.has(r.id));
+  saveHist(novo);
+  removePlannerBlocks(blocoIds);
   render();
 }
 
@@ -248,14 +418,20 @@ function render() {
           const mins = parseInt(r.minutos) || 0;
           const conteudo = (r.conteudo || '').trim();
           const idAttr = escapeHtml(r.id || '');
-          const tag = r.manual ? '<span class="rev-tag">manual</span>' : (r.auto ? '<span class="rev-tag auto">cronômetro</span>' : '');
-          return `<div class="rev-row ${concluido ? 'done' : 'pending'}">
+          const tag = r.scheduled
+            ? `<span class="rev-tag sched">↻ rev ${r.revisaoOrdem}/${r.revisaoTotal} · ${escapeHtml(r.revisaoOffset || '')}</span>`
+            : r.isParent
+              ? `<span class="rev-tag parent">base · ${escapeHtml((METODOLOGIAS[r.metodologia]||{}).lbl || 'metodologia')}</span>`
+              : (r.manual ? '<span class="rev-tag">manual</span>' : (r.auto ? '<span class="rev-tag auto">cronômetro</span>' : ''));
+          const rowExtra = r.scheduled ? ' scheduled' : '';
+          return `<div class="rev-row ${concluido ? 'done' : 'pending'}${rowExtra}">
             <div>
               <div class="rev-title">${escapeHtml(r.materia || 'Estudo')} ${tag}</div>
               ${conteudo ? `<div class="rev-meta"><span>${escapeHtml(conteudo)}</span></div>` : ''}
               <div class="rev-meta">
                 <span>📅 ${escapeHtml(r.data || '')}</span>
                 ${mins > 0 ? `<span>· ${mins} min</span>` : ''}
+                ${r.scheduled ? `<span>· no calendário e no histórico</span>` : ''}
               </div>
             </div>
             <div class="rev-status ${concluido ? 'ok' : 'pend'}" onclick="toggleConcluida('${idAttr}')" style="cursor:pointer" title="Alternar status">${concluido ? '✓ Concluído' : '◯ Não concluído'}</div>
