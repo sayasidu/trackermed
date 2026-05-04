@@ -4,6 +4,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
+<script src="theme.js" defer></script>
 <style>
 .plano-card { background: var(--card); border: 1px solid var(--line); padding: 26px 28px; margin-top: 16px; position: relative; display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: flex-start; cursor: pointer; transition: border-color .12s, transform .12s; }
 .plano-card:hover { border-color: var(--ink2); }
@@ -122,6 +123,7 @@
 <div class="topbar">
   <div class="crumb" id="crumb">Home <i>›</i> Planos</div>
   <div class="topbar-right">
+    <button class="theme-toggle" type="button" aria-label="Alternar tema"><span class="ico">☾</span><span class="lbl">Escuro</span></button>
     <span class="pill" id="statusPill">0 planos</span>
     <button class="btn" onclick="abrirNovo()">+ Novo plano</button>
   </div>
