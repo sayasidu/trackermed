@@ -635,7 +635,20 @@ function timerFinish(auto) {
   const sessaoConteudo = timerState.conteudo || '';
 
   let novoRevBlocoId = null;
-  if (timerState.linkedBlocoId) {
+  // Pra sessões de revisão sem bloco vinculado direto, tenta achar um bloco já
+  // existente apontando para essa entrada do feed de revisões. Evita criar um
+  // bloco duplicado quando o aluno depois marca a "Revisão programada"
+  // manualmente em historico.html — a mesma atividade não deve virar duas
+  // sessões.
+  let blocoIdAlvo = timerState.linkedBlocoId;
+  if (isRevisaoSession && !blocoIdAlvo && sessaoRevHistId) {
+    const planLookup = loadPlan();
+    for (const wk of Object.keys(planLookup)) {
+      const found = (planLookup[wk] || []).find(b => b && b.revHistId === sessaoRevHistId);
+      if (found) { blocoIdAlvo = found.id; break; }
+    }
+  }
+  if (blocoIdAlvo) {
     // Atualiza bloco existente: acumula tempo estudado e só marca feito quando atinge o planejado.
     // Para sessões de revisão, percorre todas as semanas (o bloco pode estar em outra weekKey)
     // e força feito=true porque o aluno clicou "Concluir".
@@ -643,7 +656,7 @@ function timerFinish(auto) {
     if (isRevisaoSession) {
       Object.keys(plan).forEach(wk => {
         plan[wk] = (plan[wk]||[]).map(b => {
-          if (b.id !== timerState.linkedBlocoId) return b;
+          if (b.id !== blocoIdAlvo) return b;
           const plannedMin = b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60) || studied;
           const studiedAcum = (b.minutosFeitos || 0) + studied;
           return { ...b, feito: true, minutos: plannedMin, minutosFeitos: studiedAcum, data: todayKey() };
@@ -652,7 +665,7 @@ function timerFinish(auto) {
     } else {
       const wk = weekKey(new Date());
       plan[wk] = (plan[wk]||[]).map(b => {
-        if (b.id !== timerState.linkedBlocoId) return b;
+        if (b.id !== blocoIdAlvo) return b;
         const plannedMin = b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60);
         const studiedAcum = (b.minutosFeitos || 0) + studied;
         const feito = concluidoNatural || studiedAcum >= plannedMin;
