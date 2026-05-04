@@ -630,6 +630,7 @@ function timerFinish(auto) {
   const sessaoMateria = timerState.discNome;
   const sessaoConteudo = timerState.conteudo || '';
 
+  let novoRevBlocoId = null;
   if (timerState.linkedBlocoId) {
     // Atualiza bloco existente: acumula tempo estudado e só marca feito quando atinge o planejado.
     // Para sessões de revisão, percorre todas as semanas (o bloco pode estar em outra weekKey)
@@ -655,8 +656,28 @@ function timerFinish(auto) {
       });
     }
     savePlan(plan);
-  } else if (!isRevisaoSession) {
-    // Novo bloco (apenas para estudos avulsos — revisões já têm bloco vinculado).
+  } else if (isRevisaoSession) {
+    // Revisão sem bloco vinculado (ex.: revisão manual sem metodologia) — cria
+    // um bloco hoje marcado como feito para aparecer na lista do histórico.
+    const plan = loadPlan();
+    const wk = weekKey(new Date());
+    if (!plan[wk]) plan[wk] = [];
+    const now = new Date();
+    const endH = now.getHours() + now.getMinutes()/60;
+    const startH = Math.max(0, endH - studied/60);
+    novoRevBlocoId = uid();
+    plan[wk].push({
+      id: novoRevBlocoId, tipo: 'revisao', revisao: true,
+      discId: timerState.discId, matNome: timerState.discNome,
+      conteudo: timerState.conteudo || '',
+      dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH),
+      feito: true, fromTimer: true, minutos: studied, minutosFeitos: studied,
+      extra: true, data: todayKey(),
+      revHistId: sessaoRevHistId
+    });
+    savePlan(plan);
+  } else {
+    // Novo bloco (apenas para estudos avulsos).
     const plan = loadPlan();
     const wk = weekKey(new Date());
     if (!plan[wk]) plan[wk] = [];
@@ -673,7 +694,9 @@ function timerFinish(auto) {
     const arr = loadHist().map(r => {
       if (!r || r.id !== sessaoRevHistId) return r;
       const minsAtuais = parseInt(r.minutos) || 0;
-      return { ...r, concluido: true, minutos: Math.max(minsAtuais, studied), revisar: true, finalizadoEm: Date.now() };
+      const patch = { ...r, concluido: true, minutos: Math.max(minsAtuais, studied), revisar: true, finalizadoEm: Date.now() };
+      if (novoRevBlocoId && !r.blocoId) patch.blocoId = novoRevBlocoId;
+      return patch;
     });
     saveHist(arr);
     timerClose();

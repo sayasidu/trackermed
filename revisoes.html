@@ -10,6 +10,9 @@
 .rev-row .rev-play { background: var(--cobalt); color: #fff; border: none; width: 36px; height: 36px; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; font-family: inherit; }
 .rev-row .rev-play:hover { background: #1530b3; }
 .rev-row.done .rev-play { display: none; }
+.rev-row.done .rev-title { text-decoration: line-through; color: var(--muted); }
+.rev-row.done .rev-meta { text-decoration: line-through; }
+.rev-row.done .rev-count { color: var(--mint); }
 .play-mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
 .play-mode-btn { background: var(--paper); border: 1px solid #E0E0E0; padding: 18px 14px; cursor: pointer; font-family: inherit; text-align: left; transition: all .12s; }
 .play-mode-btn:hover { border-color: var(--cobalt); background: #fff; }
@@ -393,7 +396,7 @@ function toggleConcluida(id) {
     return r;
   });
   saveHist(novo);
-  if (alvo && alvo.scheduled) {
+  if (alvo && alvo.blocoId) {
     const patch = { feito: alvo.concluido };
     if (alvo.concluido) patch.data = todayISO();
     syncPlannerBlock(alvo, patch);
