@@ -4,6 +4,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
+<script src="theme.js" defer></script>
 <style>
 .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
 .stat-card { background: #fff; border: 1px solid #E0E0E0; padding: 18px 20px; }
@@ -244,6 +245,7 @@
 <div class="topbar">
   <div class="crumb">Home <i>›</i> Planejamento</div>
   <div class="topbar-right">
+    <button class="theme-toggle" type="button" aria-label="Alternar tema"><span class="ico">☾</span><span class="lbl">Escuro</span></button>
     <span class="pill" id="semanaLbl">Semana de —</span>
     <button class="btn-ghost" onclick="mudarSemana(-1)">‹ anterior</button>
     <button class="btn-ghost" onclick="mudarSemana(0)">hoje</button>

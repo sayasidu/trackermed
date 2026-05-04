@@ -1,12 +1,47 @@
 /* TrackerMed · shared Cobalto app styles */
 :root {
+  /* palette (constant — used as brand colors / decorative fills) */
   --ink: #0A1330; --ink2: #2A3356; --paper: #F4F1EA; --card: #FFFFFF; --line: #E4DFD2;
   --line-dark: rgba(244,241,234,0.08); --cobalt: #1E3AE8; --acid: #E6FF3D;
   --rose: #FF5B5B; --mint: #1FC28A; --amber: #F4A72F;
   --muted: #6B6A5F; --muted-dark: rgba(244,241,234,0.5);
+
+  /* semantic theme tokens (swap on dark mode) */
+  --bg: #F4F1EA;
+  --surface: #FFFFFF;
+  --surface-soft: #F4F1EA;
+  --text: #0A1330;
+  --text-soft: #2A3356;
+  --text-mute: #6B6A5F;
+  --border: #E4DFD2;
+  --border-soft: #E0E0E0;
+  --shadow-strong: rgba(10,19,48,0.4);
+  --row-hover: rgba(30,58,232,0.03);
 }
+
+[data-theme="dark"] {
+  --bg: #0B1226;
+  --surface: #161D40;
+  --surface-soft: #11173A;
+  --text: #F1EEE5;
+  --text-soft: #C8CCDE;
+  --text-mute: #8B8FA8;
+  --border: rgba(241,238,229,0.12);
+  --border-soft: rgba(241,238,229,0.08);
+  --shadow-strong: rgba(0,0,0,0.55);
+  --row-hover: rgba(30,58,232,0.18);
+
+  /* legacy aliases — swap so inline page styles inherit dark mode automatically.
+     --ink and --paper stay constant: --ink is the dark brand fill, --paper is the cream
+     text color used on top of dark fills (sidebar, .btn, .card.dark, etc.). */
+  --card: #161D40;
+  --line: rgba(241,238,229,0.12);
+  --ink2: #C8CCDE;
+  --muted: #8B8FA8;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { background: var(--paper); color: var(--ink); font-family: 'Inter Tight', -apple-system, sans-serif; font-size: 14px; line-height: 1.5; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter Tight', -apple-system, sans-serif; font-size: 14px; line-height: 1.5; }
 a { color: inherit; text-decoration: none; }
 button { font-family: inherit; cursor: pointer; }
 
@@ -22,36 +57,44 @@ button { font-family: inherit; cursor: pointer; }
 .sidebar-foot { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--line-dark); font-size: 11px; color: var(--muted-dark); letter-spacing: 0.1em; text-transform: uppercase; }
 
 .main { padding: 36px 44px 64px; min-width: 0; }
-.topbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 24px; border-bottom: 1px solid var(--line); margin-bottom: 36px; }
-.crumb { font-size: 12px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600; }
+.topbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 24px; border-bottom: 1px solid var(--border); margin-bottom: 36px; }
+.crumb { font-size: 12px; color: var(--text-mute); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600; }
 .crumb i { color: var(--cobalt); font-style: normal; }
-.topbar-right { display: flex; align-items: center; gap: 14px; font-size: 12px; color: var(--muted); }
-.pill { border: 1px solid var(--line); background: var(--card); padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; }
+.topbar-right { display: flex; align-items: center; gap: 14px; font-size: 12px; color: var(--text-mute); }
+.pill { border: 1px solid var(--border); background: var(--surface); padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--text); }
 
-h1.page-title { font-family: 'Fraunces', serif; font-size: 56px; font-weight: 500; letter-spacing: -0.035em; line-height: 1; }
+/* Theme toggle — sits in the topbar */
+.theme-toggle { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 6px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; cursor: pointer; font-family: inherit; transition: all .15s; }
+.theme-toggle:hover { border-color: var(--cobalt); color: var(--cobalt); }
+.theme-toggle .ico { font-size: 13px; line-height: 1; }
+.theme-toggle .lbl { text-transform: uppercase; }
+[data-theme="dark"] .theme-toggle { color: var(--acid); border-color: rgba(230,255,61,0.35); }
+[data-theme="dark"] .theme-toggle:hover { border-color: var(--acid); color: var(--acid); }
+
+h1.page-title { font-family: 'Fraunces', serif; font-size: 56px; font-weight: 500; letter-spacing: -0.035em; line-height: 1; color: var(--text); }
 h1.page-title i { color: var(--cobalt); }
-.page-lede { font-size: 16px; color: var(--ink2); margin-top: 12px; max-width: 600px; }
-.kicker { font-size: 11px; letter-spacing: 0.2em; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+.page-lede { font-size: 16px; color: var(--text-soft); margin-top: 12px; max-width: 600px; }
+.kicker { font-size: 11px; letter-spacing: 0.2em; color: var(--text-mute); font-weight: 600; text-transform: uppercase; }
 
 .section { margin-top: 40px; }
 .section-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; }
-.section-title { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; letter-spacing: -0.02em; }
+.section-title { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; letter-spacing: -0.02em; color: var(--text); }
 .section-title i { color: var(--cobalt); font-style: italic; }
-.card { background: var(--card); border: 1px solid var(--line); padding: 24px; }
+.card { background: var(--surface); border: 1px solid var(--border); padding: 24px; color: var(--text); }
 .card.dark { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
 .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); font-size: 13px; font-weight: 600; }
-.btn.ghost { background: transparent; color: var(--ink); }
-.btn.cobalt { background: var(--cobalt); border-color: var(--cobalt); }
+.btn.ghost { background: transparent; color: var(--text); border-color: var(--text); }
+.btn.cobalt { background: var(--cobalt); border-color: var(--cobalt); color: #fff; }
 .btn.acid { background: var(--acid); border-color: var(--acid); color: var(--ink); }
 .btn:hover { opacity: 0.88; }
 
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th { text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); padding: 14px 16px; border-bottom: 1px solid var(--line); background: var(--paper); }
-td { padding: 14px 16px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
-tr:hover td { background: rgba(30,58,232,0.03); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; color: var(--text); }
+th { text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-mute); padding: 14px 16px; border-bottom: 1px solid var(--border); background: var(--surface-soft); }
+td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+tr:hover td { background: var(--row-hover); }
 
-.progress { height: 6px; background: rgba(10,19,48,0.08); overflow: hidden; }
+.progress { height: 6px; background: var(--border-soft); overflow: hidden; }
 .progress i { display: block; height: 100%; background: var(--cobalt); font-style: normal; }
 .progress.mint i { background: var(--mint); }
 .progress.rose i { background: var(--rose); }
@@ -63,7 +106,7 @@ tr:hover td { background: rgba(30,58,232,0.03); }
 .tag.rose { background: var(--rose); color: #fff; }
 .tag.acid { background: var(--acid); color: var(--ink); }
 .tag.amber { background: var(--amber); color: var(--ink); }
-.tag.ghost { background: transparent; border: 1px solid var(--line); color: var(--ink2); }
+.tag.ghost { background: transparent; border: 1px solid var(--border); color: var(--text-soft); }
 
 @media (max-width: 900px) {
   .app { grid-template-columns: 1fr; }
@@ -74,3 +117,182 @@ tr:hover td { background: rgba(30,58,232,0.03); }
   .main { padding: 24px 20px 48px; }
   h1.page-title { font-size: 40px; }
 }
+
+/* ===== Dark mode tweaks for shared inline patterns across pages ===== */
+[data-theme="dark"] body { color: var(--text); }
+/* form fields inherit text color */
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select { color: var(--text); color-scheme: dark; }
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder { color: var(--text-mute); }
+
+/* Hover border highlights using --ink read poorly on dark surfaces — use cobalt instead */
+[data-theme="dark"] .disc-card:hover,
+[data-theme="dark"] .qcard:hover,
+[data-theme="dark"] .quick:hover,
+[data-theme="dark"] .rev-row:hover,
+[data-theme="dark"] .met-card:hover,
+[data-theme="dark"] .blk-item .check-btn:hover,
+[data-theme="dark"] .disc-card .actions button:hover,
+[data-theme="dark"] .plano-actions button:hover,
+[data-theme="dark"] .det-edit-btn:hover { border-color: var(--cobalt) !important; }
+
+/* Common text-on-card/surface classes that hard-code color: var(--ink) */
+[data-theme="dark"] .erro-card .por-que .txt,
+[data-theme="dark"] .disc-card .meta-h,
+[data-theme="dark"] .hist-row .data b,
+[data-theme="dark"] .live-preview b,
+[data-theme="dark"] .det-edit-btn,
+[data-theme="dark"] .det-mat-nome,
+[data-theme="dark"] .det-notas,
+[data-theme="dark"] .stat-card .val,
+[data-theme="dark"] .stat-card .lbl,
+[data-theme="dark"] .periodo-info b,
+[data-theme="dark"] .disp-tot b,
+[data-theme="dark"] .disp-total b,
+[data-theme="dark"] .hist-item .ts,
+[data-theme="dark"] .mfield.check-row label,
+[data-theme="dark"] .mins-picker button:hover:not(.active),
+[data-theme="dark"] .rev-row .rev-tag.parent { color: var(--text); }
+
+[data-theme="dark"] .rev-row .rev-tag.parent { border-color: var(--text-soft); }
+
+/* KPI/quick/box backgrounds that hardcode #fff or use card */
+[data-theme="dark"] .modal-box,
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .section-box,
+[data-theme="dark"] .sessoes-setup,
+[data-theme="dark"] .disp-setup,
+[data-theme="dark"] .grade,
+[data-theme="dark"] .grade-head,
+[data-theme="dark"] .access-row { background: var(--surface); border-color: var(--border); }
+[data-theme="dark"] .grade-head { border-bottom-color: var(--border); }
+
+/* Smaller helper backgrounds (#fff used inside other components) */
+[data-theme="dark"] .mins-picker button,
+[data-theme="dark"] .hist-item button,
+[data-theme="dark"] .tool-row input.search,
+[data-theme="dark"] .tool-row select,
+[data-theme="dark"] .sim-row { background: var(--surface); border-color: var(--border); color: var(--text); }
+[data-theme="dark"] .met-card:hover { background: var(--surface); }
+
+/* Light tinted backgrounds — soften for dark mode */
+[data-theme="dark"] .blk-item.revisao { background: rgba(251,140,0,0.12); color: var(--text); }
+[data-theme="dark"] .today-item.done { background: rgba(67,160,71,0.18); color: var(--text); }
+[data-theme="dark"] .today-item.done .mins { color: #7BD389; }
+[data-theme="dark"] .sug-item.urgente { background: rgba(255,91,91,0.12); }
+[data-theme="dark"] .bloco.estudo { background: rgba(201,162,0,0.18); color: #F4E27A; border-left-color: #C9A200; }
+[data-theme="dark"] .bloco.revisao { background: rgba(251,140,0,0.18); color: #F4C77A; border-left-color: #FB8C00; }
+[data-theme="dark"] .legenda .e b { background: rgba(201,162,0,0.18); }
+[data-theme="dark"] .legenda .r b { background: rgba(251,140,0,0.18); }
+[data-theme="dark"] .hist-item.active { background: rgba(230,255,61,0.1); }
+
+/* Acid-tinted KPI: keep dark text since bg is yellow */
+[data-theme="dark"] .kpi.acid .lbl,
+[data-theme="dark"] .kpi.acid .val,
+[data-theme="dark"] .kpi.acid .val span,
+[data-theme="dark"] .kpi.acid .sub { color: var(--ink); }
+[data-theme="dark"] .qcard.acid p,
+[data-theme="dark"] .qcard.acid .qn { color: var(--ink); }
+
+/* Mini-card numbers default text color */
+[data-theme="dark"] .mini-num { color: var(--text); }
+
+/* Dashboard greet headline keeps text token */
+[data-theme="dark"] .greet h1 { color: var(--text); }
+
+/* Disciplinas: aulas & section-group panels using --paper as soft surface */
+[data-theme="dark"] .disc-card .aulas,
+[data-theme="dark"] .section-group { background: var(--surface-soft); }
+
+/* Modal save buttons & cancel border tweaks */
+[data-theme="dark"] .mbtn-cancel { color: var(--text); border-color: var(--border); }
+
+/* Empty button etc keep cobalt fill — already fine */
+
+/* Hard-coded #E0E0E0 borders elsewhere */
+[data-theme="dark"] .dur-btn,
+[data-theme="dark"] .opt-btn,
+[data-theme="dark"] .dur-custom input,
+[data-theme="dark"] .met-card,
+[data-theme="dark"] .mfield input,
+[data-theme="dark"] .mfield select,
+[data-theme="dark"] .mfield textarea { border-color: var(--border); }
+
+/* opt-btn baseline color in dark */
+[data-theme="dark"] .opt-btn { color: var(--text-soft); }
+
+/* Plannerstudy mins-picker baseline color */
+[data-theme="dark"] .mins-picker button { color: var(--text-soft); }
+
+/* Live-preview soft border */
+[data-theme="dark"] .live-preview { border-left-color: var(--border); color: var(--text-mute); }
+
+/* Modal backdrop a touch deeper for dark mode */
+[data-theme="dark"] .modal-backdrop { background: rgba(0,0,0,0.65); }
+
+/* Hist-item buttons */
+[data-theme="dark"] .hist-item button { color: var(--text-soft); border-color: var(--border); }
+
+/* Erros: card surfaces */
+[data-theme="dark"] .erro-card .por-que { color: var(--text); }
+
+/* Filter tab inactive — swap automatically via --paper, but color may need fix */
+[data-theme="dark"] .filter-tabs button { color: var(--text-soft); background: var(--surface); border-color: var(--border); }
+
+/* Cards & utility surfaces hardcoded to #fff */
+[data-theme="dark"] .erro-card,
+[data-theme="dark"] .empty-state,
+[data-theme="dark"] .crit,
+[data-theme="dark"] .play-mode-btn:hover,
+[data-theme="dark"] .play-mode-btn.active { background: var(--surface); border-color: var(--border); color: var(--text); }
+
+/* Sidebar in dark mode: keep navy bg but slightly deeper for separation */
+[data-theme="dark"] .sidebar { background: #050A1F; }
+
+/* Soft surface overrides — every place using `background: var(--paper)` as a
+   secondary surface needs to swap to dark-mode surface-soft. (--paper itself
+   stays cream because it's also used as text color over dark fills.) */
+[data-theme="dark"] .erro-card .por-que,
+[data-theme="dark"] .disc-row .bar-wrap,
+[data-theme="dark"] .today-item,
+[data-theme="dark"] .erro-preview,
+[data-theme="dark"] .disc-card .aulas,
+[data-theme="dark"] .section-group,
+[data-theme="dark"] .blk-item,
+[data-theme="dark"] .dur-btn,
+[data-theme="dark"] .opt-btn,
+[data-theme="dark"] .dur-custom input,
+[data-theme="dark"] .met-card,
+[data-theme="dark"] .live-preview,
+[data-theme="dark"] .plano-materias span,
+[data-theme="dark"] .type-choice label,
+[data-theme="dark"] .play-mode-btn,
+[data-theme="dark"] .met-info,
+[data-theme="dark"] .sess-row,
+[data-theme="dark"] .sug-item,
+[data-theme="dark"] .periodo-row input,
+[data-theme="dark"] .periodo-info,
+[data-theme="dark"] .disp-day input,
+[data-theme="dark"] .prio-breakdown .pb-row,
+[data-theme="dark"] .hist-item,
+[data-theme="dark"] .mfield.check-row,
+[data-theme="dark"] .mfield input,
+[data-theme="dark"] .mfield select,
+[data-theme="dark"] .mfield textarea { background: var(--surface-soft); }
+
+/* Form fields text color — needs higher specificity to beat inline styles */
+[data-theme="dark"] .mfield input,
+[data-theme="dark"] .mfield select,
+[data-theme="dark"] .mfield textarea,
+[data-theme="dark"] .periodo-row input,
+[data-theme="dark"] .disp-day input,
+[data-theme="dark"] .tool-row input,
+[data-theme="dark"] .tool-row select,
+[data-theme="dark"] .dur-custom input { color: var(--text); }
+
+/* table th was using var(--paper) — give it a soft dark in dark mode */
+[data-theme="dark"] th { background: var(--surface-soft); }
+
+
