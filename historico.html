@@ -111,6 +111,23 @@
 .mbtn-timer { background: var(--acid); color: var(--ink); border: none; padding: 10px 22px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; letter-spacing: 0.03em; }
 .mbtn-timer-free { background: var(--ink); color: var(--acid); border: none; padding: 10px 22px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; letter-spacing: 0.03em; }
 .mbtn-timer-free:hover { background: var(--cobalt); color: #fff; }
+
+/* Modal de método de revisão */
+.met-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.met-card { background: var(--paper); border: 1px solid #E0E0E0; padding: 22px 14px; cursor: pointer; font-family: inherit; text-align: center; transition: all .12s; }
+.met-card:hover { border-color: var(--cobalt); background: #fff; }
+.met-card .ic { font-size: 28px; line-height: 1; }
+.met-card .lb { font-family: 'Fraunces', serif; font-size: 16px; font-style: italic; color: var(--cobalt); margin-top: 10px; }
+.met-card .ds { font-size: 11px; color: #70757A; margin-top: 4px; line-height: 1.3; }
+.live-preview { margin-top: 6px; padding: 14px 16px; background: var(--paper); border-left: 3px solid var(--line); font-size: 13px; color: var(--muted); }
+.live-preview.on { border-left-color: var(--cobalt); }
+.live-preview b { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
+.met-class { display: inline-block; padding: 3px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 3px; margin-left: 8px; }
+.met-class.bom { background: var(--amber); color: var(--ink); }
+.met-class.muito-bom { background: var(--cobalt); color: #fff; }
+.met-class.extremamente-bom { background: var(--mint); color: var(--ink); }
+.met-class.excelente { background: var(--acid); color: var(--ink); }
+.met-class.refazer { background: var(--rose); color: #fff; }
 </style></head><body>
 <div class="app">
 <aside class="sidebar">
@@ -293,6 +310,48 @@
   </div>
 </div>
 
+<!-- Modal: método de revisão (após concluir cronômetro de revisão) -->
+<div class="modal-backdrop" id="metodoRevModal" onclick="if(event.target===this) fecharMetodoRev()">
+  <div class="modal-box" style="width:520px">
+    <button class="mbtn-close" onclick="fecharMetodoRev()">×</button>
+    <h2>Revisão <i>concluída</i></h2>
+    <div class="modal-sub" id="metodoRevSub">Como você revisou?</div>
+    <div id="metodoStep1">
+      <div class="met-grid">
+        <button type="button" class="met-card" onclick="escolherMetodoRev('questoes')">
+          <div class="ic">📝</div><div class="lb">Questões</div>
+          <div class="ds">Resolução de questões objetivas.</div>
+        </button>
+        <button type="button" class="met-card" onclick="escolherMetodoRev('flashcards')">
+          <div class="ic">🃏</div><div class="lb">Flashcards</div>
+          <div class="ds">Revisão ativa por cartões.</div>
+        </button>
+        <button type="button" class="met-card" onclick="escolherMetodoRev('leitura')">
+          <div class="ic">📖</div><div class="lb">Leitura de resumo</div>
+          <div class="ds">Releitura de notas e resumos.</div>
+        </button>
+      </div>
+    </div>
+    <div id="metodoStep2" style="display:none">
+      <div class="mfield row2">
+        <div>
+          <label>Questões feitas</label>
+          <input type="number" id="metQ" min="1" step="1" placeholder="ex: 30" oninput="atualizarMetodoPreview()"/>
+        </div>
+        <div>
+          <label>Acertos</label>
+          <input type="number" id="metA" min="0" step="1" placeholder="ex: 24" oninput="atualizarMetodoPreview()"/>
+        </div>
+      </div>
+      <div class="live-preview" id="metPreview">Preencha questões e acertos para ver o resultado.</div>
+      <div class="mactions">
+        <button type="button" class="mbtn-cancel" onclick="voltarMetodoRevStep1()">← Trocar método</button>
+        <button type="button" class="mbtn-save" onclick="salvarMetodoRevQuestoes()">Concluir revisão</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 const DISC_KEY = 'trackermed.disciplinas.v1';
 const PLAN_KEY = 'trackermed.plan.v1';
@@ -364,7 +423,7 @@ function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
 
 // Timer state
 function makeTimerState() {
-  return { discId: null, discNome: '', conteudo: '', focusSec: 0, pauseSec: 0, sections: 1, currentSection: 1, mode: 'focus', leftSec: 0, running: false, intervalId: null, linkedBlocoId: null, fromModal: false, revisar: false, studiedSec: 0, freeMode: false, elapsedSec: 0 };
+  return { discId: null, discNome: '', conteudo: '', focusSec: 0, pauseSec: 0, sections: 1, currentSection: 1, mode: 'focus', leftSec: 0, running: false, intervalId: null, linkedBlocoId: null, fromModal: false, revisar: false, studiedSec: 0, freeMode: false, elapsedSec: 0, revHistId: null };
 }
 let timerState = makeTimerState();
 function beep() {
@@ -386,7 +445,8 @@ function timerOpen(discId, discNome, mins, linkedBlocoId, opts) {
     linkedBlocoId: linkedBlocoId || null,
     fromModal: !!opts.fromModal, revisar: !!opts.revisar,
     studiedSec: 0,
-    freeMode: false, elapsedSec: 0
+    freeMode: false, elapsedSec: 0,
+    revHistId: opts.revHistId || null
   };
   document.getElementById('tDisc').textContent = discNome;
   document.getElementById('tPlayBtn').textContent = 'Iniciar';
@@ -410,7 +470,8 @@ function timerOpenFree(discId, discNome, linkedBlocoId, opts) {
     linkedBlocoId: linkedBlocoId || null,
     fromModal: !!opts.fromModal, revisar: !!opts.revisar,
     studiedSec: 0,
-    freeMode: true, elapsedSec: 0
+    freeMode: true, elapsedSec: 0,
+    revHistId: opts.revHistId || null
   };
   document.getElementById('tDisc').textContent = discNome;
   document.getElementById('tPlayBtn').textContent = 'Iniciar';
@@ -564,21 +625,38 @@ function timerFinish(auto) {
   }
   if (studied < 1) { timerClose(); return; }
   const concluidoNatural = !timerState.freeMode && !!auto && timerState.mode === 'focus' && timerState.currentSection >= timerState.sections && timerState.leftSec <= 0;
+  const isRevisaoSession = !!timerState.revHistId;
+  const sessaoRevHistId = timerState.revHistId;
+  const sessaoMateria = timerState.discNome;
+  const sessaoConteudo = timerState.conteudo || '';
 
   if (timerState.linkedBlocoId) {
     // Atualiza bloco existente: acumula tempo estudado e só marca feito quando atinge o planejado.
+    // Para sessões de revisão, percorre todas as semanas (o bloco pode estar em outra weekKey)
+    // e força feito=true porque o aluno clicou "Concluir".
     const plan = loadPlan();
-    const wk = weekKey(new Date());
-    plan[wk] = (plan[wk]||[]).map(b => {
-      if (b.id !== timerState.linkedBlocoId) return b;
-      const plannedMin = b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60);
-      const studiedAcum = (b.minutosFeitos || 0) + studied;
-      const feito = concluidoNatural || studiedAcum >= plannedMin;
-      return { ...b, feito, minutos: plannedMin, minutosFeitos: studiedAcum, data: todayKey() };
-    });
+    if (isRevisaoSession) {
+      Object.keys(plan).forEach(wk => {
+        plan[wk] = (plan[wk]||[]).map(b => {
+          if (b.id !== timerState.linkedBlocoId) return b;
+          const plannedMin = b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60) || studied;
+          const studiedAcum = (b.minutosFeitos || 0) + studied;
+          return { ...b, feito: true, minutos: plannedMin, minutosFeitos: studiedAcum, data: todayKey() };
+        });
+      });
+    } else {
+      const wk = weekKey(new Date());
+      plan[wk] = (plan[wk]||[]).map(b => {
+        if (b.id !== timerState.linkedBlocoId) return b;
+        const plannedMin = b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60);
+        const studiedAcum = (b.minutosFeitos || 0) + studied;
+        const feito = concluidoNatural || studiedAcum >= plannedMin;
+        return { ...b, feito, minutos: plannedMin, minutosFeitos: studiedAcum, data: todayKey() };
+      });
+    }
     savePlan(plan);
-  } else {
-    // Novo bloco
+  } else if (!isRevisaoSession) {
+    // Novo bloco (apenas para estudos avulsos — revisões já têm bloco vinculado).
     const plan = loadPlan();
     const wk = weekKey(new Date());
     if (!plan[wk]) plan[wk] = [];
@@ -589,8 +667,22 @@ function timerFinish(auto) {
     savePlan(plan);
   }
 
-  // Toda finalização de cronômetro entra no feed de revisões automaticamente,
-  // já marcada como "revisar" para aparecer em revisoes.html.
+  if (isRevisaoSession) {
+    // Marca a entrada de revisão existente como concluída e atualiza o tempo estudado.
+    // O método (questões / flashcards / leitura) é capturado no modal logo a seguir.
+    const arr = loadHist().map(r => {
+      if (!r || r.id !== sessaoRevHistId) return r;
+      const minsAtuais = parseInt(r.minutos) || 0;
+      return { ...r, concluido: true, minutos: Math.max(minsAtuais, studied), revisar: true, finalizadoEm: Date.now() };
+    });
+    saveHist(arr);
+    timerClose();
+    render();
+    abrirMetodoRev(sessaoRevHistId, studied, sessaoMateria, sessaoConteudo);
+    return;
+  }
+
+  // Estudo comum: entra no feed de revisões automaticamente como sugestão pra revisar depois.
   pushHist({
     data: fmtDataBR(new Date()),
     materia: timerState.discNome,
@@ -604,6 +696,122 @@ function timerFinish(auto) {
   if (auto) alert(`🎉 Sessão de ${Math.round(totalPlannedSec/60)}min completa! Registrada.`);
   timerClose();
   render();
+}
+
+// ===== Modal de método de revisão =====
+const SIM_KEY = 'trackermed.simulados.v2';
+let metodoRevCtx = null;
+
+function abrirMetodoRev(revHistId, studied, materia, conteudo) {
+  metodoRevCtx = { revHistId, studied, materia: materia || 'Revisão', conteudo: conteudo || '' };
+  document.getElementById('metodoStep1').style.display = '';
+  document.getElementById('metodoStep2').style.display = 'none';
+  document.getElementById('metQ').value = '';
+  document.getElementById('metA').value = '';
+  document.getElementById('metPreview').className = 'live-preview';
+  document.getElementById('metPreview').textContent = 'Preencha questões e acertos para ver o resultado.';
+  const sub = `${metodoRevCtx.materia}${metodoRevCtx.conteudo ? ' — ' + metodoRevCtx.conteudo : ''} · ${studied} min. Como você revisou?`;
+  document.getElementById('metodoRevSub').textContent = sub;
+  document.getElementById('metodoRevModal').classList.add('open');
+}
+function fecharMetodoRev() {
+  document.getElementById('metodoRevModal').classList.remove('open');
+  metodoRevCtx = null;
+  render();
+}
+function voltarMetodoRevStep1() {
+  document.getElementById('metodoStep1').style.display = '';
+  document.getElementById('metodoStep2').style.display = 'none';
+}
+function escolherMetodoRev(metodo) {
+  if (!metodoRevCtx) return;
+  if (metodo === 'questoes') {
+    document.getElementById('metodoStep1').style.display = 'none';
+    document.getElementById('metodoStep2').style.display = '';
+    setTimeout(() => document.getElementById('metQ').focus(), 50);
+    return;
+  }
+  // flashcards / leitura: só registra o método e fecha.
+  registrarMetodoNoHist(metodo);
+  fecharMetodoRev();
+}
+function classificarRevisao(pct) {
+  if (pct < 70) return { key: 'refazer', label: 'Refazer' };
+  if (pct <= 79) return { key: 'bom', label: 'Bom' };
+  if (pct <= 84) return { key: 'muito-bom', label: 'Muito bom' };
+  if (pct <= 89) return { key: 'extremamente-bom', label: 'Extremamente bom' };
+  return { key: 'excelente', label: 'Excelente' };
+}
+function atualizarMetodoPreview() {
+  const q = parseInt(document.getElementById('metQ').value);
+  const a = parseInt(document.getElementById('metA').value);
+  const preview = document.getElementById('metPreview');
+  if (!q || isNaN(a)) {
+    preview.className = 'live-preview';
+    preview.textContent = 'Preencha questões e acertos para ver o resultado.';
+    return;
+  }
+  if (a > q) {
+    preview.className = 'live-preview';
+    preview.innerHTML = '<span style="color:var(--rose)">Acertos não pode ser maior que o total de questões.</span>';
+    return;
+  }
+  const pct = Math.round((a / q) * 100);
+  const c = classificarRevisao(pct);
+  preview.className = 'live-preview on';
+  preview.innerHTML = `Aproveitamento <b>${pct}%</b> <span class="met-class ${c.key}">${c.label}</span>`;
+}
+function salvarMetodoRevQuestoes() {
+  if (!metodoRevCtx) return;
+  const q = parseInt(document.getElementById('metQ').value);
+  const a = parseInt(document.getElementById('metA').value);
+  if (!q || q < 1) { alert('Informe a quantidade de questões.'); return; }
+  if (isNaN(a) || a < 0) { alert('Informe a quantidade de acertos.'); return; }
+  if (a > q) { alert('Acertos não pode ser maior que o total de questões.'); return; }
+  const pct = Math.round((a / q) * 100);
+  const c = classificarRevisao(pct);
+  registrarMetodoNoHist('questoes', {
+    questoes: q,
+    acertos: a,
+    percentual: pct,
+    classificacao: c.key,
+    classificacaoLabel: c.label
+  });
+  registrarSimuladoDeRevisao(q, a, metodoRevCtx.studied);
+  fecharMetodoRev();
+}
+function registrarMetodoNoHist(metodo, extra) {
+  if (!metodoRevCtx) return;
+  const arr = loadHist().map(r => {
+    if (!r || r.id !== metodoRevCtx.revHistId) return r;
+    return { ...r, concluido: true, metodoRevisao: metodo, ...(extra || {}) };
+  });
+  saveHist(arr);
+}
+function registrarSimuladoDeRevisao(questoes, acertos, minutos) {
+  if (!metodoRevCtx) return;
+  let sims = [];
+  try {
+    const v = JSON.parse(localStorage.getItem(SIM_KEY) || '[]');
+    if (Array.isArray(v)) sims = v;
+  } catch {}
+  const mins = Math.max(0, parseInt(minutos) || 0);
+  const h = Math.floor(mins / 60), m = mins % 60;
+  const tempo = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+  const today = new Date();
+  const dataIso = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+  sims.unshift({
+    id: 'sm-' + Date.now() + '-' + Math.random().toString(36).slice(2,6),
+    materia: metodoRevCtx.materia || 'Revisão',
+    questoes,
+    acertos,
+    tempo,
+    data: dataIso,
+    ts: Date.now(),
+    fromRevisao: true,
+    revHistId: metodoRevCtx.revHistId
+  });
+  localStorage.setItem(SIM_KEY, JSON.stringify(sims));
 }
 
 function toggleFeito(wk, blocoId) {
@@ -987,7 +1195,7 @@ setInterval(() => { if (!timerState.running) render(); }, 60000);
   try { req = JSON.parse(raw); } catch { return; }
   if (!req || !req.modo) return;
   if (req.ts && (Date.now() - req.ts) > 60000) return;
-  const opts = { conteudo: req.conteudo || '', revisar: true };
+  const opts = { conteudo: req.conteudo || '', revisar: true, revHistId: req.revHistId || null };
   if (req.modo === 'crono') {
     timerOpenFree(req.discId, req.discNome, req.blocoId, opts);
   } else {
