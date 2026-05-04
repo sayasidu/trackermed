@@ -24,8 +24,12 @@
 .blk-item { display: grid; grid-template-columns: auto 1fr auto auto auto; gap: 14px; align-items: center; padding: 12px 16px; background: var(--paper); border-left: 3px solid var(--cobalt); }
 .blk-item.done { opacity: 0.65; background: #E8F5E9; border-left-color: #43A047; }
 .blk-item.done .nome { text-decoration: line-through; }
+.blk-item.done .motivo { text-decoration: line-through; }
 .blk-item.revisao { background: #FFF8EE; border-left-color: #FB8C00; }
 .blk-item.revisao .mins { color: #B26A00; }
+.blk-item.done.revisao { background: #E8F5E9; border-left-color: #43A047; }
+.blk-item.done.revisao .mins { color: #2E7D32; }
+.blk-item.done.revisao .rev-pill { background: #43A047; }
 .blk-item .rev-pill { display:inline-block; font-size:9px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; background:#FB8C00; color:#fff; padding:2px 6px; margin-right:6px; border-radius:2px; vertical-align:1px; }
 .blk-item .horario { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink2); font-weight: 600; min-width: 85px; }
 .blk-item .nome { font-weight: 600; font-size: 14px; }
@@ -1088,6 +1092,27 @@ function render() {
   document.getElementById('dataHoje').textContent = hoje.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
 
   // ==== Blocos planejados pra HOJE ====
+  // Sincroniza blocos de revisão com o estado de "concluido" do feed de revisões.
+  // Garante que concluir uma revisão em revisoes.html marque o bloco como feito aqui.
+  const histRev = loadHist();
+  const histById = {};
+  histRev.forEach(r => { if (r && r.id) histById[r.id] = r; });
+  let planMudou = false;
+  Object.keys(plan).forEach(wkPlan => {
+    plan[wkPlan] = (plan[wkPlan]||[]).map(b => {
+      const isRevB = b && (b.tipo === 'revisao' || b.revisao);
+      if (!isRevB || !b.revHistId) return b;
+      const r = histById[b.revHistId];
+      if (!r) return b;
+      if (!!r.concluido !== !!b.feito) {
+        planMudou = true;
+        return { ...b, feito: !!r.concluido, data: r.concluido ? (b.data || todayKey()) : b.data };
+      }
+      return b;
+    });
+  });
+  if (planMudou) savePlan(plan);
+
   const blocosHoje = (plan[wk]||[]).filter(b => b.dia === hojeDia);
   // Aulas fixas pra hoje (das disciplinas)
   const DIA_IDX = { dom:0, seg:1, ter:2, qua:3, qui:4, sex:5, sab:6 };
@@ -1161,7 +1186,8 @@ function render() {
       let motivoBase;
       if (isRev) {
         const ord = b.revisaoOrdem ? `${b.revisaoOrdem}/${b.revisaoTotal||'?'}` : '';
-        motivoBase = `revisão programada${ord?` · ${ord}`:''}${b.revisaoOffset?` · ${escHtml(b.revisaoOffset)}`:''} · vinda das <a href="revisoes.html" style="color:#FB8C00;font-weight:600">Revisões</a>`;
+        const status = b.feito ? ' · concluído' : '';
+        motivoBase = `revisão programada${ord?` · ${ord}`:''}${b.revisaoOffset?` · ${escHtml(b.revisaoOffset)}`:''}${status} · vinda das <a href="revisoes.html" style="color:#FB8C00;font-weight:600">Revisões</a>`;
       } else {
         motivoBase = b.feito ? 'concluído' : (parcial ? `parcial · ${fmtHrange(studiedMin)} de ${fmtHrange(mins)}` : 'planejado');
       }
@@ -1207,6 +1233,15 @@ function render() {
 
 render();
 setInterval(() => { if (!timerState.running) render(); }, 60000);
+
+// Atualiza ao detectar mudança no plano ou no feed de revisões em outra aba
+// (por exemplo, quando uma revisão é concluída em revisoes.html).
+window.addEventListener('storage', e => {
+  if (!e.key) return;
+  if (e.key === PLAN_KEY || e.key === HIST_KEY) {
+    if (!timerState.running) render();
+  }
+});
 
 // Atende pedidos de "iniciar revisão" vindos da página de Revisões.
 (function consumirPedidoRevisao() {
