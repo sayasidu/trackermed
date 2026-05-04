@@ -13,7 +13,8 @@
 .rev-row.done .rev-title { text-decoration: line-through; color: var(--muted); }
 .rev-row.done .rev-meta { text-decoration: line-through; }
 .rev-row.done .rev-count { color: var(--mint); }
-.play-mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.play-mode-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+@media (max-width: 560px) { .play-mode-grid { grid-template-columns: 1fr; } }
 .play-mode-btn { background: var(--paper); border: 1px solid #E0E0E0; padding: 18px 14px; cursor: pointer; font-family: inherit; text-align: left; transition: all .12s; }
 .play-mode-btn:hover { border-color: var(--cobalt); background: #fff; }
 .play-mode-btn .pm-title { font-family: 'Fraunces', serif; font-size: 18px; color: var(--cobalt); font-style: italic; }
@@ -146,7 +147,7 @@
   <div class="modal-box">
     <button class="mbtn-close" onclick="fecharPlayRevisao()">×</button>
     <h2>Iniciar <i>revisão</i></h2>
-    <div class="modal-sub" id="playSub">Como você quer cronometrar essa revisão?</div>
+    <div class="modal-sub" id="playSub">Como você quer registrar essa revisão?</div>
     <div class="play-mode-grid">
       <button type="button" class="play-mode-btn" id="modeTimerBtn" onclick="selecionarModoPlay('timer')">
         <div class="pm-title">⏱ Modo timer</div>
@@ -156,10 +157,14 @@
         <div class="pm-title">▶ Cronômetro</div>
         <div class="pm-desc">Sem limite de tempo — conta progressivamente até você concluir.</div>
       </button>
+      <button type="button" class="play-mode-btn" id="modeManualBtn" onclick="selecionarModoPlay('manual')">
+        <div class="pm-title">✎ Registro manual</div>
+        <div class="pm-desc">Já estudou? Informe diretamente quantos minutos foram dedicados a esse horário.</div>
+      </button>
     </div>
     <div class="play-timer-wrap" id="playTimerWrap">
       <div class="mfield">
-        <label>Duração (minutos)</label>
+        <label id="playMinutosLabel">Duração (minutos)</label>
         <input type="number" id="playMinutos" min="1" max="600" value="25">
       </div>
     </div>
@@ -478,11 +483,14 @@ function abrirPlayRevisao(id) {
   playCtx = { id, modo: null };
   const sub = document.getElementById('playSub');
   const titulo = `${rev.materia || 'Estudo'}${rev.conteudo ? ' — ' + rev.conteudo : ''}`;
-  sub.textContent = `${titulo}. Como você quer cronometrar essa revisão?`;
+  sub.textContent = `${titulo}. Como você quer registrar essa revisão?`;
   document.getElementById('modeTimerBtn').classList.remove('active');
   document.getElementById('modeCronoBtn').classList.remove('active');
+  document.getElementById('modeManualBtn').classList.remove('active');
   document.getElementById('playTimerWrap').classList.remove('show');
   document.getElementById('playMinutos').value = parseInt(rev.minutos) > 0 ? rev.minutos : 25;
+  document.getElementById('playMinutosLabel').textContent = 'Duração (minutos)';
+  document.getElementById('playStartBtn').textContent = 'Iniciar';
   document.getElementById('playStartBtn').disabled = true;
   document.getElementById('playModal').classList.add('open');
 }
@@ -495,18 +503,28 @@ function selecionarModoPlay(modo) {
   playCtx.modo = modo;
   document.getElementById('modeTimerBtn').classList.toggle('active', modo === 'timer');
   document.getElementById('modeCronoBtn').classList.toggle('active', modo === 'crono');
-  document.getElementById('playTimerWrap').classList.toggle('show', modo === 'timer');
+  document.getElementById('modeManualBtn').classList.toggle('active', modo === 'manual');
+  const precisaInput = modo === 'timer' || modo === 'manual';
+  document.getElementById('playTimerWrap').classList.toggle('show', precisaInput);
+  document.getElementById('playMinutosLabel').textContent = modo === 'manual'
+    ? 'Minutos dedicados a esse horário'
+    : 'Duração (minutos)';
+  document.getElementById('playStartBtn').textContent = modo === 'manual' ? 'Registrar' : 'Iniciar';
   document.getElementById('playStartBtn').disabled = false;
-  if (modo === 'timer') setTimeout(() => document.getElementById('playMinutos').focus(), 50);
+  if (precisaInput) setTimeout(() => document.getElementById('playMinutos').focus(), 50);
 }
 function iniciarPlayRevisao() {
   if (!playCtx || !playCtx.modo) return;
   const rev = loadHist().find(r => r && r.id === playCtx.id);
   if (!rev) { fecharPlayRevisao(); return; }
   let minutos = 0;
-  if (playCtx.modo === 'timer') {
+  if (playCtx.modo === 'timer' || playCtx.modo === 'manual') {
     minutos = parseInt(document.getElementById('playMinutos').value);
     if (!minutos || minutos < 1) { alert('Informe um número de minutos válido.'); return; }
+  }
+  if (playCtx.modo === 'manual') {
+    registrarRevisaoManual(rev, minutos);
+    return;
   }
   const req = {
     modo: playCtx.modo,
@@ -520,6 +538,28 @@ function iniciarPlayRevisao() {
   };
   try { sessionStorage.setItem('trackermed.revisaoPlay', JSON.stringify(req)); } catch {}
   window.location.href = 'historico.html';
+}
+
+// Registro manual: o usuário informa os minutos dedicados sem cronômetro.
+// Atualiza a entrada no histórico e propaga pro bloco do planner — espelha o
+// que o histórico faz quando uma sessão cronometrada de revisão é finalizada.
+function registrarRevisaoManual(rev, minutos) {
+  const arr = loadHist();
+  let alvo = null;
+  const novo = arr.map(r => {
+    if (r && r.id === rev.id) {
+      const minsAtuais = parseInt(r.minutos) || 0;
+      alvo = { ...r, concluido: true, minutos: Math.max(minsAtuais, minutos), revisar: true, finalizadoEm: Date.now() };
+      return alvo;
+    }
+    return r;
+  });
+  saveHist(novo);
+  if (alvo) {
+    syncPlannerBlock(alvo, { feito: true, minutos: alvo.minutos, minutosFeitos: minutos, data: todayISO() });
+  }
+  fecharPlayRevisao();
+  render();
 }
 
 function ensureIds() {
