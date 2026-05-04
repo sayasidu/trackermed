@@ -394,7 +394,9 @@ function toggleConcluida(id) {
   });
   saveHist(novo);
   if (alvo && alvo.scheduled) {
-    syncPlannerBlock(alvo, { feito: alvo.concluido });
+    const patch = { feito: alvo.concluido };
+    if (alvo.concluido) patch.data = todayISO();
+    syncPlannerBlock(alvo, patch);
   }
   render();
 }
