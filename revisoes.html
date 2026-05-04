@@ -6,7 +6,18 @@
 <link rel="stylesheet" href="app.css">
 <style>
 .rev-list { display: flex; flex-direction: column; gap: 8px; }
-.rev-row { background: var(--card); border: 1px solid var(--line); padding: 18px 22px; display: grid; grid-template-columns: 1fr auto auto auto; gap: 20px; align-items: center; transition: border-color .15s; }
+.rev-row { background: var(--card); border: 1px solid var(--line); padding: 18px 22px; display: grid; grid-template-columns: 1fr auto auto auto auto; gap: 20px; align-items: center; transition: border-color .15s; }
+.rev-row .rev-play { background: var(--cobalt); color: #fff; border: none; width: 36px; height: 36px; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; font-family: inherit; }
+.rev-row .rev-play:hover { background: #1530b3; }
+.rev-row.done .rev-play { display: none; }
+.play-mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.play-mode-btn { background: var(--paper); border: 1px solid #E0E0E0; padding: 18px 14px; cursor: pointer; font-family: inherit; text-align: left; transition: all .12s; }
+.play-mode-btn:hover { border-color: var(--cobalt); background: #fff; }
+.play-mode-btn .pm-title { font-family: 'Fraunces', serif; font-size: 18px; color: var(--cobalt); font-style: italic; }
+.play-mode-btn .pm-desc { font-size: 11px; color: #70757A; margin-top: 6px; line-height: 1.4; }
+.play-mode-btn.active { border-color: var(--cobalt); background: #fff; box-shadow: inset 0 0 0 1px var(--cobalt); }
+.play-timer-wrap { display: none; margin-bottom: 14px; }
+.play-timer-wrap.show { display: block; }
 .rev-row:hover { border-color: var(--ink); }
 .rev-row.done { border-left: 4px solid var(--mint); }
 .rev-row.pending { border-left: 4px solid var(--amber); }
@@ -127,6 +138,35 @@
     </form>
   </div>
 </div>
+<!-- Modal iniciar revisão (timer ou cronômetro) -->
+<div class="modal-backdrop" id="playModal" onclick="if(event.target===this) fecharPlayRevisao()">
+  <div class="modal-box">
+    <button class="mbtn-close" onclick="fecharPlayRevisao()">×</button>
+    <h2>Iniciar <i>revisão</i></h2>
+    <div class="modal-sub" id="playSub">Como você quer cronometrar essa revisão?</div>
+    <div class="play-mode-grid">
+      <button type="button" class="play-mode-btn" id="modeTimerBtn" onclick="selecionarModoPlay('timer')">
+        <div class="pm-title">⏱ Modo timer</div>
+        <div class="pm-desc">Define um tempo (ex.: 25 min) e o cronômetro faz a contagem regressiva.</div>
+      </button>
+      <button type="button" class="play-mode-btn" id="modeCronoBtn" onclick="selecionarModoPlay('crono')">
+        <div class="pm-title">▶ Cronômetro</div>
+        <div class="pm-desc">Sem limite de tempo — conta progressivamente até você concluir.</div>
+      </button>
+    </div>
+    <div class="play-timer-wrap" id="playTimerWrap">
+      <div class="mfield">
+        <label>Duração (minutos)</label>
+        <input type="number" id="playMinutos" min="1" max="600" value="25">
+      </div>
+    </div>
+    <div class="mactions">
+      <button type="button" class="mbtn-cancel" onclick="fecharPlayRevisao()">Cancelar</button>
+      <button type="button" class="mbtn-save" id="playStartBtn" onclick="iniciarPlayRevisao()" disabled>Iniciar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const HIST_KEY = 'historicoEstudos';
 const DISC_KEY = 'trackermed.disciplinas.v1';
@@ -377,6 +417,57 @@ function apagarRevisao(id) {
   render();
 }
 
+let playCtx = null;
+function abrirPlayRevisao(id) {
+  const rev = loadHist().find(r => r && r.id === id);
+  if (!rev) return;
+  playCtx = { id, modo: null };
+  const sub = document.getElementById('playSub');
+  const titulo = `${rev.materia || 'Estudo'}${rev.conteudo ? ' — ' + rev.conteudo : ''}`;
+  sub.textContent = `${titulo}. Como você quer cronometrar essa revisão?`;
+  document.getElementById('modeTimerBtn').classList.remove('active');
+  document.getElementById('modeCronoBtn').classList.remove('active');
+  document.getElementById('playTimerWrap').classList.remove('show');
+  document.getElementById('playMinutos').value = parseInt(rev.minutos) > 0 ? rev.minutos : 25;
+  document.getElementById('playStartBtn').disabled = true;
+  document.getElementById('playModal').classList.add('open');
+}
+function fecharPlayRevisao() {
+  document.getElementById('playModal').classList.remove('open');
+  playCtx = null;
+}
+function selecionarModoPlay(modo) {
+  if (!playCtx) return;
+  playCtx.modo = modo;
+  document.getElementById('modeTimerBtn').classList.toggle('active', modo === 'timer');
+  document.getElementById('modeCronoBtn').classList.toggle('active', modo === 'crono');
+  document.getElementById('playTimerWrap').classList.toggle('show', modo === 'timer');
+  document.getElementById('playStartBtn').disabled = false;
+  if (modo === 'timer') setTimeout(() => document.getElementById('playMinutos').focus(), 50);
+}
+function iniciarPlayRevisao() {
+  if (!playCtx || !playCtx.modo) return;
+  const rev = loadHist().find(r => r && r.id === playCtx.id);
+  if (!rev) { fecharPlayRevisao(); return; }
+  let minutos = 0;
+  if (playCtx.modo === 'timer') {
+    minutos = parseInt(document.getElementById('playMinutos').value);
+    if (!minutos || minutos < 1) { alert('Informe um número de minutos válido.'); return; }
+  }
+  const req = {
+    modo: playCtx.modo,
+    minutos,
+    discId: rev.discId || null,
+    discNome: rev.materia || 'Revisão',
+    conteudo: rev.conteudo || '',
+    blocoId: rev.blocoId || null,
+    revHistId: rev.id,
+    ts: Date.now()
+  };
+  try { sessionStorage.setItem('trackermed.revisaoPlay', JSON.stringify(req)); } catch {}
+  window.location.href = 'historico.html';
+}
+
 function ensureIds() {
   const arr = loadHist();
   let mudou = false;
@@ -436,6 +527,7 @@ function render() {
             </div>
             <div class="rev-status ${concluido ? 'ok' : 'pend'}" onclick="toggleConcluida('${idAttr}')" style="cursor:pointer" title="Alternar status">${concluido ? '✓ Concluído' : '◯ Não concluído'}</div>
             <div class="rev-count">${mins}<br><span>min</span></div>
+            ${concluido ? '<div></div>' : `<button class="rev-play" onclick="abrirPlayRevisao('${idAttr}')" title="Iniciar revisão">▶</button>`}
             <button class="rev-del" onclick="apagarRevisao('${idAttr}')" title="Apagar">×</button>
           </div>`;
         }).join('')}
