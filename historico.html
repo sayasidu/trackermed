@@ -976,5 +976,24 @@ function render() {
 
 render();
 setInterval(() => { if (!timerState.running) render(); }, 60000);
+
+// Atende pedidos de "iniciar revisão" vindos da página de Revisões.
+(function consumirPedidoRevisao() {
+  let raw = null;
+  try { raw = sessionStorage.getItem('trackermed.revisaoPlay'); } catch { return; }
+  if (!raw) return;
+  try { sessionStorage.removeItem('trackermed.revisaoPlay'); } catch {}
+  let req;
+  try { req = JSON.parse(raw); } catch { return; }
+  if (!req || !req.modo) return;
+  if (req.ts && (Date.now() - req.ts) > 60000) return;
+  const opts = { conteudo: req.conteudo || '', revisar: true };
+  if (req.modo === 'crono') {
+    timerOpenFree(req.discId, req.discNome, req.blocoId, opts);
+  } else {
+    const mins = parseInt(req.minutos);
+    if (mins > 0) timerOpen(req.discId, req.discNome, mins, req.blocoId, opts);
+  }
+})();
 </script>
 </body></html>
