@@ -399,6 +399,48 @@ function fmtDataBR(d) { return d.toLocaleDateString('pt-BR'); } // DD/MM/AAAA
   } catch {}
 })();
 function uid() { return 'b-'+Date.now()+'-'+Math.random().toString(36).slice(2,6); }
+
+// Repara vínculos blocoId ↔ revHistId entre histórico e planner usando a
+// chave estável parentId+revisaoOrdem. Permite que dados antigos (sem
+// linkagem direta) voltem a sincronizar entre revisoes.html e historico.html.
+function backfillRevLinks() {
+  const hist = loadHist();
+  const plan = loadPlan();
+  if (!hist.length) return;
+  const histByKey = {};
+  hist.forEach(r => {
+    if (r && r.parentId && r.revisaoOrdem != null) {
+      histByKey[r.parentId + '|' + r.revisaoOrdem] = r;
+    }
+  });
+  const blkByKey = {};
+  Object.keys(plan).forEach(wk => {
+    (plan[wk] || []).forEach(b => {
+      if (b && (b.tipo === 'revisao' || b.revisao) && b.parentId && b.revisaoOrdem != null) {
+        blkByKey[b.parentId + '|' + b.revisaoOrdem] = b;
+      }
+    });
+  });
+  let histChanged = false;
+  hist.forEach(r => {
+    if (!r || r.blocoId || !r.parentId || r.revisaoOrdem == null) return;
+    const b = blkByKey[r.parentId + '|' + r.revisaoOrdem];
+    if (b && b.id) { r.blocoId = b.id; histChanged = true; }
+  });
+  let planChanged = false;
+  Object.keys(plan).forEach(wk => {
+    plan[wk] = (plan[wk] || []).map(b => {
+      if (!b || b.revHistId) return b;
+      if (!(b.tipo === 'revisao' || b.revisao)) return b;
+      if (!b.parentId || b.revisaoOrdem == null) return b;
+      const r = histByKey[b.parentId + '|' + b.revisaoOrdem];
+      if (r && r.id) { planChanged = true; return { ...b, revHistId: r.id }; }
+      return b;
+    });
+  });
+  if (histChanged) saveHist(hist);
+  if (planChanged) savePlan(plan);
+}
 function parseTime(t) { const [h,m]=t.split(':').map(Number); return h+m/60; }
 function startOfWeek(d) { const x=new Date(d); x.setHours(0,0,0,0); const w=(x.getDay()+6)%7; x.setDate(x.getDate()-w); return x; }
 function weekKey(d) { return startOfWeek(d).toISOString().slice(0,10); }
@@ -865,9 +907,24 @@ function toggleFeito(wk, blocoId) {
   });
   savePlan(plan);
   // Se for um bloco de revisão vindo de revisoes.html, sincroniza a entrada do feed.
-  if (alvo && (alvo.tipo === 'revisao' || alvo.revisao) && alvo.revHistId) {
-    const arr = loadHist().map(r => (r && r.id === alvo.revHistId) ? { ...r, concluido: !!alvo.feito } : r);
-    saveHist(arr);
+  // Localiza por revHistId e, na ausência, cai pra parentId+revisaoOrdem — recupera
+  // dados antigos sem vínculo direto pra que ambas as telas convirjam.
+  if (alvo && (alvo.tipo === 'revisao' || alvo.revisao)) {
+    const arr = loadHist();
+    let mudou = false;
+    const novo = arr.map(r => {
+      if (!r) return r;
+      const matchById = alvo.revHistId && r.id === alvo.revHistId;
+      const matchByOrdem = !matchById && r.revisar
+        && alvo.parentId && r.parentId === alvo.parentId
+        && alvo.revisaoOrdem != null && r.revisaoOrdem === alvo.revisaoOrdem;
+      if (matchById || matchByOrdem) {
+        mudou = true;
+        return { ...r, concluido: !!alvo.feito };
+      }
+      return r;
+    });
+    if (mudou) saveHist(novo);
   }
   render();
 }
@@ -1095,6 +1152,9 @@ function aplicarEdicaoDuracao(mins) {
 }
 
 function render() {
+  // Repara vínculos blocoId ↔ revHistId antes de carregar o plano/histórico
+  // pra que tudo abaixo enxergue os campos atualizados.
+  backfillRevLinks();
   const disc = loadDisc();
   const plan = loadPlan();
   const hoje = new Date();
@@ -1105,26 +1165,37 @@ function render() {
   document.getElementById('dataHoje').textContent = hoje.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
 
   // ==== Blocos planejados pra HOJE ====
-  // Sincroniza blocos de revisão com o estado de "concluido" do feed de revisões.
-  // Garante que concluir uma revisão em revisoes.html marque o bloco como feito aqui.
   const histRev = loadHist();
   const histById = {};
   histRev.forEach(r => { if (r && r.id) histById[r.id] = r; });
+  // Sincroniza blocos de revisão com o estado de "concluido" do feed de revisões.
+  // Em ambos os sentidos: se uma das telas marcou como concluído e a outra não,
+  // a marcação propaga (concluído tem prioridade pra evitar reverter o que o
+  // aluno acabou de fechar). Quando ambos batem, nada muda.
   let planMudou = false;
+  let histMudou = false;
   Object.keys(plan).forEach(wkPlan => {
     plan[wkPlan] = (plan[wkPlan]||[]).map(b => {
       const isRevB = b && (b.tipo === 'revisao' || b.revisao);
       if (!isRevB || !b.revHistId) return b;
       const r = histById[b.revHistId];
       if (!r) return b;
-      if (!!r.concluido !== !!b.feito) {
+      const rConc = !!r.concluido;
+      const bFeito = !!b.feito;
+      if (rConc === bFeito) return b;
+      // Concluído ganha — propaga pro lado pendente.
+      if (rConc && !bFeito) {
         planMudou = true;
-        return { ...b, feito: !!r.concluido, data: r.concluido ? (b.data || todayKey()) : b.data };
+        return { ...b, feito: true, data: b.data || todayKey() };
       }
+      // bFeito && !rConc → atualiza o histórico pra refletir a conclusão feita aqui.
+      r.concluido = true;
+      histMudou = true;
       return b;
     });
   });
   if (planMudou) savePlan(plan);
+  if (histMudou) saveHist(histRev);
 
   const blocosHoje = (plan[wk]||[]).filter(b => b.dia === hojeDia);
   // Aulas fixas pra hoje (das disciplinas)

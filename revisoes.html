@@ -360,17 +360,66 @@ function salvarNovaRevisao() {
 }
 
 // Mantém o bloco de planner sincronizado quando a entrada de revisão muda.
+// Localiza o bloco por blocoId direto e, se faltar, cai pra parentId+revisaoOrdem
+// — o que recupera vínculos quebrados em dados antigos.
 function syncPlannerBlock(rev, patch) {
-  if (!rev || !rev.blocoId) return;
+  if (!rev) return;
   const plan = loadPlan();
   let mudou = false;
   Object.keys(plan).forEach(wk => {
     plan[wk] = (plan[wk] || []).map(b => {
-      if (b && b.id === rev.blocoId) { mudou = true; return { ...b, ...patch }; }
+      if (!b) return b;
+      const matchById = rev.blocoId && b.id === rev.blocoId;
+      const matchByOrdem = !matchById && (b.tipo === 'revisao' || b.revisao)
+        && rev.parentId && b.parentId === rev.parentId
+        && rev.revisaoOrdem != null && b.revisaoOrdem === rev.revisaoOrdem;
+      if (matchById || matchByOrdem) { mudou = true; return { ...b, ...patch }; }
       return b;
     });
   });
   if (mudou) savePlan(plan);
+}
+
+// Repara vínculos blocoId ↔ revHistId entre histórico e planner usando a
+// chave estável parentId+revisaoOrdem. Permite que dados antigos (sem
+// linkagem direta) voltem a sincronizar entre as telas.
+function backfillRevLinks() {
+  const hist = loadHist();
+  const plan = loadPlan();
+  if (!hist.length) return;
+  const histByKey = {};
+  hist.forEach(r => {
+    if (r && r.parentId && r.revisaoOrdem != null) {
+      histByKey[r.parentId + '|' + r.revisaoOrdem] = r;
+    }
+  });
+  const blkByKey = {};
+  Object.keys(plan).forEach(wk => {
+    (plan[wk] || []).forEach(b => {
+      if (b && (b.tipo === 'revisao' || b.revisao) && b.parentId && b.revisaoOrdem != null) {
+        blkByKey[b.parentId + '|' + b.revisaoOrdem] = b;
+      }
+    });
+  });
+  let histChanged = false;
+  hist.forEach(r => {
+    if (!r || r.blocoId || !r.parentId || r.revisaoOrdem == null) return;
+    const b = blkByKey[r.parentId + '|' + r.revisaoOrdem];
+    if (b && b.id) { r.blocoId = b.id; histChanged = true; }
+  });
+  let planChanged = false;
+  Object.keys(plan).forEach(wk => {
+    plan[wk] = (plan[wk] || []).map(b => {
+      if (!b || b.revHistId) return b;
+      if (!(b.tipo === 'revisao' || b.revisao)) return b;
+      if (!b.parentId || b.revisaoOrdem == null) return b;
+      const r = histByKey[b.parentId + '|' + b.revisaoOrdem];
+      if (r && r.id) { planChanged = true; return { ...b, revHistId: r.id }; }
+      return b;
+    });
+  });
+  if (histChanged) saveHist(hist);
+  if (planChanged) savePlan(plan);
 }
 function removePlannerBlocks(blocoIds) {
   if (!blocoIds || !blocoIds.length) return;
@@ -396,7 +445,7 @@ function toggleConcluida(id) {
     return r;
   });
   saveHist(novo);
-  if (alvo && alvo.blocoId) {
+  if (alvo) {
     const patch = { feito: alvo.concluido };
     if (alvo.concluido) patch.data = todayISO();
     syncPlannerBlock(alvo, patch);
@@ -487,6 +536,7 @@ function ensureIds() {
 
 function render() {
   ensureIds();
+  backfillRevLinks();
   const itens = loadHist().filter(x => x && x.revisar === true);
   const root = document.getElementById('revRoot');
   const pill = document.getElementById('revPill');
