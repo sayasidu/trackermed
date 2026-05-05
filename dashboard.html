@@ -37,6 +37,15 @@
 .kpi .sub { font-size: 13px; color: var(--ink2); margin-top: 10px; }
 .kpi.dark .sub { color: rgba(244,241,234,0.6); }
 .kpi.acid .sub { color: var(--ink2); }
+.kpi .meme { font-size: 12px; color: #2E7D32; margin-top: 8px; font-style: italic; line-height: 1.35; display: none; }
+.kpi.dark .meme { color: var(--acid); }
+.kpi.acid .meme { color: var(--ink); }
+.kpi .meme.show { display: block; }
+.disc-row .bar-wrap div.over { background: #43A047; }
+.disc-row .pct.over { color: #2E7D32; font-weight: 700; }
+.meme-banner { background: #E8F5E9; border-left: 4px solid #43A047; padding: 14px 18px; margin-bottom: 24px; font-size: 14px; color: #1B5E20; font-style: italic; line-height: 1.4; }
+.meme-banner.over { background: #FFF8E1; border-left-color: #FB8C00; color: #8D5A00; }
+.meme-banner b { font-style: normal; font-weight: 700; }
 
 .col2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; margin-bottom: 40px; }
 
@@ -132,11 +141,13 @@
 </div>
 
 <div class="kpi-row">
-  <div class="kpi"><div class="lbl">Estudado hoje</div><div class="val" id="kHoje">0<span>h00</span></div><div class="sub" id="kHojeSub">—</div></div>
+  <div class="kpi"><div class="lbl">Estudado hoje</div><div class="val" id="kHoje">0<span>h00</span></div><div class="sub" id="kHojeSub">—</div><div class="meme" id="kHojeMeme"></div></div>
   <div class="kpi dark"><div class="lbl">Streak</div><div class="val" id="kStreak">0</div><div class="sub" id="kStreakSub">dias seguidos</div></div>
-  <div class="kpi"><div class="lbl">Semana</div><div class="val" id="kSemana">0<span>h00</span></div><div class="sub" id="kSemanaSub">—</div></div>
+  <div class="kpi"><div class="lbl">Semana</div><div class="val" id="kSemana">0<span>h00</span></div><div class="sub" id="kSemanaSub">—</div><div class="meme" id="kSemanaMeme"></div></div>
   <div class="kpi acid"><div class="lbl">Erros pendentes</div><div class="val" id="kErros">0</div><div class="sub" id="kErrosSub">a revisar</div></div>
 </div>
+
+<div id="metaBanner" class="meme-banner" style="display:none"></div>
 
 <div class="col2">
   <div class="box">
@@ -194,7 +205,34 @@ function startOfWeek(d) { const x=new Date(d); x.setHours(0,0,0,0); const w=(x.g
 function weekKey(d) { return startOfWeek(d).toISOString().slice(0,10); }
 function addDays(d,n) { const x=new Date(d); x.setDate(x.getDate()+n); return x; }
 function fmtH(m) { const h=Math.floor(m/60), mm=m%60; return `${h}<span>h${String(mm).padStart(2,'0')}</span>`; }
+function fmtHrange(m) { const h=Math.floor(m/60), mm=m%60; return h>0 ? `${h}h${String(mm).padStart(2,'0')}` : `${mm}min`; }
 function esc(s) { return String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function getPlannedMin(b) { return b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60); }
+function getStudiedMin(b) {
+  if (b.minutosFeitos != null) return b.minutosFeitos;
+  return b.feito ? getPlannedMin(b) : 0;
+}
+
+const MEMES_META = [
+  'Parabéns, fez o mínimo. Feliz por você.',
+  'Olha só, estudou mesmo. O sistema está chocado.',
+  'Cumpriu a meta. Milagre registrado com sucesso.',
+  'Meta batida. Pode respirar, sem fingir que foi fácil.',
+  'Parabéns, hoje você venceu a preguiça no tapa.'
+];
+const MEMES_SUPER = [
+  'Passou da meta? Quem é você e o que fez com o aluno procrastinador?',
+  'Estudou além do planejado. O surto virou produtividade.',
+  'Fez mais que o programado. A medicina ainda vai fingir que não viu.',
+  'Produtividade detectada. Chamem o conselho.',
+  'Estudou além da meta. Alguém printa antes que desapareça.'
+];
+function pickMeme(seed, lista) {
+  let h = 0;
+  const s = String(seed);
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return lista[h % lista.length];
+}
 
 function saudacaoHora() {
   const h = new Date().getHours();
@@ -252,23 +290,64 @@ function render() {
 
   // Blocos de hoje
   const blocosHoje = (plan[wk]||[]).filter(b => b.dia === hojeDia);
-  const hojeMin = blocosHoje.filter(b=>b.feito).reduce((s,b)=>s+(b.minutos||Math.round((parseTime(b.fim)-parseTime(b.ini))*60)),0);
-  const planMin = blocosHoje.reduce((s,b)=>s+(b.minutos||Math.round((parseTime(b.fim)-parseTime(b.ini))*60)),0);
+  const hojeMin = blocosHoje.reduce((s,b)=>s+getStudiedMin(b),0);
+  const planMin = blocosHoje.reduce((s,b)=>s+getPlannedMin(b),0);
   document.getElementById('kHoje').innerHTML = fmtH(hojeMin);
-  document.getElementById('kHojeSub').textContent = blocosHoje.length ? `${blocosHoje.filter(b=>b.feito).length} de ${blocosHoje.length} sessões · ${planMin>0?Math.round(hojeMin/planMin*100):0}% da meta` : 'nada planejado pra hoje';
+  const pctHoje = planMin > 0 ? Math.round(hojeMin/planMin*100) : 0;
+  document.getElementById('kHojeSub').textContent = blocosHoje.length
+    ? `${blocosHoje.filter(b=>b.feito).length} de ${blocosHoje.length} sessões · ${pctHoje}% da meta${hojeMin>planMin?' · +'+fmtHrange(hojeMin-planMin):''}`
+    : 'nada planejado pra hoje';
+
+  // Meme do dia (kpi card)
+  const kHojeMemeEl = document.getElementById('kHojeMeme');
+  if (planMin > 0 && hojeMin >= planMin) {
+    const lista = hojeMin > planMin ? MEMES_SUPER : MEMES_META;
+    kHojeMemeEl.textContent = '" ' + pickMeme(hoje.toISOString().slice(0,10) + (hojeMin>planMin?'-over':'-meta'), lista) + ' "';
+    kHojeMemeEl.classList.add('show');
+  } else {
+    kHojeMemeEl.classList.remove('show');
+    kHojeMemeEl.textContent = '';
+  }
+
+  // Banner topo (mais visível) só quando bate ou supera a meta do dia
+  const banner = document.getElementById('metaBanner');
+  if (planMin > 0 && hojeMin >= planMin) {
+    const superou = hojeMin > planMin;
+    const memeBig = pickMeme(hoje.toISOString().slice(0,10) + '-banner-' + (superou?'over':'meta'), superou ? MEMES_SUPER : MEMES_META);
+    const detalhe = superou
+      ? `<b>Meta superada</b> em ${fmtHrange(hojeMin - planMin)} — ${memeBig}`
+      : `<b>Meta batida</b> — ${memeBig}`;
+    banner.innerHTML = detalhe;
+    banner.classList.toggle('over', superou);
+    banner.style.display = '';
+  } else {
+    banner.style.display = 'none';
+  }
 
   // Semana total
-  const semanaMin = (plan[wk]||[]).filter(b=>b.feito).reduce((s,b)=>s+(b.minutos||Math.round((parseTime(b.fim)-parseTime(b.ini))*60)),0);
-  const semanaPlan = (plan[wk]||[]).reduce((s,b)=>s+(b.minutos||Math.round((parseTime(b.fim)-parseTime(b.ini))*60)),0);
+  const semanaMin = (plan[wk]||[]).reduce((s,b)=>s+getStudiedMin(b),0);
+  const semanaPlan = (plan[wk]||[]).reduce((s,b)=>s+getPlannedMin(b),0);
   document.getElementById('kSemana').innerHTML = fmtH(semanaMin);
-  document.getElementById('kSemanaSub').textContent = semanaPlan > 0 ? `${Math.round(semanaMin/semanaPlan*100)}% do plano da semana` : 'sem meta semanal';
+  const pctSemana = semanaPlan > 0 ? Math.round(semanaMin/semanaPlan*100) : 0;
+  document.getElementById('kSemanaSub').textContent = semanaPlan > 0
+    ? `${pctSemana}% do plano da semana${semanaMin>semanaPlan?' · +'+fmtHrange(semanaMin-semanaPlan):''}`
+    : 'sem meta semanal';
+  const kSemanaMemeEl = document.getElementById('kSemanaMeme');
+  if (semanaPlan > 0 && semanaMin >= semanaPlan) {
+    const lista = semanaMin > semanaPlan ? MEMES_SUPER : MEMES_META;
+    kSemanaMemeEl.textContent = '" ' + pickMeme(wk + (semanaMin>semanaPlan?'-over':'-meta'), lista) + ' "';
+    kSemanaMemeEl.classList.add('show');
+  } else {
+    kSemanaMemeEl.classList.remove('show');
+    kSemanaMemeEl.textContent = '';
+  }
 
   // Streak
   const diasEstudo = new Set();
   const todasSemanas = Object.entries(plan);
   todasSemanas.forEach(([wkS, blocos]) => {
     const inicioSem = new Date(wkS+'T00:00');
-    blocos.filter(b => b.feito).forEach(b => {
+    blocos.filter(b => b.feito || getStudiedMin(b) > 0).forEach(b => {
       const d = addDays(inicioSem, (b.dia + 6) % 7);
       diasEstudo.add(d.toISOString().slice(0,10));
     });
@@ -294,19 +373,22 @@ function render() {
     dEl.innerHTML = `<div class="empty-inline">Nenhuma disciplina cadastrada. <a href="disciplinas.html">Cadastrar agora →</a></div>`;
   } else {
     const minsPorDisc = {};
-    (plan[wk]||[]).filter(b => b.feito && b.discId).forEach(b => {
-      const m = b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60);
+    (plan[wk]||[]).filter(b => b.discId).forEach(b => {
+      const m = getStudiedMin(b);
+      if (m <= 0) return;
       minsPorDisc[b.discId] = (minsPorDisc[b.discId]||0) + m;
     });
     dEl.innerHTML = disc.map(d => {
       const metaMin = (d.metaHorasSemana||0) * 60;
       const feitoMin = minsPorDisc[d.id] || 0;
-      const pct = metaMin > 0 ? Math.min(100, Math.round(feitoMin/metaMin*100)) : 0;
-      const lbl = metaMin > 0 ? `${pct}%` : '—';
+      const pctReal = metaMin > 0 ? Math.round(feitoMin/metaMin*100) : 0;
+      const pctBar = Math.min(100, pctReal);
+      const over = metaMin > 0 && feitoMin > metaMin;
+      const lbl = metaMin > 0 ? (over ? `${pctReal}% · +${fmtHrange(feitoMin-metaMin)}` : `${pctReal}%`) : '—';
       return `<div class="disc-row">
         <div class="nm">${esc(d.nome)}</div>
-        <div class="bar-wrap"><div style="width:${pct}%"></div></div>
-        <div class="pct">${lbl}</div>
+        <div class="bar-wrap"><div class="${over?'over':''}" style="width:${pctBar}%"></div></div>
+        <div class="pct ${over?'over':''}">${lbl}</div>
       </div>`;
     }).join('');
   }
@@ -319,12 +401,16 @@ function render() {
     const discById = Object.fromEntries(disc.map(d => [d.id, d]));
     tEl.innerHTML = blocosHoje.sort((a,b)=>parseTime(a.ini)-parseTime(b.ini)).slice(0,6).map(b => {
       const d = discById[b.discId];
-      const mins = b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60);
-      const h = Math.floor(mins/60), m = mins%60;
+      const planned = getPlannedMin(b);
+      const studied = getStudiedMin(b);
+      const showMins = b.feito || studied > 0 ? studied : planned;
+      const over = b.feito && studied > planned;
+      const h = Math.floor(showMins/60), m = showMins%60;
+      const overTag = over ? ` <span style="color:#2E7D32;font-style:normal;font-size:11px;font-weight:700">+${fmtHrange(studied-planned)}</span>` : '';
       return `<div class="today-item ${b.feito?'done':''}">
         <div class="hora">${b.ini}—${b.fim}</div>
         <div class="nome">${esc(d?d.nome:'Estudo')}</div>
-        <div class="mins">${h>0?h+'h':''}${String(m).padStart(2,'0')}</div>
+        <div class="mins">${h>0?h+'h':''}${String(m).padStart(2,'0')}${overTag}</div>
       </div>`;
     }).join('');
   }
