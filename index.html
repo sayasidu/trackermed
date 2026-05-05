@@ -103,6 +103,35 @@
   .mini-card.dark .mini-label { color: var(--acid); }
   .mini-card.dark .mini-num { color: var(--acid); }
 
+  /* MOTIVATION BANNER */
+  .motivation { margin-top: 28px; background: var(--ink); color: var(--paper); padding: 22px 26px; display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; border: 1px solid var(--ink); }
+  [data-theme="dark"] .motivation { background: var(--surface); border-color: var(--border); }
+  .motivation .quote { font-family: 'Fraunces', serif; font-style: italic; font-size: clamp(18px, 2vw, 22px); line-height: 1.35; max-width: 760px; }
+  .motivation .quote::before { content: '“'; color: var(--acid); margin-right: 4px; font-size: 1.2em; }
+  .motivation .quote::after { content: '”'; color: var(--acid); margin-left: 2px; font-size: 1.2em; }
+  .motivation button { background: transparent; border: 1px solid rgba(244,241,234,0.35); color: var(--paper); padding: 8px 14px; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; font-family: inherit; }
+  .motivation button:hover { border-color: var(--acid); color: var(--acid); }
+  [data-theme="dark"] .motivation button { color: var(--text); border-color: var(--border); }
+  [data-theme="dark"] .motivation button:hover { border-color: var(--acid); color: var(--acid); }
+
+  /* PERFORMANCE section */
+  .perf-section { padding: 70px 0 30px; border-top: 1px solid var(--border); }
+  .perf-head { margin-bottom: 28px; }
+  .perf-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .perf-card { background: var(--surface); border: 1px solid var(--border); padding: 22px; display: flex; flex-direction: column; gap: 10px; min-height: 150px; transition: all .15s; }
+  .perf-card:hover { border-color: var(--text); transform: translateY(-2px); box-shadow: 0 6px 20px var(--shadow-hover); }
+  .perf-card .plbl { font-size: 10px; letter-spacing: 0.18em; color: var(--text-mute); font-weight: 700; text-transform: uppercase; }
+  .perf-card .pval { font-family: 'Fraunces', serif; font-size: 44px; letter-spacing: -0.04em; line-height: 1; color: var(--text); margin-top: auto; }
+  .perf-card .pval span { font-size: 18px; color: var(--text-mute); margin-left: 2px; }
+  .perf-card .psub { font-size: 12px; color: var(--text-soft); }
+  .perf-card.cobalt .pval { color: var(--cobalt); }
+  .perf-card.mint .pval { color: var(--mint); }
+  .perf-card.rose .pval { color: var(--rose); }
+  .perf-card.acid { background: var(--acid); border-color: var(--acid); color: var(--ink); }
+  .perf-card.acid .plbl { color: var(--ink2); }
+  .perf-card.acid .pval { color: var(--ink); }
+  .perf-card.acid .psub { color: var(--ink2); }
+
   /* QUICK LINKS section */
   .quick-section { padding: 70px 0 90px; border-top: 1px solid var(--border); }
   .quick-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; flex-wrap: wrap; gap: 14px; }
@@ -127,12 +156,15 @@
   @media (max-width: 900px) {
     .hero-preview { grid-template-columns: 1fr; }
     .quick-grid { grid-template-columns: 1fr 1fr; }
+    .perf-grid { grid-template-columns: 1fr 1fr; }
     .nav-links { display: none; }
   }
   @media (max-width: 560px) {
     .quick-grid { grid-template-columns: 1fr; }
+    .perf-grid { grid-template-columns: 1fr; }
     .access-row { flex-direction: column; }
     .access-row button { padding: 14px; justify-content: center; }
+    .motivation { flex-direction: column; align-items: flex-start; }
   }
 </style>
 <script src="theme.js" defer></script>
@@ -194,8 +226,64 @@
         <div class="mini-sub" style="color:rgba(244,241,234,0.6)" id="kProvaSub">sem prova cadastrada</div>
       </div>
     </div>
+
+    <div class="motivation" role="region" aria-label="Frase de motivação">
+      <div class="quote" id="motivationQuote">Cada hora estudada é um passo a menos pra prova e um passo a mais pra aprovação.</div>
+      <button type="button" id="motivationNext" aria-label="Trocar frase">Outra frase</button>
+    </div>
   </div>
 </header>
+
+<section class="perf-section" aria-label="Resumo de desempenho">
+  <div class="wrap">
+    <div class="perf-head">
+      <div class="kicker">Seu desempenho</div>
+      <h2>Como você está <i>indo</i>.</h2>
+    </div>
+    <div class="perf-grid">
+      <div class="perf-card cobalt">
+        <div class="plbl">HORAS ESTUDADAS</div>
+        <div class="pval" id="pHorasVal">0<span>h00</span></div>
+        <div class="psub" id="pHorasSub">no total registrado</div>
+      </div>
+      <div class="perf-card">
+        <div class="plbl">QUESTÕES FEITAS</div>
+        <div class="pval" id="pQuestoesVal">0</div>
+        <div class="psub" id="pQuestoesSub">em simulados</div>
+      </div>
+      <div class="perf-card mint">
+        <div class="plbl">APROVEITAMENTO</div>
+        <div class="pval" id="pAproVal">—<span>%</span></div>
+        <div class="psub" id="pAproSub">média de acertos</div>
+      </div>
+      <div class="perf-card rose">
+        <div class="plbl">ERROS PENDENTES</div>
+        <div class="pval" id="pErrosVal">0</div>
+        <div class="psub" id="pErrosSub">pra revisar no caderno</div>
+      </div>
+      <div class="perf-card">
+        <div class="plbl">SESSÕES CONCLUÍDAS</div>
+        <div class="pval" id="pSessVal">0</div>
+        <div class="psub" id="pSessSub">de estudo registradas</div>
+      </div>
+      <div class="perf-card">
+        <div class="plbl">DISCIPLINAS</div>
+        <div class="pval" id="pDiscVal">0</div>
+        <div class="psub" id="pDiscSub">cadastradas no painel</div>
+      </div>
+      <div class="perf-card">
+        <div class="plbl">SIMULADOS</div>
+        <div class="pval" id="pSimsVal">0</div>
+        <div class="psub" id="pSimsSub">aplicados até aqui</div>
+      </div>
+      <div class="perf-card acid">
+        <div class="plbl">SEMANA ATUAL</div>
+        <div class="pval" id="pSemanaVal">0<span>h00</span></div>
+        <div class="psub" id="pSemanaSub">estudadas nesta semana</div>
+      </div>
+    </div>
+  </div>
+</section>
 
 <section class="quick-section">
   <div class="wrap">
@@ -258,6 +346,22 @@
   const NOME_KEY = 'trackermed.nome.v1';
   const PROVA_KEY = 'trackermed.prova.v1';
   const PLAN_KEY = 'trackermed.plan.v1';
+  const ERR_KEY = 'trackermed.erros.v1';
+  const SIM_KEY = 'trackermed.simulados.v2';
+  const DISC_KEY = 'trackermed.disciplinas.v1';
+
+  const FRASES = [
+    'Cada hora estudada é um passo a menos pra prova e um passo a mais pra aprovação.',
+    'Estudar todo dia, mesmo pouco, vale mais que maratonar uma vez por semana.',
+    'Erro registrado é erro que não vai te derrubar na prova.',
+    'A residência não é sobre talento — é sobre constância.',
+    'Revisar é onde o conhecimento mora. O resto é só leitura.',
+    'Você não precisa estudar tudo hoje. Só precisa estudar hoje.',
+    'A melhor hora pra começar foi ontem. A segunda melhor é agora.',
+    'Disciplina vence motivação todo dia da semana.',
+    'Cada questão errada hoje é uma armadilha desarmada na prova.',
+    'Você está mais perto da aprovação do que estava ontem.'
+  ];
 
   function lerNome() {
     try { return localStorage.getItem(NOME_KEY); } catch (_) { return null; }
@@ -336,6 +440,83 @@
       document.getElementById('kProvaVal').textContent = '—';
       document.getElementById('kProvaSub').textContent = 'sem prova cadastrada';
     }
+
+    // Performance: agregados de todo o histórico
+    const sims = loadJSON(SIM_KEY, []);
+    const erros = loadJSON(ERR_KEY, []);
+    const disc = loadJSON(DISC_KEY, []);
+
+    let totalMin = 0, totalSess = 0;
+    Object.values(plan).forEach(blocos => {
+      (blocos || []).filter(b => b.feito).forEach(b => {
+        totalMin += blocoMin(b);
+        totalSess++;
+      });
+    });
+    const th = Math.floor(totalMin/60), tm = totalMin%60;
+    document.getElementById('pHorasVal').innerHTML = `${th}<span>h${String(tm).padStart(2,'0')}</span>`;
+    document.getElementById('pHorasSub').textContent = totalSess > 0
+      ? `em ${totalSess} ${totalSess === 1 ? 'sessão' : 'sessões'} concluída${totalSess === 1 ? '' : 's'}`
+      : 'comece registrando uma sessão';
+
+    document.getElementById('pSemanaVal').innerHTML = `${h}<span>h${String(m).padStart(2,'0')}</span>`;
+    document.getElementById('pSemanaSub').textContent = semanaPlan > 0
+      ? `de ${Math.floor(semanaPlan/60)}h${String(semanaPlan%60).padStart(2,'0')} planejadas`
+      : 'estudadas nesta semana';
+
+    const totalQ = sims.reduce((s, x) => s + (Number(x.questoes) || 0), 0);
+    const totalA = sims.reduce((s, x) => s + (Number(x.acertos) || 0), 0);
+    document.getElementById('pQuestoesVal').textContent = totalQ;
+    document.getElementById('pQuestoesSub').textContent = totalQ > 0
+      ? `${totalA} acerto${totalA === 1 ? '' : 's'} no total`
+      : 'sem simulados ainda';
+
+    const aproEl = document.getElementById('pAproVal');
+    if (totalQ > 0) {
+      const pct = Math.round((totalA / totalQ) * 100);
+      aproEl.innerHTML = `${pct}<span>%</span>`;
+      document.getElementById('pAproSub').textContent = `média sobre ${totalQ} ${totalQ === 1 ? 'questão' : 'questões'}`;
+    } else {
+      aproEl.innerHTML = `—<span>%</span>`;
+      document.getElementById('pAproSub').textContent = 'média de acertos';
+    }
+
+    const errosPend = erros.filter(e => !e.revisado).length;
+    document.getElementById('pErrosVal').textContent = errosPend;
+    document.getElementById('pErrosSub').textContent = erros.length > 0
+      ? `${erros.length} no total no caderno`
+      : 'pra revisar no caderno';
+
+    document.getElementById('pSessVal').textContent = totalSess;
+    document.getElementById('pSessSub').textContent = totalSess > 0
+      ? 'de estudo concluídas'
+      : 'comece sua primeira hoje';
+
+    document.getElementById('pDiscVal').textContent = disc.length;
+    document.getElementById('pDiscSub').textContent = disc.length > 0
+      ? `acompanhando seu progresso`
+      : 'cadastre suas matérias';
+
+    document.getElementById('pSimsVal').textContent = sims.length;
+    document.getElementById('pSimsSub').textContent = sims.length > 0
+      ? `${sims.length === 1 ? 'aplicado' : 'aplicados'} até aqui`
+      : 'aplicados até aqui';
+  }
+
+  function pickFraseInicial() {
+    const idx = Math.floor((Date.now() / 86400000)) % FRASES.length;
+    document.getElementById('motivationQuote').textContent = FRASES[idx];
+    document.getElementById('motivationQuote').dataset.idx = String(idx);
+  }
+  function trocarFrase() {
+    const el = document.getElementById('motivationQuote');
+    const cur = parseInt(el.dataset.idx || '0', 10);
+    let next = cur;
+    if (FRASES.length > 1) {
+      while (next === cur) next = Math.floor(Math.random() * FRASES.length);
+    }
+    el.textContent = FRASES[next];
+    el.dataset.idx = String(next);
   }
 
   function entrar(e) {
@@ -359,6 +540,8 @@
 
   init();
   renderPreview();
+  pickFraseInicial();
+  document.getElementById('motivationNext').addEventListener('click', trocarFrase);
 </script>
 </body>
 </html>
