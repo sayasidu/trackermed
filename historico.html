@@ -80,6 +80,14 @@
 .empty-state { text-align: center; padding: 32px 16px; color: #70757A; font-size: 13px; font-style: italic; }
 .empty-state a { color: var(--cobalt); font-weight: 600; }
 
+.meta-meme { padding: 14px 18px; margin-bottom: 16px; font-size: 14px; line-height: 1.4; background: #E8F5E9; border-left: 4px solid #43A047; color: #1B5E20; font-style: italic; }
+.meta-meme.over { background: #FFF8E1; border-left-color: #FB8C00; color: #8D5A00; }
+.meta-meme b { font-style: normal; font-weight: 700; }
+.blk-item.exceeded { background: #FFF8E1; border-left-color: #FB8C00; }
+.blk-item.exceeded .mins { color: #B26A00; }
+.blk-item .mins .over { color: #B26A00; font-size: 13px; font-style: normal; font-weight: 700; }
+.blk-item .motivo .super { color: #B26A00; font-weight: 700; font-style: italic; }
+
 /* Timer float */
 .timer-float { position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: var(--paper); padding: 22px 26px; width: 320px; box-shadow: 0 16px 48px rgba(10,19,48,0.4); z-index: 200; border-left: 5px solid var(--acid); display: none; }
 .timer-float.open { display: block; }
@@ -159,6 +167,8 @@
   <h1 class="page-title">Seu <i>estudo</i> de hoje.</h1>
   <p class="page-lede">Comece pelo que foi planejado — ou registre um estudo extra. O cronômetro fica flutuante pra você seguir com a página aberta.</p>
 </div>
+
+<div id="metaMeme" class="meta-meme" style="display:none"></div>
 
 <div class="hoje-head">
   <div class="stat-card"><div class="lbl">Estudado hoje</div><div class="val cobalt" id="totHoje" style="color:var(--cobalt)">0<span style="font-size:16px;color:#70757A">h00</span></div><div class="sub" id="subHoje">0 sessões</div></div>
@@ -467,6 +477,27 @@ function getStudiedMin(b) {
   return b.feito ? getPlannedMin(b) : 0;
 }
 function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+const MEMES_META = [
+  'Parabéns, fez o mínimo. Feliz por você.',
+  'Olha só, estudou mesmo. O sistema está chocado.',
+  'Cumpriu a meta. Milagre registrado com sucesso.',
+  'Meta batida. Pode respirar, sem fingir que foi fácil.',
+  'Parabéns, hoje você venceu a preguiça no tapa.'
+];
+const MEMES_SUPER = [
+  'Passou da meta? Quem é você e o que fez com o aluno procrastinador?',
+  'Estudou além do planejado. O surto virou produtividade.',
+  'Fez mais que o programado. A medicina ainda vai fingir que não viu.',
+  'Produtividade detectada. Chamem o conselho.',
+  'Estudou além da meta. Alguém printa antes que desapareça.'
+];
+function pickMeme(seed, lista) {
+  let h = 0;
+  const s = String(seed);
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return lista[h % lista.length];
+}
 
 // Timer state
 function makeTimerState() {
@@ -1019,16 +1050,19 @@ function salvarExtraManual() {
   const planoMin = getPlanoMinSelected();
   const concluido = getConcluidoSelected();
   const revisar = getRevisarSelected();
-  const minsRegistrados = planoMin || mins;
   const sessoesReg = extraMulti === 'sim' ? extraSecoes : 1;
   const pausaReg = extraMulti === 'sim' ? extraPausa : 0;
+  // tempo realmente estudado (Pomodoro × sessões); se não houver plano, plano = atual
+  const minsAtuais = mins * sessoesReg;
+  const minsPlanejado = planoMin || minsAtuais;
   const plan = loadPlan();
   const wk = weekKey(new Date());
   if (!plan[wk]) plan[wk] = [];
   const now = new Date();
+  const totalRange = Math.max(minsPlanejado, minsAtuais);
   const endH = now.getHours() + now.getMinutes()/60;
-  const startH = Math.max(0, endH - minsRegistrados/60);
-  plan[wk].push({ id: uid(), tipo:'estudo', discId: mat.discId, matNome: mat.nome, conteudo, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: concluido, minutos: minsRegistrados, extra: true, data: todayKey(), revisar, planoMin, sessoes: sessoesReg, pausaMin: pausaReg });
+  const startH = Math.max(0, endH - totalRange/60);
+  plan[wk].push({ id: uid(), tipo:'estudo', discId: mat.discId, matNome: mat.nome, conteudo, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: concluido, minutos: minsPlanejado, minutosFeitos: minsAtuais, extra: true, data: todayKey(), revisar, planoMin, sessoes: sessoesReg, pausaMin: pausaReg });
   savePlan(plan);
 
   // Feed de revisões
@@ -1036,7 +1070,8 @@ function salvarExtraManual() {
     data: fmtDataBR(now),
     materia: mat.nome,
     conteudo,
-    minutos: minsRegistrados,
+    minutos: minsAtuais,
+    minutosPlanejado: minsPlanejado,
     concluido,
     revisar,
     planoMin,
@@ -1211,9 +1246,26 @@ function render() {
   const planMin = blocosEstudoHoje.reduce((s,b)=>s+getPlannedMin(b),0);
   document.getElementById('totHoje').innerHTML = fmtH(feitosMin/60);
   const revSub = revHoje.length > 0 ? ` · ${revHoje.filter(b=>b.feito).length}/${revHoje.length} revisões` : '';
-  document.getElementById('subHoje').textContent = `${blocosEstudoHoje.filter(b=>b.feito).length} de ${blocosEstudoHoje.length} ${plural(blocosEstudoHoje.length, 'sessão', 'sessões')}${revSub}`;
+  const excedenteSub = (planMin > 0 && feitosMin > planMin) ? ` · +${fmtHrange(feitosMin - planMin)} além da meta` : '';
+  document.getElementById('subHoje').textContent = `${blocosEstudoHoje.filter(b=>b.feito).length} de ${blocosEstudoHoje.length} ${plural(blocosEstudoHoje.length, 'sessão', 'sessões')}${revSub}${excedenteSub}`;
   document.getElementById('totPlan').innerHTML = fmtH(planMin/60);
   document.getElementById('subPlan').textContent = blocosHoje.length ? `${blocosEstudoHoje.filter(b=>!b.feito).length} pendentes${revHoje.length>0?` · ${revHoje.filter(b=>!b.feito).length} revisões`:''}` : 'nada agendado';
+
+  // Banner meme: cumpriu ou superou meta diária
+  const memeEl = document.getElementById('metaMeme');
+  if (planMin > 0 && feitosMin >= planMin) {
+    const superou = feitosMin > planMin;
+    const lista = superou ? MEMES_SUPER : MEMES_META;
+    const meme = pickMeme(todayKey() + '-' + (superou?'over':'meta'), lista);
+    const detalhe = superou
+      ? `<b>Meta superada</b> em ${fmtHrange(feitosMin - planMin)} — ${meme}`
+      : `<b>Meta batida</b> — ${meme}`;
+    memeEl.innerHTML = detalhe;
+    memeEl.classList.toggle('over', superou);
+    memeEl.style.display = '';
+  } else {
+    memeEl.style.display = 'none';
+  }
 
   // Indexa blocos com qualquer estudo (concluído ou parcial) pela data real.
   const blocosByDate = {};
@@ -1260,6 +1312,7 @@ function render() {
       const mins = getPlannedMin(b);
       const studiedMin = getStudiedMin(b);
       const parcial = !b.feito && studiedMin > 0;
+      const excedeu = b.feito && studiedMin > mins;
       const isRev = b.tipo === 'revisao' || b.revisao;
       const discNome = d ? d.nome : (b.matNome || (isRev ? 'Revisão' : 'Estudo'));
       const discNomeAttr = JSON.stringify(discNome).replace(/"/g,'&quot;');
@@ -1271,15 +1324,26 @@ function render() {
       let motivoBase;
       if (isRev) {
         const ord = b.revisaoOrdem ? `${b.revisaoOrdem}/${b.revisaoTotal||'?'}` : '';
-        const status = b.feito ? ' · concluído' : '';
+        const status = b.feito ? (excedeu ? ` · concluído · <span class="super">superou em ${fmtHrange(studiedMin-mins)}</span>` : ' · concluído') : '';
         motivoBase = `revisão programada${ord?` · ${ord}`:''}${b.revisaoOffset?` · ${escHtml(b.revisaoOffset)}`:''}${status} · vinda das <a href="revisoes.html" style="color:#FB8C00;font-weight:600">Revisões</a>`;
+      } else if (b.feito) {
+        motivoBase = excedeu
+          ? `concluído · <span class="super">superou meta em ${fmtHrange(studiedMin - mins)}</span>`
+          : 'concluído';
+      } else if (parcial) {
+        motivoBase = `parcial · ${fmtHrange(studiedMin)} de ${fmtHrange(mins)}`;
       } else {
-        motivoBase = b.feito ? 'concluído' : (parcial ? `parcial · ${fmtHrange(studiedMin)} de ${fmtHrange(mins)}` : 'planejado');
+        motivoBase = 'planejado';
       }
-      const minsLabel = parcial
-        ? `${fmtHrange(studiedMin)}<span style="color:#70757A;font-size:13px"> / ${fmtHrange(mins)}</span>`
-        : fmtHrange(mins);
-      const cls = `${b.feito?'done':''} ${isRev?'revisao':''}`.trim();
+      let minsLabel;
+      if (parcial) {
+        minsLabel = `${fmtHrange(studiedMin)}<span style="color:#70757A;font-size:13px"> / ${fmtHrange(mins)}</span>`;
+      } else if (excedeu) {
+        minsLabel = `${fmtHrange(studiedMin)} <span class="over">+${fmtHrange(studiedMin - mins)}</span>`;
+      } else {
+        minsLabel = fmtHrange(b.feito ? studiedMin : mins);
+      }
+      const cls = `${b.feito?'done':''} ${isRev?'revisao':''} ${excedeu?'exceeded':''}`.trim();
       const prefix = isRev
         ? `<span class="rev-pill">↻ rev</span>`
         : (b.extra ? '✦ ' : '');
