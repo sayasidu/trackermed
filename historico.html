@@ -229,6 +229,14 @@
         <button type="button" onclick="escolherDurCustom()">Aplicar</button>
       </div>
     </div>
+    <div class="mfield" id="durStudiedWrap" style="display:none">
+      <label>Tempo já estudado (em minutos)</label>
+      <div class="dur-custom">
+        <input type="number" id="durStudied" min="0" max="600" placeholder="ex: 30">
+        <button type="button" onclick="aplicarTempoEstudado()">Salvar</button>
+      </div>
+      <div style="font-size:11px;color:#70757A;margin-top:6px">Marca como concluído se o tempo estudado for ≥ a duração planejada.</div>
+    </div>
     <div id="secOptsWrap">
       <div class="mfield">
         <label>Seções</label>
@@ -1127,6 +1135,7 @@ function abrirPlayDuracao(discId, discNome, blocoId) {
   document.getElementById('durSub').textContent = `Quanto tempo pra "${discNome}"?`;
   document.getElementById('durCustom').value = '';
   document.getElementById('durCustomWrap').style.display = '';
+  document.getElementById('durStudiedWrap').style.display = 'none';
   document.getElementById('secOptsWrap').style.display = '';
   document.getElementById('durFreeBtn').style.display = '';
   setSecoes(1);
@@ -1135,10 +1144,15 @@ function abrirPlayDuracao(discId, discNome, blocoId) {
 }
 function abrirEditarDuracao(wk, blocoId, discNome, minsAtual) {
   durCtx = { modo: 'edit', wk, blocoId, discNome };
+  const plan = loadPlan();
+  const bloco = (plan[wk]||[]).find(b => b.id === blocoId);
+  const studiedAtual = bloco ? getStudiedMin(bloco) : 0;
   document.getElementById('durTitulo').innerHTML = 'Editar <i>duração</i>';
-  document.getElementById('durSub').textContent = `"${discNome}" — atual: ${fmtHrange(minsAtual)}`;
+  document.getElementById('durSub').textContent = `"${discNome}" — planejado: ${fmtHrange(minsAtual)} · estudado: ${fmtHrange(studiedAtual)}`;
   document.getElementById('durCustom').value = minsAtual;
+  document.getElementById('durStudied').value = studiedAtual || '';
   document.getElementById('durCustomWrap').style.display = '';
+  document.getElementById('durStudiedWrap').style.display = '';
   document.getElementById('secOptsWrap').style.display = 'none';
   document.getElementById('durFreeBtn').style.display = 'none';
   document.getElementById('durModal').classList.add('open');
@@ -1181,6 +1195,23 @@ function aplicarEdicaoDuracao(mins) {
     const iniH = parseTime(b.ini);
     const fimH = Math.min(24, iniH + mins/60);
     return { ...b, minutos: mins, fim: toHHMM(fimH) };
+  });
+  savePlan(plan);
+  fecharDur();
+  render();
+}
+function aplicarTempoEstudado() {
+  if (!durCtx || durCtx.modo !== 'edit') return;
+  const raw = document.getElementById('durStudied').value;
+  const v = parseInt(raw);
+  if (isNaN(v) || v < 0) { alert('Informe um número de minutos válido.'); return; }
+  const { wk, blocoId } = durCtx;
+  const plan = loadPlan();
+  plan[wk] = (plan[wk]||[]).map(b => {
+    if (b.id !== blocoId) return b;
+    const plannedMin = getPlannedMin(b);
+    const feito = v >= plannedMin && plannedMin > 0;
+    return { ...b, minutosFeitos: v, feito, data: b.data || todayKey() };
   });
   savePlan(plan);
   fecharDur();
