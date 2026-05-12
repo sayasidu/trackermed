@@ -226,6 +226,25 @@
 .mfield.check-row input { width: auto; margin: 0; }
 .mfield.check-row label { margin: 0; letter-spacing: 0; text-transform: none; font-size: 13px; color: var(--ink); font-weight: 500; cursor: pointer; }
 .mbtn-delete { background: transparent; border: none; color: var(--rose); padding: 10px 0; font-size: 12px; cursor: pointer; font-family: inherit; font-weight: 600; }
+
+/* Modal transferência de matérias pendentes */
+.trans-target { padding: 10px 14px; background: var(--paper); border-left: 3px solid var(--cobalt); font-size: 13px; color: var(--ink2); margin-bottom: 14px; }
+.trans-target b { color: var(--ink); font-weight: 600; font-family: 'Fraunces', serif; }
+.trans-list { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; padding-right: 4px; }
+.trans-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--paper); border-left: 3px solid var(--cobalt); cursor: pointer; }
+.trans-item input { margin: 0; width: 16px; height: 16px; flex-shrink: 0; }
+.trans-item .trans-meta { flex: 1; min-width: 0; }
+.trans-item .trans-nome { font-weight: 600; font-size: 14px; }
+.trans-item .trans-sub { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+.trans-item .trans-sub b { color: var(--ink); font-weight: 600; }
+.trans-soma { margin-top: 12px; font-size: 12px; color: var(--muted); padding: 10px 12px; background: var(--paper); border-left: 3px solid var(--acid); }
+.trans-soma b { color: var(--ink); font-family: 'Fraunces', serif; font-size: 16px; font-weight: 500; }
+
+.pend-banner { background: #FFF8E1; border: 1px solid #FFE082; border-left: 4px solid #FB8C00; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pend-banner .pb-msg { font-size: 13px; color: #8D5A00; }
+.pend-banner .pb-msg b { color: #6B4500; }
+.pend-banner button { background: #FB8C00; color: #fff; border: none; padding: 8px 14px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; letter-spacing: 0.04em; text-transform: uppercase; }
+.pend-banner button:hover { background: #EF6C00; }
 </style></head><body>
 <div class="app">
 <aside class="sidebar">
@@ -331,6 +350,22 @@
         </div>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Modal: transferir matérias pendentes de dias passados -->
+<div class="modal-backdrop" id="transferModal" onclick="if(event.target===this) fecharTransferModal()">
+  <div class="modal-box" style="width:540px">
+    <button class="mbtn-close" onclick="fecharTransferModal()">×</button>
+    <h2>Transferir <i>matérias pendentes</i></h2>
+    <div class="modal-sub">Você não bateu a carga horária prevista em dias anteriores. Quer somar as matérias que ficaram pra trás ao dia de hoje?</div>
+    <div id="transferTargetInfo" class="trans-target"></div>
+    <div id="transferList" class="trans-list"></div>
+    <div id="transferSomaLbl" class="trans-soma"></div>
+    <div class="mactions">
+      <button type="button" class="mbtn-cancel" onclick="dispensarPendentes()" title="Marca essas pendências como vistas — não pergunta de novo">Não transferir</button>
+      <button type="button" class="mbtn-save" id="btnTransferConfirma" onclick="confirmarTransferencia()">Transferir selecionadas</button>
+    </div>
   </div>
 </div>
 
@@ -1226,6 +1261,217 @@ function renderHistPanel() {
   };
 }
 
+// ============ Transferência de matérias pendentes ============
+// Quando o aluno não bate a carga horária num dia, oferece transferir as
+// matérias pendentes pra hoje (somando ao já planejado). Compartilha o
+// PLAN_KEY com historico.html: cada bloco tem feito/minutos/minutosFeitos.
+const TRANS_DISMISS_KEY = 'trackermed.planner.pendDispensados.v1';
+const TRANS_SESSION_FLAG = 'trackermed.planner.transferModalSeen.v1';
+function loadTransDispensados() {
+  try { return new Set(JSON.parse(localStorage.getItem(TRANS_DISMISS_KEY) || '[]')); }
+  catch { return new Set(); }
+}
+function saveTransDispensados(s) { localStorage.setItem(TRANS_DISMISS_KEY, JSON.stringify([...s])); }
+
+function blocoPlannedMin(b) {
+  if (b.minutos) return b.minutos;
+  if (b.ini && b.fim) return Math.round((parseTime(b.fim) - parseTime(b.ini)) * 60);
+  return 0;
+}
+function blocoStudiedMin(b) {
+  if (b.minutosFeitos != null) return b.minutosFeitos;
+  return b.feito ? blocoPlannedMin(b) : 0;
+}
+// Data real do bloco: respeita b.data (registrado por historico.html) ou
+// deriva de wk (segunda-feira ISO) + b.dia (0=Dom..6=Sáb).
+function blocoDataReal(wk, b) {
+  if (b && b.data) return b.data;
+  if (!wk || !b || b.dia == null) return null;
+  const [y, m, d] = wk.split('-').map(Number);
+  if (!y) return null;
+  const monday = new Date(y, m - 1, d, 12, 0, 0);
+  const offset = b.dia === 0 ? 6 : b.dia - 1;
+  return toISODate(addDays(monday, offset));
+}
+
+function findPendentesTransfer() {
+  const plan = loadPlan();
+  const dispensados = loadTransDispensados();
+  const hojeISO = toISODate(new Date());
+  const discById = {};
+  loadDisc().forEach(d => { discById[d.id] = d; });
+  const itens = [];
+  Object.entries(plan).forEach(([wk, arr]) => {
+    (arr || []).forEach(b => {
+      if (!b || b.tipo !== 'estudo') return;
+      if (b.feito) return;
+      if (b.transferidoPara) return;
+      if (dispensados.has(b.id)) return;
+      const data = blocoDataReal(wk, b);
+      if (!data || data >= hojeISO) return; // só dias passados
+      const planMin = blocoPlannedMin(b);
+      const studiedMin = blocoStudiedMin(b);
+      const faltaMin = planMin - studiedMin;
+      if (faltaMin <= 0) return;
+      const disc = discById[b.discId];
+      const nome = disc ? disc.nome : (b.matNome || 'Estudo');
+      itens.push({ wk, blocoId: b.id, data, discId: b.discId, nome, faltaMin, planMin, studiedMin });
+    });
+  });
+  itens.sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : 0));
+  return itens;
+}
+
+function fmtMinTransfer(min) {
+  const h = Math.floor(min / 60), m = min % 60;
+  if (h > 0 && m > 0) return `${h}h${String(m).padStart(2, '0')}`;
+  if (h > 0) return `${h}h`;
+  return `${m}min`;
+}
+
+function abrirTransferModal() {
+  const itens = findPendentesTransfer();
+  if (itens.length === 0) return;
+  const target = new Date();
+  const targetWk = weekKey(target);
+  const targetDia = target.getDay();
+  const plan = loadPlan();
+  const blocosDia = (plan[targetWk] || []).filter(b => b.dia === targetDia && b.tipo === 'estudo');
+  const minutosJaPlan = blocosDia.reduce((s, b) => s + blocoPlannedMin(b), 0);
+  const dataLbl = `${DIAS_LONG[targetDia]}, ${target.getDate()}/${target.getMonth() + 1}`;
+  const jaPlanLbl = minutosJaPlan > 0 ? fmtMinTransfer(minutosJaPlan) : '0h';
+  document.getElementById('transferTargetInfo').innerHTML =
+    `Destino: <b>${escH(dataLbl)}</b> · já tem <b>${jaPlanLbl}</b> planejada${minutosJaPlan === 60 ? '' : 's'}.`;
+  const list = document.getElementById('transferList');
+  list.innerHTML = itens.map(it => {
+    const dt = fromISODate(it.data);
+    const dtLbl = dt ? `${DIAS_LBL[dt.getDay()]} ${dt.getDate()}/${dt.getMonth() + 1}` : '—';
+    const sub = it.studiedMin > 0
+      ? `${dtLbl} · estudou ${fmtMinTransfer(it.studiedMin)} de ${fmtMinTransfer(it.planMin)} · faltam <b>${fmtMinTransfer(it.faltaMin)}</b>`
+      : `${dtLbl} · não estudou · falta <b>${fmtMinTransfer(it.faltaMin)}</b>`;
+    return `<label class="trans-item">
+      <input type="checkbox" data-bloco-id="${escH(it.blocoId)}" data-wk="${escH(it.wk)}" data-falta="${it.faltaMin}" checked>
+      <div class="trans-meta">
+        <div class="trans-nome">${escH(it.nome)}</div>
+        <div class="trans-sub">${sub}</div>
+      </div>
+    </label>`;
+  }).join('');
+  list.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', atualizarTransferTotal);
+  });
+  atualizarTransferTotal();
+  document.getElementById('transferModal').classList.add('open');
+}
+
+function atualizarTransferTotal() {
+  let totMin = 0, count = 0;
+  document.querySelectorAll('#transferList input[type=checkbox]').forEach(cb => {
+    if (cb.checked) { totMin += parseInt(cb.dataset.falta) || 0; count++; }
+  });
+  const lbl = document.getElementById('transferSomaLbl');
+  if (totMin > 0) {
+    lbl.innerHTML = `${count} matéria${count !== 1 ? 's' : ''} selecionada${count !== 1 ? 's' : ''} · vai somar <b>${fmtMinTransfer(totMin)}</b> ao dia de hoje.`;
+  } else {
+    lbl.textContent = 'Nenhuma matéria selecionada.';
+  }
+  document.getElementById('btnTransferConfirma').disabled = totMin === 0;
+}
+
+function fecharTransferModal() {
+  document.getElementById('transferModal').classList.remove('open');
+}
+
+// Botão "Não transferir": registra os IDs pra não perguntar de novo.
+function dispensarPendentes() {
+  const dispensados = loadTransDispensados();
+  document.querySelectorAll('#transferList input[type=checkbox]').forEach(cb => {
+    if (cb.dataset.blocoId) dispensados.add(cb.dataset.blocoId);
+  });
+  saveTransDispensados(dispensados);
+  fecharTransferModal();
+  render();
+}
+
+function confirmarTransferencia() {
+  const cbs = [...document.querySelectorAll('#transferList input[type=checkbox]')];
+  const selecionados = cbs.filter(cb => cb.checked).map(cb => ({
+    blocoId: cb.dataset.blocoId,
+    wk: cb.dataset.wk,
+    faltaMin: parseInt(cb.dataset.falta) || 0
+  }));
+  if (selecionados.length === 0) { fecharTransferModal(); return; }
+
+  const plan = loadPlan();
+  const target = new Date();
+  const targetWk = weekKey(target);
+  const targetDia = target.getDay();
+  if (!plan[targetWk]) plan[targetWk] = [];
+
+  // Cursor: começa logo depois do último bloco do dia, ou às 19h, sem nunca
+  // antes de HORA_INI. Os novos blocos ficam empilhados em sequência.
+  const blocosDia = plan[targetWk].filter(b => b.dia === targetDia);
+  let cursor = blocosDia.length > 0
+    ? Math.max(...blocosDia.map(b => parseTime(b.fim)))
+    : 19;
+  if (cursor < HORA_INI) cursor = HORA_INI;
+  const limite = HORA_FIM + 1;
+
+  const toHHMMmin = (h) => {
+    const hh = Math.floor(h), mm = Math.round((h - hh) * 60);
+    return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+  };
+
+  let transferidos = 0, semEspaco = 0;
+  selecionados.forEach(s => {
+    const arr = plan[s.wk] || [];
+    const orig = arr.find(b => b.id === s.blocoId);
+    if (!orig) return;
+    // Arredonda pra múltiplo de 30min, mínimo de 30min, pra encaixar na grade
+    const durHoras = Math.max(0.5, Math.round((s.faltaMin / 60) * 2) / 2);
+    const ini = cursor;
+    let fim = ini + durHoras;
+    if (ini >= limite - 0.49) { semEspaco++; return; }
+    if (fim > limite) fim = limite;
+    plan[targetWk].push({
+      id: uid(),
+      tipo: 'estudo',
+      discId: orig.discId,
+      matNome: orig.matNome || null,
+      dia: targetDia,
+      ini: toHHMMmin(ini),
+      fim: toHHMMmin(fim),
+      feito: false,
+      auto: false,
+      transferidoDe: orig.id,
+      transferidoDeData: blocoDataReal(s.wk, orig)
+    });
+    cursor = fim;
+    transferidos++;
+    plan[s.wk] = plan[s.wk].map(b => b.id === orig.id
+      ? { ...b, transferidoPara: targetWk + '#' + targetDia, transferidoEm: new Date().toISOString() }
+      : b
+    );
+  });
+
+  savePlan(plan);
+  fecharTransferModal();
+  if (semEspaco > 0) {
+    alert(`${transferidos} matéria${transferidos !== 1 ? 's' : ''} transferida${transferidos !== 1 ? 's' : ''}. ${semEspaco} não coube${semEspaco !== 1 ? 'ram' : ''} no dia (passa de ${HORA_FIM + 1}h) — ajuste manualmente se quiser.`);
+  }
+  render();
+}
+
+function checkAndOpenTransferModal() {
+  try {
+    if (sessionStorage.getItem(TRANS_SESSION_FLAG) === '1') return;
+  } catch {}
+  const itens = findPendentesTransfer();
+  if (itens.length === 0) return;
+  try { sessionStorage.setItem(TRANS_SESSION_FLAG, '1'); } catch {}
+  abrirTransferModal();
+}
+
 function render() {
   const discList = loadDisc();
   const plan = loadPlan();
@@ -1301,7 +1547,15 @@ function render() {
   const avisoPeriodo = excedePeriodo
     ? `<div class="g-status" style="color:#FF8A8A">⚠ Metas (${totalMetasPeriodo.toFixed(1)}h) ultrapassam ${(totalMetasPeriodo - periodoTotal).toFixed(1)}h a disponibilidade do período (${periodoTotal.toFixed(1)}h). A sugestão será proporcional, priorizando matérias de maior prioridade.</div>`
     : '';
-  const sugHtml = `<div class="gerar-card">
+  const pendentes = findPendentesTransfer();
+  const pendHoras = pendentes.reduce((s, p) => s + p.faltaMin, 0) / 60;
+  const pendBanner = pendentes.length > 0
+    ? `<div class="pend-banner">
+        <div class="pb-msg">⚠ Você tem <b>${pendentes.length} matéria${pendentes.length!==1?'s':''}</b> pendente${pendentes.length!==1?'s':''} de dias anteriores (<b>${pendHoras.toFixed(1)}h</b> não estudada${pendHoras===1?'':'s'}). Transferir pra hoje?</div>
+        <button type="button" onclick="abrirTransferModal()">Revisar pendências</button>
+       </div>`
+    : '';
+  const sugHtml = pendBanner + `<div class="gerar-card">
     <div class="g-info">
       <h3>Gerar <i>sugestão</i> de estudo</h3>
       <div class="help">Distribui blocos no período respeitando prioridade (alta → manhã, baixa → noite), meta semanal, limite diário e horários já ocupados. Se as metas excederem a disponibilidade do período, a distribuição é feita proporcionalmente, com peso maior para prioridades altas.</div>
@@ -1322,5 +1576,6 @@ function render() {
 renderDisp();
 bindPeriodoInputs();
 render();
+checkAndOpenTransferModal();
 </script>
 </body></html>
