@@ -215,6 +215,10 @@
     <button class="mbtn-close" onclick="fecharDur()">×</button>
     <h2 id="durTitulo">Duração</h2>
     <div class="modal-sub" id="durSub">—</div>
+    <div class="mfield" id="durConteudoWrap" style="display:none">
+      <label>Conteúdo sendo estudado (opcional)</label>
+      <input type="text" id="durConteudo" maxlength="160" placeholder="ex: capítulo 3, sistema cardiovascular, farmacologia…">
+    </div>
     <div class="dur-grid">
       <button type="button" class="dur-btn" onclick="escolherDur(25)">25min</button>
       <button type="button" class="dur-btn" onclick="escolherDur(30)">30min</button>
@@ -751,7 +755,9 @@ function timerFinish(auto) {
         const plannedMin = b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60);
         const studiedAcum = (b.minutosFeitos || 0) + studied;
         const feito = concluidoNatural || studiedAcum >= plannedMin;
-        return { ...b, feito, minutos: plannedMin, minutosFeitos: studiedAcum, data: todayKey() };
+        const updated = { ...b, feito, minutos: plannedMin, minutosFeitos: studiedAcum, data: todayKey() };
+        if (sessaoConteudo) updated.conteudo = sessaoConteudo;
+        return updated;
       });
     }
     savePlan(plan);
@@ -1138,6 +1144,12 @@ function abrirPlayDuracao(discId, discNome, blocoId) {
   document.getElementById('durStudiedWrap').style.display = 'none';
   document.getElementById('secOptsWrap').style.display = '';
   document.getElementById('durFreeBtn').style.display = '';
+  document.getElementById('durConteudoWrap').style.display = '';
+  // Pre-fill conteudo from the block if it already has one
+  const plan = loadPlan();
+  const wk = weekKey(new Date());
+  const bloco = (plan[wk]||[]).find(b => b.id === blocoId);
+  document.getElementById('durConteudo').value = (bloco && bloco.conteudo) || '';
   setSecoes(1);
   setPausa(5);
   document.getElementById('durModal').classList.add('open');
@@ -1155,13 +1167,15 @@ function abrirEditarDuracao(wk, blocoId, discNome, minsAtual) {
   document.getElementById('durStudiedWrap').style.display = '';
   document.getElementById('secOptsWrap').style.display = 'none';
   document.getElementById('durFreeBtn').style.display = 'none';
+  document.getElementById('durConteudoWrap').style.display = 'none';
   document.getElementById('durModal').classList.add('open');
 }
 function fecharDur() { document.getElementById('durModal').classList.remove('open'); durCtx = null; }
 function iniciarPlayCom(mins) {
   const { discId, discNome, blocoId, sections, pauseMins } = durCtx;
+  const conteudo = (document.getElementById('durConteudo').value || '').trim();
   fecharDur();
-  timerOpen(discId, discNome, mins, blocoId, { sections, pauseMins });
+  timerOpen(discId, discNome, mins, blocoId, { sections, pauseMins, conteudo });
 }
 function escolherDur(mins) {
   if (!durCtx) return;
@@ -1184,8 +1198,9 @@ function escolherDurCustom() {
 function escolherDurLivre() {
   if (!durCtx || durCtx.modo !== 'play') return;
   const { discId, discNome, blocoId } = durCtx;
+  const conteudo = (document.getElementById('durConteudo').value || '').trim();
   fecharDur();
-  timerOpenFree(discId, discNome, blocoId);
+  timerOpenFree(discId, discNome, blocoId, { conteudo });
 }
 function aplicarEdicaoDuracao(mins) {
   const { wk, blocoId } = durCtx;
