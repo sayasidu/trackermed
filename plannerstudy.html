@@ -162,6 +162,7 @@
 .prio-breakdown .pb-row.baixa { border-left-color: #9E9E9E; }
 .prio-breakdown .pb-nome { font-weight: 600; }
 .prio-breakdown .pb-prio { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-left: 8px; }
+.prio-breakdown .pb-fixos { font-size: 10px; color: var(--cobalt); font-weight: 600; margin-left: 8px; letter-spacing: 0.02em; }
 .prio-breakdown .pb-calc { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .prio-breakdown .pb-calc.manual { color: var(--cobalt); font-weight: 600; }
 .prio-breakdown .pb-tot { font-family: 'Fraunces', serif; font-size: 16px; color: var(--cobalt); font-variant-numeric: tabular-nums; font-weight: 500; }
@@ -226,6 +227,23 @@
 .mfield.check-row input { width: auto; margin: 0; }
 .mfield.check-row label { margin: 0; letter-spacing: 0; text-transform: none; font-size: 13px; color: var(--ink); font-weight: 500; cursor: pointer; }
 .mbtn-delete { background: transparent; border: none; color: var(--rose); padding: 10px 0; font-size: 12px; cursor: pointer; font-family: inherit; font-weight: 600; }
+
+/* Modal: configurar dias fixos */
+.fixar-radio { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.fixar-radio label { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--paper); border: 1px solid var(--line); cursor: pointer; font-size: 13px; font-weight: 500; }
+.fixar-radio label:hover { border-color: var(--cobalt); }
+.fixar-radio label.selected { border-color: var(--cobalt); background: #EEF1FF; }
+.fixar-radio input { width: auto; margin: 0; }
+.dias-check-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 14px; }
+@media (max-width: 480px) { .dias-check-grid { grid-template-columns: repeat(3, 1fr); } }
+.dias-check-grid label { display: flex; align-items: center; gap: 6px; padding: 8px 10px; background: var(--paper); border: 1px solid var(--line); cursor: pointer; font-size: 13px; font-weight: 500; user-select: none; }
+.dias-check-grid label:hover { border-color: var(--cobalt); }
+.dias-check-grid input { width: auto; margin: 0; }
+.dias-check-grid input:checked + span { color: var(--cobalt); font-weight: 600; }
+.dias-fixos-section { display: none; }
+.dias-fixos-section.visible { display: block; }
+.fixar-divider { border: none; border-top: 1px dashed var(--line); margin: 14px 0; }
+.fixar-disc-nome { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 500; color: var(--cobalt); margin-bottom: 14px; }
 
 /* Modal transferência de matérias pendentes */
 .trans-target { padding: 10px 14px; background: var(--paper); border-left: 3px solid var(--cobalt); font-size: 13px; color: var(--ink2); margin-bottom: 14px; }
@@ -366,6 +384,54 @@
       <button type="button" class="mbtn-cancel" onclick="dispensarPendentes()" title="Marca essas pendências como vistas — não pergunta de novo">Não transferir</button>
       <button type="button" class="mbtn-save" id="btnTransferConfirma" onclick="confirmarTransferencia()">Transferir selecionadas</button>
     </div>
+  </div>
+</div>
+
+<!-- Modal: configurar dias fixos e horas por disciplina -->
+<div class="modal-backdrop" id="fixarModal" onclick="if(event.target===this) fecharFixarModal()">
+  <div class="modal-box" style="width:520px">
+    <button class="mbtn-close" onclick="fecharFixarModal()">×</button>
+    <h2>Configurar <i>matéria</i></h2>
+    <div class="modal-sub">Defina os dias e a carga horária semanal para esta matéria.</div>
+    <div class="fixar-disc-nome" id="fixarDiscNome"></div>
+    <form onsubmit="event.preventDefault(); salvarFixarModal();">
+      <input type="hidden" id="fixarDiscId">
+
+      <div class="mfield">
+        <label>Deseja fixar dias específicos da semana para estudar esta matéria?</label>
+        <div class="fixar-radio" id="fixarRadioGroup">
+          <label id="fixarRadioSim"><input type="radio" name="fixarDias" value="sim"> Sim, quero fixar os dias</label>
+          <label id="fixarRadioNao"><input type="radio" name="fixarDias" value="nao"> Não, distribuir automaticamente</label>
+        </div>
+      </div>
+
+      <div class="dias-fixos-section" id="diasFixosSection">
+        <div class="mfield">
+          <label>Quais dias da semana?</label>
+          <div class="dias-check-grid" id="diasCheckGrid">
+            <label><input type="checkbox" value="1"><span>Segunda</span></label>
+            <label><input type="checkbox" value="2"><span>Terça</span></label>
+            <label><input type="checkbox" value="3"><span>Quarta</span></label>
+            <label><input type="checkbox" value="4"><span>Quinta</span></label>
+            <label><input type="checkbox" value="5"><span>Sexta</span></label>
+            <label><input type="checkbox" value="6"><span>Sábado</span></label>
+            <label><input type="checkbox" value="0"><span>Domingo</span></label>
+          </div>
+        </div>
+      </div>
+
+      <hr class="fixar-divider">
+
+      <div class="mfield">
+        <label>Horas de estudo por semana (opcional)</label>
+        <input type="number" id="fixarHoras" min="0" max="40" step="0.5" placeholder="Deixe vazio para cálculo automático por prioridade">
+      </div>
+
+      <div class="mactions">
+        <button type="button" class="mbtn-cancel" onclick="fecharFixarModal()">Cancelar</button>
+        <button type="submit" class="mbtn-save">Salvar</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -599,15 +665,18 @@ function renderPrioStats(discList) {
       const totStr = (diasLivresCount === 0 && !manual)
         ? '—'
         : (hH>0 ? `${hH}h${hM?String(hM).padStart(2,'0'):''}` : `${hM}min`);
+      const temFixos = d.diasFixos && d.diasFixos.length > 0;
+      const fixosStr = temFixos ? d.diasFixos.map(wd => DIAS_LBL[wd]).join(', ') : '';
       const calcStr = manual
         ? `meta manual · ${fmtDispHoras(d.metaHorasSemana)}/semana`
         : `${min}min × ${diasLivresCount} dia${diasLivresCount!==1?'s':''} livre${diasLivresCount!==1?'s':''}`;
+      const fixosTag = temFixos ? `<span class="pb-fixos" title="Dias fixos: ${escH(fixosStr)}">📌 ${escH(fixosStr)}</span>` : '';
       return `<div class="pb-row ${prio}">
-        <div><span class="pb-nome">${escH(d.nome || 'Sem nome')}</span><span class="pb-prio">${PRIO_LBL[prio]}</span></div>
+        <div><span class="pb-nome">${escH(d.nome || 'Sem nome')}</span><span class="pb-prio">${PRIO_LBL[prio]}</span>${fixosTag}</div>
         <div class="pb-calc ${manual?'manual':''}">${escH(calcStr)}</div>
         <div class="pb-tot">${totStr}</div>
         <div class="pb-acts">
-          <button type="button" class="pb-edit" data-act="edit" data-disc-id="${escH(d.id)}" title="Editar horas semanais">✎</button>
+          <button type="button" class="pb-edit" data-act="edit" data-disc-id="${escH(d.id)}" title="Configurar dias e horas">✎</button>
           <button type="button" class="pb-rm" data-act="rm" data-disc-id="${escH(d.id)}" title="Dispensar do planejamento">×</button>
         </div>
       </div>`;
@@ -651,22 +720,86 @@ function saveExcl(s) { localStorage.setItem(EXCL_KEY, JSON.stringify([...s])); }
 function excluirDisc(discId) { const e = loadExcl(); e.add(discId); saveExcl(e); render(); }
 function restaurarDisc(discId) { const e = loadExcl(); e.delete(discId); saveExcl(e); render(); }
 function editMetaHoras(discId) {
+  abrirFixarModal(discId);
+}
+
+function abrirFixarModal(discId) {
   const list = loadDisc();
   const d = list.find(x => x.id === discId);
   if (!d) return;
+
+  document.getElementById('fixarDiscId').value = discId;
+  document.getElementById('fixarDiscNome').textContent = d.nome || 'Sem nome';
+
+  const diasFixos = d.diasFixos || [];
+  const temDiasFixos = diasFixos.length > 0;
+
+  const radios = document.querySelectorAll('#fixarRadioGroup input[name="fixarDias"]');
+  radios.forEach(r => {
+    r.checked = (r.value === 'sim' && temDiasFixos) || (r.value === 'nao' && !temDiasFixos);
+    r.addEventListener('change', atualizarFixarVisibilidade);
+  });
+  atualizarFixarRadioStyle();
+
+  const section = document.getElementById('diasFixosSection');
+  section.classList.toggle('visible', temDiasFixos);
+
+  const checks = document.querySelectorAll('#diasCheckGrid input[type="checkbox"]');
+  checks.forEach(cb => { cb.checked = diasFixos.includes(parseInt(cb.value)); });
+
+  const horasInp = document.getElementById('fixarHoras');
   const atual = Number(d.metaHorasSemana) || 0;
-  const resp = prompt(
-    `Horas de estudo por semana para "${d.nome || 'disciplina'}":\nDeixe vazio (ou 0) pra voltar ao cálculo por prioridade.`,
-    atual > 0 ? String(atual) : ''
-  );
-  if (resp === null) return;
-  const v = parseFloat((resp || '').replace(',', '.'));
-  if (!resp.trim() || isNaN(v) || v <= 0) {
+  horasInp.value = atual > 0 ? atual : '';
+
+  document.getElementById('fixarModal').classList.add('open');
+}
+
+function atualizarFixarVisibilidade() {
+  const sim = document.querySelector('#fixarRadioGroup input[value="sim"]').checked;
+  document.getElementById('diasFixosSection').classList.toggle('visible', sim);
+  atualizarFixarRadioStyle();
+}
+
+function atualizarFixarRadioStyle() {
+  const radios = document.querySelectorAll('#fixarRadioGroup input[name="fixarDias"]');
+  radios.forEach(r => {
+    r.closest('label').classList.toggle('selected', r.checked);
+  });
+}
+
+function fecharFixarModal() {
+  document.getElementById('fixarModal').classList.remove('open');
+}
+
+function salvarFixarModal() {
+  const discId = document.getElementById('fixarDiscId').value;
+  const list = loadDisc();
+  const d = list.find(x => x.id === discId);
+  if (!d) return;
+
+  const querFixar = document.querySelector('#fixarRadioGroup input[value="sim"]').checked;
+  if (querFixar) {
+    const checks = document.querySelectorAll('#diasCheckGrid input[type="checkbox"]:checked');
+    const dias = [...checks].map(cb => parseInt(cb.value));
+    if (dias.length === 0) {
+      alert('Selecione ao menos um dia da semana.');
+      return;
+    }
+    d.diasFixos = dias;
+  } else {
+    delete d.diasFixos;
+  }
+
+  const horasVal = document.getElementById('fixarHoras').value;
+  const v = parseFloat((horasVal || '').replace(',', '.'));
+  if (!horasVal || isNaN(v) || v <= 0) {
     delete d.metaHorasSemana;
   } else {
     d.metaHorasSemana = Math.min(40, Math.max(0.5, Math.round(v * 2) / 2));
   }
+
   saveDisc(list);
+  fecharFixarModal();
   render();
 }
 // Avail agora deriva de disp: dias com horas > 0 são "dias livres", total é a meta semanal.
@@ -848,8 +981,13 @@ function gerarAuto() {
     let guarda = 400;
     while (falta > 0.1 && guarda-- > 0) {
       // Candidatos: dias do período com folga (não ultrapassam o limite diário)
+      // Se a disciplina tem diasFixos, filtra apenas dias correspondentes
+      const temFixos = d.diasFixos && d.diasFixos.length > 0;
       const candidatos = dias
-        .filter(dd => (dd.capHoras - usoDia[ocupKey(dd.wkKey, dd.wd)]) >= 0.5 - 0.001)
+        .filter(dd => {
+          if (temFixos && !d.diasFixos.includes(dd.wd)) return false;
+          return (dd.capHoras - usoDia[ocupKey(dd.wkKey, dd.wd)]) >= 0.5 - 0.001;
+        })
         .sort((a, b) => {
           const ua = usoDia[ocupKey(a.wkKey, a.wd)];
           const ub = usoDia[ocupKey(b.wkKey, b.wd)];
