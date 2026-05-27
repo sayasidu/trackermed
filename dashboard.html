@@ -21,6 +21,16 @@
 .countdown-box .edit-btn { background: transparent; color: rgba(244,241,234,0.5); border: 1px solid rgba(244,241,234,0.15); padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 14px; letter-spacing: 0.04em; }
 .countdown-box .edit-btn:hover { color: var(--paper); }
 
+.frase-box { background: var(--card); border: 1px solid var(--line); padding: 20px 26px; margin-bottom: 36px; display: flex; align-items: flex-start; gap: 14px; }
+.frase-box .frase-ico { font-family: 'Fraunces', serif; font-size: 32px; line-height: 1; color: var(--cobalt); flex-shrink: 0; user-select: none; }
+.frase-box .frase-txt { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 400; font-style: italic; color: var(--ink2); line-height: 1.5; }
+.frase-box.meta-ok { background: #E8F5E9; border-color: #A5D6A7; }
+.frase-box.meta-ok .frase-ico { color: #2E7D32; }
+.frase-box.meta-ok .frase-txt { color: #1B5E20; }
+[data-theme="dark"] .frase-box.meta-ok { background: rgba(67,160,71,0.12); border-color: rgba(67,160,71,0.25); }
+[data-theme="dark"] .frase-box.meta-ok .frase-ico { color: var(--acid); }
+[data-theme="dark"] .frase-box.meta-ok .frase-txt { color: var(--acid); }
+
 .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 40px; }
 .kpi { background: var(--card); border: 1px solid var(--line); padding: 22px 24px; }
 .kpi.dark { background: var(--ink); color: var(--paper); border-color: var(--ink); }
@@ -140,6 +150,11 @@
   </div>
 </div>
 
+<div class="frase-box" id="fraseBox">
+  <div class="frase-ico">"</div>
+  <div class="frase-txt" id="fraseTxt">—</div>
+</div>
+
 <div class="kpi-row">
   <div class="kpi"><div class="lbl">Estudado hoje</div><div class="val" id="kHoje">0<span>h00</span></div><div class="sub" id="kHojeSub">—</div><div class="meme" id="kHojeMeme"></div></div>
   <div class="kpi dark"><div class="lbl">Streak</div><div class="val" id="kStreak">0</div><div class="sub" id="kStreakSub">dias seguidos</div></div>
@@ -211,6 +226,61 @@ function getPlannedMin(b) { return b.minutos || Math.round((parseTime(b.fim)-par
 function getStudiedMin(b) {
   if (b.minutosFeitos != null) return b.minutosFeitos;
   return b.feito ? getPlannedMin(b) : 0;
+}
+
+const FRASES_GERAIS = [
+  'Nesse ritmo, a tartaruga vai te ultrapassar.',
+  'Finalmente tentando fazer diferença na própria vida.',
+  'Dessa forma, quem sabe os surtos diminuam.',
+  'Tratando sua ansiedade do jeito universitário: estudando na força do ódio.',
+  'Você abriu o dashboard. Seus neurônios quase entraram em choque.',
+  'Parabéns por aparecer. O mínimo foi feito com relativo sucesso.',
+  'Milagre acadêmico detectado: consistência.',
+  'Abrir o planner já conta como início de reabilitação.',
+  'Seu futuro eu agradece. O atual continua cansado.',
+  'A procrastinação perdeu a batalha de hoje. Mas ela volta amanhã.',
+  'Mais um dia fingindo que tem controle sobre a própria vida. Bora.',
+  'O edital não vai estudar sozinho. Infelizmente.',
+  'Se a prova fosse de procrastinar, você já teria passado.',
+  'Lembrete: o café não substitui o estudo. Mas ajuda a fingir.',
+  'Você está aqui. Isso já é mais do que a maioria fez hoje.',
+  'A residência não vai cair no seu colo. Mas o sono vai.',
+  'Seu cronograma te olha com esperança. Não o decepcione de novo.',
+  'A medicina é linda. O caminho até ela, nem tanto.',
+  'Respira fundo. Abre o resumo. Finge que tá tudo bem.',
+  'Você versus o edital. Spoiler: o edital não dorme.',
+  'Aquele momento em que você percebe que deveria ter começado ontem.',
+  'Pelo menos você não tá no TikTok. Ou tá?',
+  'A disciplina tá chorando pedindo atenção. Vai lá.',
+  'Seu eu do futuro tá torcendo por você. O do presente tá com sono.',
+  'Estudar é difícil. Sabe o que é mais difícil? Explicar por que não passou.'
+];
+const FRASES_META_OK = [
+  'Meta concluída. Pode sofrer em paz agora.',
+  'Hoje você venceu. Amanhã o ciclo recomeça.',
+  'Inacreditável. Você realmente terminou o que planejou.',
+  'Seu cronograma está emocionado.',
+  'A ansiedade continua aí, mas agora ela pelo menos está organizada.',
+  'Alguém avisa que hoje o plano foi cumprido. Não, não é mentira.',
+  'Meta batida. O universo está confuso, mas orgulhoso.',
+  'Isso é dedicação ou desespero? Tanto faz, funcionou.',
+  'Você fez o que prometeu. Quem é você e o que fez com o procrastinador?',
+  'Missão cumprida. Agora sim pode surtar com consciência limpa.',
+  'Hoje a preguiça perdeu feio. Tá até pedindo revanche.',
+  'Impressionante. O plano saiu do papel e virou realidade.',
+  'A residência ficou um pouquinho mais perto. Só um pouquinho.',
+  'Se consistência fosse matéria, hoje você gabaritou.',
+  'Parabéns. Amanhã faz de novo. E depois de novo. E depois...'
+];
+const FRASE_VISIT_KEY = 'trackermed.fraseVisit.v1';
+
+function getFraseIndex(lista) {
+  let visits = parseInt(localStorage.getItem(FRASE_VISIT_KEY) || '0', 10);
+  return visits % lista.length;
+}
+function incrementVisit() {
+  let visits = parseInt(localStorage.getItem(FRASE_VISIT_KEY) || '0', 10);
+  localStorage.setItem(FRASE_VISIT_KEY, String(visits + 1));
 }
 
 const MEMES_META = [
@@ -434,5 +504,31 @@ function render() {
 }
 
 render();
+renderFrase();
+
+function renderFrase() {
+  const plan = loadJSON(PLAN_KEY, {});
+  const hoje = new Date();
+  const hojeDia = hoje.getDay();
+  const wk = weekKey(hoje);
+  const blocosHoje = (plan[wk]||[]).filter(b => b.dia === hojeDia);
+  const hojeMin = blocosHoje.reduce((s,b)=>s+getStudiedMin(b),0);
+  const planMin = blocosHoje.reduce((s,b)=>s+getPlannedMin(b),0);
+
+  const box = document.getElementById('fraseBox');
+  const txt = document.getElementById('fraseTxt');
+  const metaOk = planMin > 0 && hojeMin >= planMin;
+
+  if (metaOk) {
+    box.classList.add('meta-ok');
+    const idx = getFraseIndex(FRASES_META_OK);
+    txt.textContent = FRASES_META_OK[idx];
+  } else {
+    box.classList.remove('meta-ok');
+    const idx = getFraseIndex(FRASES_GERAIS);
+    txt.textContent = FRASES_GERAIS[idx];
+  }
+}
+incrementVisit();
 </script>
 </body></html>
