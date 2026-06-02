@@ -149,6 +149,24 @@
 .disp-tot b { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; margin-left: 4px; }
 .disp-sugerir { background: var(--ink); color: var(--paper); border: none; padding: 10px 18px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; letter-spacing: 0.06em; text-transform: uppercase; }
 .disp-sugerir:hover { background: var(--cobalt); }
+/* Rotina fixa (almoço, jantar, academia) */
+.rotina-grid { display: flex; flex-direction: column; gap: 10px; }
+.rotina-row { display: grid; grid-template-columns: 130px auto 1fr; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+.rotina-row:last-child { border-bottom: none; }
+@media (max-width: 720px) { .rotina-row { grid-template-columns: 1fr; gap: 8px; } }
+.rotina-nome { font-size: 14px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 7px; }
+.rotina-nome .dot { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.rotina-times { display: flex; align-items: center; gap: 6px; }
+.rotina-times input { padding: 8px; border: 1px solid var(--line); background: var(--paper); font-size: 14px; font-family: inherit; font-variant-numeric: tabular-nums; }
+.rotina-times input:focus { outline: none; border-color: var(--cobalt); }
+.rotina-times .sep { color: var(--muted); font-size: 13px; }
+.rotina-dias { display: flex; gap: 5px; flex-wrap: wrap; }
+.rotina-dias button { border: 1px solid var(--line); background: var(--paper); color: var(--muted); padding: 6px 9px; font-size: 11px; font-weight: 600; font-family: inherit; cursor: pointer; letter-spacing: 0.04em; text-transform: uppercase; }
+.rotina-dias button:hover { border-color: var(--cobalt); }
+.rotina-dias button.active { background: var(--cobalt); border-color: var(--cobalt); color: #fff; }
+.bloco.rotina { border-left-width: 3px; border-left-style: solid; cursor: default; }
+.bloco.rotina .nome { font-weight: 600; font-size: 12px; }
+.bloco.rotina .tempo { opacity: 0.8; font-size: 11px; margin-top: 1px; font-variant-numeric: tabular-nums; }
 
 .disp-total { margin-top: 14px; font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; padding-top: 12px; border-top: 1px dashed var(--line); }
 .disp-total b { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; margin: 0 4px; }
@@ -320,12 +338,18 @@
   </div>
 </div>
 
+<div class="disp-setup">
+  <h3>Sua <i>rotina</i> fixa</h3>
+  <div class="help">Informe os horários que você reserva pra <b>almoço</b>, <b>jantar</b> e <b>academia</b> em cada dia da semana. Esses horários ficam bloqueados e o gerador de sugestão encaixa os estudos ao redor deles, deixando o cronograma compatível com a sua rotina. Deixe o horário em branco pra ignorar uma atividade.</div>
+  <div class="rotina-grid" id="rotinaGrid"></div>
+</div>
+
 <div id="sugContainer"></div>
 
 <div class="planner-wrap">
   <div>
     <div id="gradeContainer"></div>
-    <div class="legenda"><span class="a"><b></b>Aula</span><span class="e"><b></b>Estudo</span><span class="r"><b></b>Revisão (cadastrada em <a href="revisoes.html" style="color:#FB8C00;font-weight:600">Revisões</a>)</span><span class="d"><b></b>Feito</span><span>(clica num bloco pra editar · arrasta pra mover · borda inferior pra redimensionar)</span></div>
+    <div class="legenda"><span class="a"><b></b>Aula</span><span class="e"><b></b>Estudo</span><span class="r"><b></b>Revisão (cadastrada em <a href="revisoes.html" style="color:#FB8C00;font-weight:600">Revisões</a>)</span><span class="d"><b></b>Feito</span><span><b style="display:inline-block;width:11px;height:11px;background:#7C3AED;vertical-align:-1px;margin-right:5px"></b>Rotina fixa (almoço, jantar, academia)</span><span>(clica num bloco pra editar · arrasta pra mover · borda inferior pra redimensionar)</span></div>
   </div>
   <aside class="hist-panel">
     <h3>Histórico <i>de sugestões</i></h3>
@@ -440,7 +464,14 @@ const DISC_KEY = 'trackermed.disciplinas.v1';
 const PLAN_KEY = 'trackermed.plan.v1';
 const HIST_KEY = 'trackermed.planner.historico.v1';
 const DISP_KEY = 'planejamento.disponibilidade';
+const ROTINA_KEY = 'trackermed.planner.rotina.v1';
 const PERIODO_KEY = 'trackermed.planner.periodo.v1';
+// Atividades fixas da rotina do aluno (bloqueiam horários na geração da sugestão)
+const ROTINA_ATIVS = [
+  { k: 'almoco',   lbl: 'Almoço',   icon: '🍽️', cor: '#7C3AED', defIni: '12:00', defFim: '13:00', defDias: ['seg','ter','qua','qui','sex','sab','dom'] },
+  { k: 'jantar',   lbl: 'Jantar',   icon: '🍲', cor: '#0D9488', defIni: '19:00', defFim: '20:00', defDias: ['seg','ter','qua','qui','sex','sab','dom'] },
+  { k: 'academia', lbl: 'Academia', icon: '🏋️', cor: '#EC4899', defIni: '',      defFim: '',      defDias: ['seg','qua','sex'] }
+];
 const DISP_SUG = { seg: 4, ter: 4, qua: 4, qui: 4, sex: 4, sab: 3, dom: 2 };
 const DISP_DAYS = [
   { k: 'seg', lbl: 'Seg', wd: 1 },
@@ -590,6 +621,72 @@ function renderDisp() {
       if (inp) inp.value = novo[day.k];
     });
     render();
+  });
+}
+
+function loadRotina() {
+  const base = {};
+  ROTINA_ATIVS.forEach(a => base[a.k] = { inicio: a.defIni, fim: a.defFim, dias: a.defDias.slice() });
+  try {
+    const raw = JSON.parse(localStorage.getItem(ROTINA_KEY) || 'null');
+    if (raw && typeof raw === 'object') {
+      ROTINA_ATIVS.forEach(a => {
+        const r = raw[a.k];
+        if (r && typeof r === 'object') {
+          base[a.k] = {
+            inicio: typeof r.inicio === 'string' ? r.inicio : '',
+            fim: typeof r.fim === 'string' ? r.fim : '',
+            dias: Array.isArray(r.dias) ? r.dias.filter(k => DIA_IDX[k] !== undefined) : []
+          };
+        }
+      });
+    }
+  } catch {}
+  return base;
+}
+function saveRotina(r) { localStorage.setItem(ROTINA_KEY, JSON.stringify(r)); }
+// Uma atividade só vale na geração se tem horário válido (fim > início) e ao menos um dia marcado.
+function rotinaItemAtivo(r) {
+  return !!(r && r.inicio && r.fim && parseTime(r.fim) > parseTime(r.inicio) && Array.isArray(r.dias) && r.dias.length > 0);
+}
+function renderRotina() {
+  const grid = document.getElementById('rotinaGrid');
+  if (!grid) return;
+  const data = loadRotina();
+  grid.innerHTML = ROTINA_ATIVS.map(a => {
+    const r = data[a.k];
+    const dias = DISP_DAYS.map(day =>
+      `<button type="button" data-rot="${a.k}" data-dia="${day.k}" class="${r.dias.includes(day.k) ? 'active' : ''}">${day.lbl}</button>`
+    ).join('');
+    return `<div class="rotina-row">
+      <div class="rotina-nome"><span class="dot" style="background:${a.cor}"></span>${a.icon} ${a.lbl}</div>
+      <div class="rotina-times">
+        <input type="time" data-rot="${a.k}" data-field="inicio" value="${r.inicio}" aria-label="${a.lbl} início">
+        <span class="sep">—</span>
+        <input type="time" data-rot="${a.k}" data-field="fim" value="${r.fim}" aria-label="${a.lbl} fim">
+      </div>
+      <div class="rotina-dias">${dias}</div>
+    </div>`;
+  }).join('');
+  grid.querySelectorAll('input[type="time"]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const atual = loadRotina();
+      atual[inp.dataset.rot][inp.dataset.field] = inp.value;
+      saveRotina(atual);
+      render();
+    });
+  });
+  grid.querySelectorAll('.rotina-dias button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const atual = loadRotina();
+      const dias = atual[btn.dataset.rot].dias;
+      const dia = btn.dataset.dia;
+      const i = dias.indexOf(dia);
+      if (i >= 0) { dias.splice(i, 1); btn.classList.remove('active'); }
+      else { dias.push(dia); btn.classList.add('active'); }
+      saveRotina(atual);
+      render();
+    });
   });
 }
 
@@ -936,12 +1033,19 @@ function gerarAuto() {
     const set = ensureOcup(wk, dia);
     for (let t = ini; t < fim - 0.001; t += 0.5) set.add(Math.round(t * 2) / 2);
   };
+  // Rotina fixa do aluno (almoço, jantar, academia) também bloqueia horários.
+  const rotina = loadRotina();
   wksTocadas.forEach(wk => {
     discList.forEach(d => (d.aulas || []).forEach(a => {
       const dia = DIA_IDX[a.dia];
       if (a.inicio && a.fim) marcar(wk, dia, parseTime(a.inicio), parseTime(a.fim));
     }));
     (plan[wk] || []).forEach(b => marcar(wk, b.dia, parseTime(b.ini), parseTime(b.fim)));
+    ROTINA_ATIVS.forEach(a => {
+      const r = rotina[a.k];
+      if (!rotinaItemAtivo(r)) return;
+      r.dias.forEach(dk => marcar(wk, DIA_IDX[dk], parseTime(r.inicio), parseTime(r.fim)));
+    });
   });
 
   // Uso por dia (em horas), conta blocos manuais existentes
@@ -1198,6 +1302,7 @@ function renderGrade(discList) {
 
   const wk = weekKey(anchorDate);
   const plan = loadPlan();
+  const rotina = loadRotina();
 
   for (let i = 0; i < 7; i++) {
     const d = addDays(wkStart, i);
@@ -1228,6 +1333,21 @@ function renderGrade(discList) {
           <div class="tempo">${escH(a.inicio)}—${escH(a.fim)}</div>
         </div>`;
       });
+    });
+
+    // Rotina fixa (almoço, jantar, academia)
+    const diaKey = (DISP_DAYS.find(x => x.wd === d.getDay()) || {}).k;
+    ROTINA_ATIVS.forEach(a => {
+      const r = rotina[a.k];
+      if (!rotinaItemAtivo(r) || !r.dias.includes(diaKey)) return;
+      const ini = parseTime(r.inicio), fim = parseTime(r.fim);
+      if (fim <= HORA_INI || ini >= HORA_FIM+1) return;
+      const top = Math.max(0, ini - HORA_INI) * 50;
+      const h = (fim - ini) * 50;
+      body += `<div class="bloco rotina" style="top:${top}px;height:${h}px;background:${a.cor}1A;color:${hexDarken(a.cor,40)};border-left-color:${a.cor}" title="${a.lbl} — rotina fixa">
+        <div class="nome">${a.icon} ${escH(a.lbl)}</div>
+        <div class="tempo">${escH(r.inicio)}—${escH(r.fim)}</div>
+      </div>`;
     });
 
     // Blocos de estudo e de revisão
@@ -1696,7 +1816,7 @@ function render() {
   const sugHtml = pendBanner + `<div class="gerar-card">
     <div class="g-info">
       <h3>Gerar <i>sugestão</i> de estudo</h3>
-      <div class="help">Distribui blocos no período respeitando prioridade (alta → manhã, baixa → noite), meta semanal, limite diário e horários já ocupados. Se as metas excederem a disponibilidade do período, a distribuição é feita proporcionalmente, com peso maior para prioridades altas.</div>
+      <div class="help">Distribui blocos no período respeitando prioridade (alta → manhã, baixa → noite), meta semanal, limite diário, horários já ocupados e a sua rotina fixa (almoço, jantar e academia). Se as metas excederem a disponibilidade do período, a distribuição é feita proporcionalmente, com peso maior para prioridades altas.</div>
       <div class="g-status">${escH(statusLine)}</div>
       ${avisoPeriodo}
     </div>
@@ -1712,6 +1832,7 @@ function render() {
 }
 
 renderDisp();
+renderRotina();
 bindPeriodoInputs();
 render();
 checkAndOpenTransferModal();
