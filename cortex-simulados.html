@@ -283,26 +283,38 @@
   "use strict";
 
   /* ---------------- Storage layer ---------------- */
-  // Usa window.storage (persiste entre sessões). Se indisponível, cai para memória
-  // e avisa, para o app não quebrar no preview. NUNCA localStorage (proibido em artifacts).
+  // Usa localStorage (persiste no navegador, igual ao resto do TrackerMed).
+  // Se indisponível (ex.: aba anônima com storage bloqueado), cai para memória e avisa.
   var PREFIX = "sim:";
-  var hasStore = !!(window.storage && typeof window.storage.set === "function");
+  var hasStore = (function(){
+    try{ var t="__cortex_test__"; window.localStorage.setItem(t,"1"); window.localStorage.removeItem(t); return true; }
+    catch(e){ return false; }
+  })();
   var mem = {}; // fallback
 
   async function sGet(key){
-    if(hasStore){ try{ var r=await window.storage.get(key); return r? r.value : null; }catch(e){ return null; } }
+    if(hasStore){ try{ return window.localStorage.getItem(key); }catch(e){ return null; } }
     return (key in mem)? mem[key] : null;
   }
   async function sSet(key,val){
-    if(hasStore){ try{ await window.storage.set(key,val,false); }catch(e){ console.error(e); } }
+    if(hasStore){ try{ window.localStorage.setItem(key,val); }catch(e){ console.error(e); } }
     else { mem[key]=val; }
   }
   async function sDel(key){
-    if(hasStore){ try{ await window.storage.delete(key,false); }catch(e){} }
+    if(hasStore){ try{ window.localStorage.removeItem(key); }catch(e){} }
     else { delete mem[key]; }
   }
   async function sListKeys(){
-    if(hasStore){ try{ var r=await window.storage.list(PREFIX,false); return (r&&r.keys)? r.keys : []; }catch(e){ return []; } }
+    if(hasStore){
+      try{
+        var out=[];
+        for(var i=0;i<window.localStorage.length;i++){
+          var k=window.localStorage.key(i);
+          if(k && k.indexOf(PREFIX)===0) out.push(k);
+        }
+        return out;
+      }catch(e){ return []; }
+    }
     return Object.keys(mem).filter(function(k){return k.indexOf(PREFIX)===0;});
   }
 
@@ -614,7 +626,7 @@
 
     if(!hasStore){
       var b=$("banner"); b.className="banner show";
-      b.textContent="Modo de preview: o salvamento permanente não está disponível neste ambiente, então os dados ficam só nesta sessão. Abra o artefato em tela cheia no Claude para persistir entre sessões — e use o backup .json por segurança.";
+      b.textContent="O armazenamento do navegador está bloqueado (ex.: aba anônima ou cookies/dados de site desativados), então os registros ficam só nesta sessão e somem ao recarregar. Use o backup .json por segurança.";
       $("storeNote").textContent="armazenamento: sessão";
     } else {
       $("storeNote").textContent="armazenamento: persistente";
