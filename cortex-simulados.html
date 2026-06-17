@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Córtex · Registro de Simulados</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EEF2F4; --surface:#FFFFFF; --surface-2:#F6F8F9;
+    --ink:#16242B; --ink-soft:#54656E; --ink-faint:#86969E;
+    --line:#DBE3E7; --line-strong:#C6D1D6;
+    --brand:#0E5C63; --brand-ink:#0A3F44; --brand-soft:#E3F0F0;
+    --accent:#DD6B33; --accent-ink:#B14F1E;
+    --good:#1C8A57; --good-bg:#E7F4ED;
+    --warn:#A9711A; --warn-bg:#F8F0DF;
+    --bad:#C0392B;  --bad-bg:#FAE8E5;
+    --r:14px; --r-sm:9px;
+    --shadow:0 1px 2px rgba(20,40,50,.05), 0 8px 24px -16px rgba(20,40,50,.22);
+    --mono:"Space Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    --display:"Space Grotesk", system-ui, sans-serif;
+    --body:"Inter", system-ui, -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--body);
+    line-height:1.55; -webkit-font-smoothing:antialiased;
+    padding:clamp(16px,4vw,40px);
+  }
+  .wrap{max-width:1080px; margin:0 auto}
+
+  /* ---------- Header ---------- */
+  .head{margin-bottom:26px}
+  .eyebrow{
+    font-family:var(--mono); font-size:11px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--brand); font-weight:700;
+    display:inline-flex; align-items:center; gap:9px;
+  }
+  .eyebrow::before{content:""; width:22px; height:2px; background:var(--brand); display:inline-block}
+  .head h1{
+    font-family:var(--display); font-weight:700; font-size:clamp(28px,5vw,42px);
+    letter-spacing:-.02em; margin:.28em 0 .1em; line-height:1.05;
+  }
+  .head h1 .dim{color:var(--brand)}
+  .head p{margin:0; max-width:54ch; color:var(--ink-soft); font-size:15px}
+
+  /* ---------- Layout ---------- */
+  .grid{display:grid; grid-template-columns:1.15fr .85fr; gap:18px; align-items:start}
+  @media (max-width:760px){ .grid{grid-template-columns:1fr} }
+
+  .card{
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:var(--r); box-shadow:var(--shadow); padding:22px;
+  }
+  .card-title{
+    font-family:var(--display); font-weight:600; font-size:13px;
+    letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft);
+    margin:0 0 16px; display:flex; align-items:center; gap:8px;
+  }
+  .card-title .tag{font-family:var(--mono); font-size:10px; color:var(--brand); background:var(--brand-soft); padding:2px 7px; border-radius:20px; letter-spacing:.06em}
+
+  /* ---------- Form ---------- */
+  .field{margin-bottom:14px}
+  .field label{display:block; font-size:12.5px; font-weight:600; color:var(--ink); margin-bottom:6px; letter-spacing:.01em}
+  .field .hint{font-weight:400; color:var(--ink-faint); font-size:11.5px}
+  input[type=text], input[type=number]{
+    width:100%; font-family:var(--body); font-size:15px; color:var(--ink);
+    background:var(--surface-2); border:1.5px solid var(--line); border-radius:var(--r-sm);
+    padding:11px 13px; transition:border-color .15s, background .15s;
+  }
+  input::placeholder{color:var(--ink-faint)}
+  input:focus{outline:none; border-color:var(--brand); background:#fff}
+  input:focus-visible{outline:3px solid var(--brand-soft); outline-offset:1px}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+
+  /* live percentage readout */
+  .readout{
+    display:flex; align-items:baseline; gap:10px; margin:4px 0 16px;
+    padding:13px 15px; background:var(--surface-2); border:1px dashed var(--line-strong);
+    border-radius:var(--r-sm);
+  }
+  .readout .big{font-family:var(--mono); font-weight:700; font-size:30px; letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+  .readout .lbl{font-size:12px; color:var(--ink-soft); letter-spacing:.02em}
+  .readout.good .big{color:var(--good)} .readout.warn .big{color:var(--warn)} .readout.bad .big{color:var(--bad)}
+
+  .check{display:flex; gap:10px; align-items:flex-start; padding:12px 0 18px; cursor:pointer}
+  .check input{width:18px; height:18px; margin-top:2px; accent-color:var(--brand); flex:0 0 auto}
+  .check .ct{font-size:13px; color:var(--ink)}
+  .check .cs{font-size:11.5px; color:var(--ink-faint)}
+
+  .btn{
+    font-family:var(--display); font-weight:600; font-size:15px; letter-spacing:.01em;
+    border:none; border-radius:var(--r-sm); padding:13px 20px; cursor:pointer;
+    background:var(--accent); color:#fff; width:100%; transition:transform .08s, background .15s, box-shadow .15s;
+    box-shadow:0 6px 16px -8px rgba(221,107,51,.7);
+  }
+  .btn:hover{background:var(--accent-ink)}
+  .btn:active{transform:translateY(1px)}
+  .btn:focus-visible{outline:3px solid #f2c9b2; outline-offset:2px}
+  .btn.ghost{background:transparent; color:var(--ink-soft); box-shadow:none; border:1.5px solid var(--line-strong); font-size:13px; padding:9px 14px; width:auto}
+  .btn.ghost:hover{background:var(--surface-2); color:var(--ink)}
+  .btn.danger{background:transparent; color:var(--bad); border:1.5px solid var(--bad); box-shadow:none; font-size:13px; padding:9px 14px; width:auto}
+  .btn.danger:hover{background:var(--bad-bg)}
+  .form-actions{display:flex; gap:10px; align-items:stretch}
+  .btn.grow{flex:1; width:auto}
+  .form-actions .btn.ghost{padding:13px 18px}
+
+  .err{color:var(--bad); font-size:12.5px; margin-top:-6px; margin-bottom:10px; min-height:1px}
+
+  /* ---------- Summary panel ---------- */
+  .stats{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--r-sm); overflow:hidden}
+  .stat{background:var(--surface); padding:15px 16px}
+  .stat .n{font-family:var(--mono); font-weight:700; font-size:26px; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1}
+  .stat .k{font-size:11px; color:var(--ink-soft); margin-top:6px; letter-spacing:.02em}
+  .stat.full{grid-column:1 / -1}
+  .stat .n.tint{color:var(--brand)}
+
+  /* ---------- Feedback after submit ---------- */
+  .feedback{margin:18px 0 0; border-radius:var(--r); padding:18px 20px; border:1px solid var(--line); display:none}
+  .feedback.show{display:block; animation:rise .25s ease}
+  @keyframes rise{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+  .feedback.good{background:var(--good-bg); border-color:#bfe2cf}
+  .feedback.bad{background:var(--bad-bg); border-color:#f0cdc7}
+  .feedback.warn{background:var(--warn-bg); border-color:#ecd9ac}
+  .feedback.neutral{background:var(--surface); border-color:var(--line)}
+  .feedback .fb-head{display:flex; align-items:center; gap:11px; margin-bottom:7px}
+  .feedback .arrow{font-family:var(--mono); font-weight:700; font-size:20px; line-height:1}
+  .feedback.good .arrow{color:var(--good)} .feedback.bad .arrow{color:var(--bad)} .feedback.warn .arrow{color:var(--warn)} .feedback.neutral .arrow{color:var(--brand)}
+  .feedback .fb-title{font-family:var(--display); font-weight:600; font-size:15px}
+  .feedback .fb-body{font-size:14px; color:var(--ink); margin:0}
+  .feedback .fb-body b{font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:700}
+  .feedback .fb-actions{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap}
+
+  /* ---------- History ---------- */
+  .hist-head{display:flex; align-items:baseline; justify-content:space-between; margin:34px 0 14px; gap:12px}
+  .hist-head h2{font-family:var(--display); font-weight:700; font-size:20px; letter-spacing:-.01em; margin:0}
+  .hist-head .count{font-family:var(--mono); font-size:12px; color:var(--ink-faint)}
+
+  .empty{
+    background:var(--surface); border:1px dashed var(--line-strong); border-radius:var(--r);
+    padding:40px 28px; text-align:center; color:var(--ink-soft);
+  }
+  .empty .em-t{font-family:var(--display); font-weight:600; font-size:16px; color:var(--ink); margin-bottom:6px}
+
+  .sim{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow); padding:18px 20px; margin-bottom:14px}
+  .sim-top{display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap}
+  .sim-id .m{font-family:var(--display); font-weight:600; font-size:16px; color:var(--ink)}
+  .sim-id .c{font-size:13px; color:var(--ink-soft); margin-top:1px}
+  .sim-trend{display:flex; align-items:center; gap:14px}
+  .spark{display:block}
+  .trend-badge{font-family:var(--mono); font-size:12px; font-weight:700; padding:4px 9px; border-radius:20px; white-space:nowrap; font-variant-numeric:tabular-nums}
+  .trend-badge.good{background:var(--good-bg); color:var(--good)}
+  .trend-badge.bad{background:var(--bad-bg); color:var(--bad)}
+  .trend-badge.warn{background:var(--warn-bg); color:var(--warn)}
+  .trend-badge.neutral{background:var(--surface-2); color:var(--ink-soft)}
+
+  .attempts{margin-top:16px; border-top:1px solid var(--line); padding-top:6px}
+  .att{display:grid; grid-template-columns:auto 1fr auto auto auto; gap:12px; align-items:center; padding:9px 0; border-bottom:1px solid var(--surface-2)}
+  .att:last-child{border-bottom:none}
+  .att .ix{font-family:var(--mono); font-size:11px; color:var(--ink-faint); width:46px}
+  .att .frac{font-family:var(--mono); font-size:13px; color:var(--ink-soft); font-variant-numeric:tabular-nums}
+  .att .bar{height:7px; border-radius:6px; background:var(--surface-2); overflow:hidden; min-width:60px}
+  .att .bar > span{display:block; height:100%; border-radius:6px}
+  .att .pp{font-family:var(--mono); font-size:12.5px; font-weight:700; font-variant-numeric:tabular-nums; text-align:right; width:64px}
+  .att .pp.good{color:var(--good)} .att .pp.bad{color:var(--bad)} .att .pp.warn{color:var(--warn)} .att .pp.neutral{color:var(--ink-faint)}
+  .att .date{font-family:var(--mono); font-size:11px; color:var(--ink-faint); width:78px; text-align:right}
+  .att .pctv{font-family:var(--mono); font-weight:700; font-size:14px; font-variant-numeric:tabular-nums; width:54px; text-align:right}
+  .att .pctv.good{color:var(--good)} .att .pctv.warn{color:var(--warn)} .att .pctv.bad{color:var(--bad)}
+  @media (max-width:560px){
+    .att{grid-template-columns:auto 1fr auto; row-gap:2px}
+    .att .bar, .att .date{display:none}
+  }
+  .sim-foot{margin-top:12px; display:flex; justify-content:flex-end}
+
+  /* ---------- Footer ---------- */
+  .foot{margin-top:30px; padding-top:18px; border-top:1px solid var(--line); display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between}
+  .foot .tools{display:flex; gap:10px; flex-wrap:wrap}
+  .foot .note{font-size:11.5px; color:var(--ink-faint); font-family:var(--mono)}
+  .banner{background:var(--warn-bg); border:1px solid #ecd9ac; color:var(--warn); font-size:12.5px; padding:9px 14px; border-radius:var(--r-sm); margin-bottom:18px; display:none}
+  .banner.show{display:block}
+
+  @media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="head">
+    <span class="eyebrow">Registro de desempenho</span>
+    <h1>Córtex · <span class="dim">Simulados</span></h1>
+    <p>Cada simulado é um sinal vital do estudo. Registre, repita o mesmo tema depois, e veja a curva — subindo, estável ou caindo. O número não mente.</p>
+  </header>
+
+  <div class="banner" id="banner"></div>
+
+  <div class="grid">
+    <!-- FORM -->
+    <section class="card">
+      <h2 class="card-title">Registrar simulado <span class="tag">entrada</span></h2>
+
+      <div class="field">
+        <label for="materia">Matéria</label>
+        <input type="text" id="materia" placeholder="ex.: Cardiologia" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="conteudo">Conteúdo <span class="hint">— o tema específico</span></label>
+        <input type="text" id="conteudo" placeholder="ex.: Insuficiência Cardíaca" autocomplete="off">
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label for="questoes">Questões feitas</label>
+          <input type="number" id="questoes" min="1" max="999" placeholder="20" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="acertos">Acertos</label>
+          <input type="number" id="acertos" min="0" max="999" placeholder="18" inputmode="numeric">
+        </div>
+      </div>
+
+      <div class="readout neutral" id="readout">
+        <span class="big" id="readoutPct">—</span>
+        <span class="lbl">de aproveitamento neste registro</span>
+      </div>
+
+      <label class="check" for="primeira">
+        <input type="checkbox" id="primeira">
+        <span>
+          <span class="ct">É a primeira vez que faço este simulado</span><br>
+          <span class="cs">Marque só na estreia do tema. Nas próximas, deixe desmarcado para o Córtex comparar com a vez anterior.</span>
+        </span>
+      </label>
+
+      <div class="err" id="err"></div>
+      <div class="form-actions">
+        <button class="btn grow" id="salvar">Registrar simulado</button>
+        <button class="btn ghost" id="limpar" type="button">Limpar</button>
+      </div>
+    </section>
+
+    <!-- SUMMARY -->
+    <aside class="card">
+      <h2 class="card-title">Visão geral <span class="tag">painel</span></h2>
+      <div class="stats">
+        <div class="stat"><div class="n tint" id="sTemas">0</div><div class="k">Simulados distintos</div></div>
+        <div class="stat"><div class="n" id="sTentativas">0</div><div class="k">Registros no total</div></div>
+        <div class="stat"><div class="n" id="sQuestoes">0</div><div class="k">Questões respondidas</div></div>
+        <div class="stat"><div class="n" id="sMedia">—</div><div class="k">Aproveitamento médio</div></div>
+        <div class="stat full"><div class="n" id="sMelhor">—</div><div class="k" id="sMelhorK">Melhor marca registrada</div></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- FEEDBACK -->
+  <div class="feedback" id="feedback" role="status" aria-live="polite">
+    <div class="fb-head"><span class="arrow" id="fbArrow">›</span><span class="fb-title" id="fbTitle"></span></div>
+    <p class="fb-body" id="fbBody"></p>
+    <div class="fb-actions" id="fbActions"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="hist-head">
+    <h2>Histórico por tema</h2>
+    <span class="count" id="histCount"></span>
+  </div>
+  <div id="hist"></div>
+
+  <footer class="foot">
+    <div class="tools">
+      <button class="btn ghost" id="exportar">Exportar backup (.json)</button>
+      <button class="btn ghost" id="importarBtn">Importar backup</button>
+      <input type="file" id="importarFile" accept="application/json" hidden>
+      <button class="btn danger" id="apagarTudo">Apagar tudo</button>
+    </div>
+    <span class="note" id="storeNote"></span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- Storage layer ---------------- */
+  // Usa window.storage (persiste entre sessões). Se indisponível, cai para memória
+  // e avisa, para o app não quebrar no preview. NUNCA localStorage (proibido em artifacts).
+  var PREFIX = "sim:";
+  var hasStore = !!(window.storage && typeof window.storage.set === "function");
+  var mem = {}; // fallback
+
+  async function sGet(key){
+    if(hasStore){ try{ var r=await window.storage.get(key); return r? r.value : null; }catch(e){ return null; } }
+    return (key in mem)? mem[key] : null;
+  }
+  async function sSet(key,val){
+    if(hasStore){ try{ await window.storage.set(key,val,false); }catch(e){ console.error(e); } }
+    else { mem[key]=val; }
+  }
+  async function sDel(key){
+    if(hasStore){ try{ await window.storage.delete(key,false); }catch(e){} }
+    else { delete mem[key]; }
+  }
+  async function sListKeys(){
+    if(hasStore){ try{ var r=await window.storage.list(PREFIX,false); return (r&&r.keys)? r.keys : []; }catch(e){ return []; } }
+    return Object.keys(mem).filter(function(k){return k.indexOf(PREFIX)===0;});
+  }
+
+  /* ---------------- Helpers ---------------- */
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+  function slug(m,c){
+    var s=(m+"__"+c).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    return PREFIX + s.trim().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+  }
+  function pct(a,q){ return q>0 ? (a/q*100) : 0; }
+  function fmtPct(p){ return (Math.round(p*10)/10).toFixed(1).replace(".",",") + "%"; }
+  function fmtPP(d){ var v=Math.round(d*10)/10; var s=(v>0?"+":"")+v.toFixed(1).replace(".",","); return s+" pp"; }
+  function band(p){ return p>=80?"good": p>=60?"warn":"bad"; }
+  function bandColor(p){ return p>=80?"var(--good)": p>=60?"var(--warn)":"var(--bad)"; }
+  function fmtDate(ts){ var d=new Date(ts); return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+String(d.getFullYear()).slice(2); }
+
+  /* ---------------- State ---------------- */
+  var data = []; // [{key, materia, conteudo, tentativas:[{q,a,ts}]}]
+
+  async function load(){
+    var keys = await sListKeys();
+    var out = [];
+    for(var i=0;i<keys.length;i++){
+      var raw = await sGet(keys[i]);
+      if(!raw) continue;
+      try{ var obj=JSON.parse(raw); obj.key=keys[i]; out.push(obj); }catch(e){}
+    }
+    // ordena pelo registro mais recente
+    out.sort(function(a,b){
+      var la=a.tentativas[a.tentativas.length-1]?.ts||0, lb=b.tentativas[b.tentativas.length-1]?.ts||0;
+      return new Date(lb)-new Date(la);
+    });
+    data = out;
+  }
+
+  /* ---------------- Sparkline ---------------- */
+  function sparkline(tentativas){
+    var W=132, H=34, pad=4;
+    if(tentativas.length<2){
+      return '<svg class="spark" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" aria-hidden="true">'+
+             '<text x="'+(W/2)+'" y="'+(H/2+4)+'" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="var(--ink-faint)">sem curva ainda</text></svg>';
+    }
+    var ps = tentativas.map(function(t){return pct(t.a,t.q);});
+    var n=ps.length;
+    var xs=function(i){ return pad + i*((W-2*pad)/(n-1)); };
+    var ys=function(v){ return H-pad - (v/100)*(H-2*pad); };
+    var d="";
+    for(var i=0;i<n;i++){ d += (i?"L":"M") + xs(i).toFixed(1) + " " + ys(ps[i]).toFixed(1) + " "; }
+    var trendCol = ps[n-1]>ps[0]?"var(--good)": ps[n-1]<ps[0]?"var(--bad)":"var(--ink-soft)";
+    var dots="";
+    for(var j=0;j<n;j++){ dots += '<circle cx="'+xs(j).toFixed(1)+'" cy="'+ys(ps[j]).toFixed(1)+'" r="2.4" fill="'+bandColor(ps[j])+'"/>'; }
+    return '<svg class="spark" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" aria-hidden="true">'+
+           '<line x1="'+pad+'" y1="'+ys(80).toFixed(1)+'" x2="'+(W-pad)+'" y2="'+ys(80).toFixed(1)+'" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 3"/>'+
+           '<path d="'+d+'" fill="none" stroke="'+trendCol+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+
+           dots+'</svg>';
+  }
+
+  /* ---------------- Render ---------------- */
+  function render(){
+    // summary
+    var temas=data.length, regs=0, qs=0, somaPct=0, melhor=null;
+    data.forEach(function(s){
+      s.tentativas.forEach(function(t){
+        regs++; qs+=t.q; var p=pct(t.a,t.q); somaPct+=p;
+        if(!melhor || p>melhor.p){ melhor={p:p,s:s,t:t}; }
+      });
+    });
+    $("sTemas").textContent=temas;
+    $("sTentativas").textContent=regs;
+    $("sQuestoes").textContent=qs;
+    $("sMedia").textContent = regs? fmtPct(somaPct/regs) : "—";
+    $("sMedia").className = "n" + (regs? " "+band(somaPct/regs).replace("good","").trim():"");
+    if(melhor){
+      $("sMelhor").textContent=fmtPct(melhor.p);
+      $("sMelhor").style.color=bandColor(melhor.p);
+      $("sMelhorK").textContent="Melhor marca · "+melhor.s.materia+" / "+melhor.s.conteudo;
+    } else {
+      $("sMelhor").textContent="—"; $("sMelhorK").textContent="Melhor marca registrada";
+    }
+
+    // history
+    var host=$("hist");
+    $("histCount").textContent = temas? (temas+" tema"+(temas>1?"s":"")) : "";
+    if(!temas){
+      host.innerHTML='<div class="empty"><div class="em-t">Nada registrado ainda</div>Faça seu primeiro simulado ali em cima. A partir do segundo registro do mesmo tema, o Córtex começa a te mostrar a curva.</div>';
+      return;
+    }
+    host.innerHTML = data.map(function(s){
+      var t=s.tentativas, last=t[t.length-1], first=t[0];
+      var pLast=pct(last.a,last.q);
+      // tendência geral (último vs primeiro)
+      var dTotal = pLast - pct(first.a,first.q);
+      var tcls = t.length<2?"neutral": dTotal>0?"good": dTotal<0?"bad":"warn";
+      var ttxt = t.length<2?"estreia": (dTotal>0?"▲ ":dTotal<0?"▼ ":"▬ ")+fmtPP(dTotal)+" no total";
+
+      var rows = t.map(function(at,i){
+        var p=pct(at.a,at.q);
+        var dprev = i>0 ? p-pct(t[i-1].a,t[i-1].q) : null;
+        var dcls = dprev===null?"neutral": dprev>0?"good": dprev<0?"bad":"warn";
+        var dtxt = dprev===null?"—": (dprev>0?"▲":dprev<0?"▼":"▬")+" "+fmtPP(dprev);
+        return '<div class="att">'+
+          '<span class="ix">'+(i===0?"1ª vez":(i+1)+"ª")+'</span>'+
+          '<span class="bar"><span style="width:'+Math.max(3,p).toFixed(0)+'%;background:'+bandColor(p)+'"></span></span>'+
+          '<span class="frac">'+at.a+"/"+at.q+'</span>'+
+          '<span class="pctv '+band(p)+'">'+fmtPct(p)+'</span>'+
+          '<span class="pp '+dcls+'">'+dtxt+'</span>'+
+          '<span class="date">'+fmtDate(at.ts)+'</span>'+
+        '</div>';
+      }).join("");
+
+      return '<article class="sim">'+
+        '<div class="sim-top">'+
+          '<div class="sim-id"><div class="m">'+esc(s.materia)+'</div><div class="c">'+esc(s.conteudo)+'</div></div>'+
+          '<div class="sim-trend">'+sparkline(t)+'<span class="trend-badge '+tcls+'">'+ttxt+'</span></div>'+
+        '</div>'+
+        '<div class="attempts">'+rows+'</div>'+
+        '<div class="sim-foot"><button class="btn danger" data-del="'+esc(s.key)+'">Apagar tema</button></div>'+
+      '</article>';
+    }).join("");
+
+    Array.prototype.forEach.call(host.querySelectorAll("[data-del]"), function(b){
+      b.addEventListener("click", function(){ delTema(b.getAttribute("data-del")); });
+    });
+  }
+
+  /* ---------------- Live readout ---------------- */
+  function updateReadout(){
+    var q=parseInt($("questoes").value,10), a=parseInt($("acertos").value,10);
+    var ro=$("readout"), el=$("readoutPct");
+    if(q>0 && a>=0 && a<=q){
+      var p=pct(a,q); el.textContent=fmtPct(p); ro.className="readout "+band(p);
+    } else { el.textContent="—"; ro.className="readout neutral"; }
+  }
+
+  /* ---------------- Feedback ---------------- */
+  function showFeedback(kind, arrow, title, bodyHTML, actions){
+    var fb=$("feedback");
+    fb.className="feedback show "+kind;
+    $("fbArrow").textContent=arrow;
+    $("fbTitle").textContent=title;
+    $("fbBody").innerHTML=bodyHTML;
+    var act=$("fbActions"); act.innerHTML="";
+    (actions||[]).forEach(function(a){
+      var b=document.createElement("button"); b.className="btn "+(a.cls||"ghost"); b.textContent=a.label;
+      b.addEventListener("click", a.onClick); act.appendChild(b);
+    });
+    fb.scrollIntoView({behavior:"smooth", block:"nearest"});
+  }
+
+  /* ---------------- Save logic ---------------- */
+  async function persistTema(obj){ await sSet(obj.key, JSON.stringify({materia:obj.materia, conteudo:obj.conteudo, tentativas:obj.tentativas})); }
+
+  async function registrar(){
+    var materia=$("materia").value.trim();
+    var conteudo=$("conteudo").value.trim();
+    var q=parseInt($("questoes").value,10);
+    var a=parseInt($("acertos").value,10);
+    var primeira=$("primeira").checked;
+    var err=$("err"); err.textContent="";
+
+    if(!materia){ err.textContent="Preencha a matéria."; $("materia").focus(); return; }
+    if(!conteudo){ err.textContent="Preencha o conteúdo (o tema específico)."; $("conteudo").focus(); return; }
+    if(!(q>0)){ err.textContent="Quantas questões você fez? Coloque um número maior que zero."; $("questoes").focus(); return; }
+    if(isNaN(a) || a<0){ err.textContent="Quantos acertos? Coloque zero ou mais."; $("acertos").focus(); return; }
+    if(a>q){ err.textContent="Acertos não podem passar do total de questões ("+a+" > "+q+")."; $("acertos").focus(); return; }
+
+    var key=slug(materia,conteudo);
+    var raw=await sGet(key);
+    var existing = raw? (function(){ try{var o=JSON.parse(raw); o.key=key; return o;}catch(e){return null;} })() : null;
+    var nova={q:q, a:a, ts:new Date().toISOString()};
+
+    // CASO 1 — marcou "primeira vez" mas já existe histórico -> conflito
+    if(primeira && existing){
+      showFeedback("warn","!","Esse tema já tem histórico",
+        "Você marcou <b>primeira vez</b>, mas <b>"+esc(materia)+" / "+esc(conteudo)+"</b> já tem <b>"+existing.tentativas.length+"</b> registro(s). O que você quer fazer?",
+        [
+          {label:"Registrar como nova tentativa e comparar", cls:"", onClick:async function(){
+            $("primeira").checked=false;
+            existing.tentativas.push(nova); await persistTema(existing);
+            await load(); render(); resultadoComparacao(existing, nova); clearForm();
+          }},
+          {label:"Reiniciar histórico do zero", cls:"danger", onClick:async function(){
+            var novo={key:key, materia:materia, conteudo:conteudo, tentativas:[nova]};
+            await persistTema(novo); await load(); render(); resultadoPrimeira(novo); clearForm();
+          }}
+        ]);
+      return;
+    }
+
+    // CASO 2 — não existe -> salva como ponto de partida (independe do checkbox)
+    if(!existing){
+      var novo={key:key, materia:materia, conteudo:conteudo, tentativas:[nova]};
+      await persistTema(novo); await load(); render(); resultadoPrimeira(novo); clearForm();
+      return;
+    }
+
+    // CASO 3 — existe e não marcou primeira -> nova tentativa + comparação
+    existing.tentativas.push(nova);
+    await persistTema(existing);
+    await load(); render();
+    resultadoComparacao(existing, nova);
+    clearForm();
+  }
+
+  function resultadoPrimeira(tema){
+    var p=pct(tema.tentativas[0].a, tema.tentativas[0].q);
+    showFeedback("neutral","›","Ponto de partida salvo",
+      "Primeiro registro de <b>"+esc(tema.materia)+" / "+esc(tema.conteudo)+"</b>: <b>"+tema.tentativas[0].a+"/"+tema.tentativas[0].q+"</b> ("+fmtPct(p)+"). É a linha de base — quando você refizer esse tema, o Córtex te diz se a curva subiu ou desceu.",[]);
+  }
+
+  function resultadoComparacao(tema, nova){
+    var t=tema.tentativas, prev=t[t.length-2], first=t[0];
+    var pNova=pct(nova.a,nova.q), pPrev=pct(prev.a,prev.q), pFirst=pct(first.a,first.q);
+    var dPrev=pNova-pPrev, dTotal=pNova-pFirst;
+    var n=t.length;
+    var melhorAntes=Math.max.apply(null, t.slice(0,-1).map(function(x){return pct(x.a,x.q);}));
+
+    var kind, arrow, title, body;
+    var ctx = "Em <b>"+esc(tema.materia)+" / "+esc(tema.conteudo)+"</b>, agora na <b>"+n+"ª vez</b>.";
+    var marca = "";
+    if(pNova>melhorAntes){ marca = " E olha só: é a <b>melhor marca</b> que você já fez nesse tema."; }
+
+    if(dPrev>0){
+      kind="good"; arrow="▲"; title="Melhorou";
+      body=ctx+" Você saiu de <b>"+fmtPct(pPrev)+"</b> para <b>"+fmtPct(pNova)+"</b> — subiu <b>"+fmtPP(dPrev)+"</b> em relação à vez anterior ("+nova.a+"/"+nova.q+" contra "+prev.a+"/"+prev.q+")."+
+           (n>2?" Desde a 1ª vez, são <b>"+fmtPP(dTotal)+"</b> acumulados.":"")+marca;
+    } else if(dPrev<0){
+      kind="bad"; arrow="▼"; title="Caiu";
+      body=ctx+" Você foi de <b>"+fmtPct(pPrev)+"</b> para <b>"+fmtPct(pNova)+"</b> — perdeu <b>"+fmtPP(dPrev)+"</b> frente à vez anterior ("+nova.a+"/"+nova.q+" contra "+prev.a+"/"+prev.q+"). "+
+           "Antes de seguir, vale uma revisão dirigida do que errou aqui — queda em tema repetido costuma ser lacuna específica, não falta de estudo geral."+(n>2?" No acumulado desde a 1ª vez você está em <b>"+fmtPP(dTotal)+"</b>.":"");
+    } else {
+      kind="warn"; arrow="▬"; title="Estável";
+      body=ctx+" Mesmo aproveitamento da última vez: <b>"+fmtPct(pNova)+"</b> ("+nova.a+"/"+nova.q+"). Platô em tema repetido geralmente significa que o teto atual já foi atingido com a estratégia de sempre — para subir, mude o tipo de questão ou aprofunde o ponto que trava.";
+    }
+    showFeedback(kind, arrow, title, body, []);
+  }
+
+  function clearForm(){
+    $("materia").value=""; $("conteudo").value=""; $("questoes").value=""; $("acertos").value=""; $("primeira").checked=false;
+    updateReadout(); $("materia").focus();
+  }
+
+  // Limpa só o formulário, para incluir um novo registro. Não toca nos dados salvos.
+  function resetForm(){
+    clearForm();
+    $("err").textContent="";
+    $("feedback").className="feedback"; // esconde o resultado anterior
+  }
+
+  // Apaga TODO o histórico salvo, para recomeçar do zero.
+  async function apagarTudo(){
+    if(!data.length){ showFeedback("neutral","\u203A","Nada para apagar","Ainda não há nenhum simulado registrado.",[]); return; }
+    var total=data.reduce(function(n,s){return n+s.tentativas.length;},0);
+    if(!confirm("Apagar TUDO?\n\nIsso remove os "+data.length+" tema(s) e os "+total+" registro(s), sem volta.\nSe quiser guardar, exporte um backup .json antes.")) return;
+    var keys=await sListKeys();
+    for(var i=0;i<keys.length;i++){ await sDel(keys[i]); }
+    await load(); render(); resetForm();
+    showFeedback("neutral","\u21BA","Tudo zerado","Histórico apagado. Pode começar a registrar os novos simulados do zero.",[]);
+  }
+
+  async function delTema(key){
+    var tema=data.find(function(s){return s.key===key;});
+    var nome = tema? (tema.materia+" / "+tema.conteudo) : "este tema";
+    if(!confirm("Apagar TODO o histórico de \""+nome+"\"? Isso não tem volta.")) return;
+    await sDel(key); await load(); render();
+    $("feedback").className="feedback";
+  }
+
+  /* ---------------- Backup ---------------- */
+  async function exportar(){
+    var dump={ app:"cortex-simulados", version:1, exportedAt:new Date().toISOString(), temas:data.map(function(s){return {materia:s.materia, conteudo:s.conteudo, tentativas:s.tentativas};}) };
+    var blob=new Blob([JSON.stringify(dump,null,2)], {type:"application/json"});
+    var url=URL.createObjectURL(blob); var an=document.createElement("a");
+    an.href=url; an.download="cortex-simulados-"+new Date().toISOString().slice(0,10)+".json";
+    document.body.appendChild(an); an.click(); an.remove(); URL.revokeObjectURL(url);
+  }
+  function importar(file){
+    var rd=new FileReader();
+    rd.onload=async function(){
+      try{
+        var obj=JSON.parse(rd.result);
+        if(!obj.temas || !Array.isArray(obj.temas)) throw 0;
+        for(var i=0;i<obj.temas.length;i++){
+          var t=obj.temas[i]; if(!t.materia||!t.conteudo||!Array.isArray(t.tentativas)) continue;
+          var key=slug(t.materia,t.conteudo);
+          await sSet(key, JSON.stringify({materia:t.materia, conteudo:t.conteudo, tentativas:t.tentativas}));
+        }
+        await load(); render();
+        showFeedback("neutral","↧","Backup importado", "Os temas do arquivo foram restaurados no Córtex.",[]);
+      }catch(e){
+        showFeedback("bad","×","Arquivo inválido","Esse arquivo não parece um backup do Córtex. Use um .json exportado por aqui.",[]);
+      }
+    };
+    rd.readAsText(file);
+  }
+
+  /* ---------------- Wire up ---------------- */
+  function init(){
+    $("questoes").addEventListener("input", updateReadout);
+    $("acertos").addEventListener("input", updateReadout);
+    $("salvar").addEventListener("click", registrar);
+    $("limpar").addEventListener("click", resetForm);
+    $("acertos").addEventListener("keydown", function(e){ if(e.key==="Enter") registrar(); });
+    $("exportar").addEventListener("click", exportar);
+    $("apagarTudo").addEventListener("click", apagarTudo);
+    $("importarBtn").addEventListener("click", function(){ $("importarFile").click(); });
+    $("importarFile").addEventListener("change", function(e){ if(e.target.files[0]) importar(e.target.files[0]); e.target.value=""; });
+
+    if(!hasStore){
+      var b=$("banner"); b.className="banner show";
+      b.textContent="Modo de preview: o salvamento permanente não está disponível neste ambiente, então os dados ficam só nesta sessão. Abra o artefato em tela cheia no Claude para persistir entre sessões — e use o backup .json por segurança.";
+      $("storeNote").textContent="armazenamento: sessão";
+    } else {
+      $("storeNote").textContent="armazenamento: persistente";
+    }
+
+    load().then(render);
+  }
+  if(document.readyState==="loading"){ document.addEventListener("DOMContentLoaded", init); } else { init(); }
+})();
+</script>
+</body>
+</html>
