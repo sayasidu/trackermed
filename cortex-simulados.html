@@ -1,15 +1,20 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
+<link rel="icon" type="image/png" href="favicon.png">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Córtex · Registro de Simulados</title>
+<title>Córtex · Simulados · TrackerMed</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<script src="theme.js" defer></script>
 <style>
-  :root{
-    --bg:#EEF2F4; --surface:#FFFFFF; --surface-2:#F6F8F9;
+  /* Córtex usa sua própria identidade visual, mas escopada em .cortex para não
+     colidir com o shell do TrackerMed (app.css). As cores reagem ao modo escuro. */
+  .cortex{
+    --surface:#FFFFFF; --surface-2:#F6F8F9;
     --ink:#16242B; --ink-soft:#54656E; --ink-faint:#86969E;
     --line:#DBE3E7; --line-strong:#C6D1D6;
     --brand:#0E5C63; --brand-ink:#0A3F44; --brand-soft:#E3F0F0;
@@ -22,14 +27,25 @@
     --mono:"Space Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
     --display:"Space Grotesk", system-ui, sans-serif;
     --body:"Inter", system-ui, -apple-system, sans-serif;
+    font-family:var(--body); color:var(--ink); line-height:1.55;
+    -webkit-font-smoothing:antialiased;
   }
-  *{box-sizing:border-box}
-  html,body{margin:0}
-  body{
-    background:var(--bg); color:var(--ink); font-family:var(--body);
-    line-height:1.55; -webkit-font-smoothing:antialiased;
-    padding:clamp(16px,4vw,40px);
+  [data-theme="dark"] .cortex{
+    --surface:#161D40; --surface-2:#11173A;
+    --ink:#F1EEE5; --ink-soft:#C8CCDE; --ink-faint:#8B8FA8;
+    --line:rgba(241,238,229,.12); --line-strong:rgba(241,238,229,.22);
+    --brand:#54C7CE; --brand-ink:#A7E3E6; --brand-soft:rgba(84,199,206,.14);
+    --accent:#E8804A; --accent-ink:#F0A074;
+    --good:#4FD08B; --good-bg:rgba(31,194,138,.14);
+    --warn:#E0B65C; --warn-bg:rgba(244,167,47,.14);
+    --bad:#FF7B6E;  --bad-bg:rgba(255,91,91,.14);
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -16px rgba(0,0,0,.6);
   }
+  [data-theme="dark"] .cortex .feedback.good{border-color:rgba(31,194,138,.3)}
+  [data-theme="dark"] .cortex .feedback.bad{border-color:rgba(255,91,91,.3)}
+  [data-theme="dark"] .cortex .feedback.warn{border-color:rgba(244,167,47,.3)}
+  [data-theme="dark"] .cortex .banner{border-color:rgba(244,167,47,.3)}
+  [data-theme="dark"] .cortex input:focus{background:var(--surface-2)}
   .wrap{max-width:1080px; margin:0 auto}
 
   /* ---------- Header ---------- */
@@ -186,6 +202,27 @@
 </style>
 </head>
 <body>
+<div class="app">
+<aside class="sidebar">
+<div class="logo">Tracker<em>Med</em></div>
+<a href="index.html" class="nav-item">Home</a>
+<a href="planos.html" class="nav-item">Planos</a>
+<a href="disciplinas.html" class="nav-item">Disciplinas</a>
+<a href="plannerstudy.html" class="nav-item">Planejamento</a>
+<a href="revisoes.html" class="nav-item">Revisões</a>
+<a href="historico.html" class="nav-item">Histórico</a>
+<a href="erros.html" class="nav-item">Caderno de erros</a>
+<a href="dashboard.html" class="nav-item">Estatísticas</a>
+<a href="simulados.html" class="nav-item">Simulados</a>
+<a href="cortex-simulados.html" class="nav-item active">Córtex</a>
+<div class="sidebar-foot">v0.1 · pessoal</div>
+</aside>
+<main class="main">
+<div class="topbar">
+  <div class="crumb">Home <i>›</i> Córtex</div>
+  <div class="topbar-right"><button class="theme-toggle" type="button" aria-label="Alternar tema"><span class="ico">☾</span><span class="lbl">Escuro</span></button><span class="pill" id="totalPill">0 registros</span></div>
+</div>
+<div class="cortex">
 <div class="wrap">
   <header class="head">
     <span class="eyebrow">Registro de desempenho</span>
@@ -277,32 +314,47 @@
     <span class="note" id="storeNote"></span>
   </footer>
 </div>
+</div>
+</main>
+</div>
 
 <script>
 (function(){
   "use strict";
 
   /* ---------------- Storage layer ---------------- */
-  // Usa window.storage (persiste entre sessões). Se indisponível, cai para memória
-  // e avisa, para o app não quebrar no preview. NUNCA localStorage (proibido em artifacts).
+  // Usa localStorage (persiste no navegador, igual ao resto do TrackerMed).
+  // Se indisponível (ex.: aba anônima com storage bloqueado), cai para memória e avisa.
   var PREFIX = "sim:";
-  var hasStore = !!(window.storage && typeof window.storage.set === "function");
+  var hasStore = (function(){
+    try{ var t="__cortex_test__"; window.localStorage.setItem(t,"1"); window.localStorage.removeItem(t); return true; }
+    catch(e){ return false; }
+  })();
   var mem = {}; // fallback
 
   async function sGet(key){
-    if(hasStore){ try{ var r=await window.storage.get(key); return r? r.value : null; }catch(e){ return null; } }
+    if(hasStore){ try{ return window.localStorage.getItem(key); }catch(e){ return null; } }
     return (key in mem)? mem[key] : null;
   }
   async function sSet(key,val){
-    if(hasStore){ try{ await window.storage.set(key,val,false); }catch(e){ console.error(e); } }
+    if(hasStore){ try{ window.localStorage.setItem(key,val); }catch(e){ console.error(e); } }
     else { mem[key]=val; }
   }
   async function sDel(key){
-    if(hasStore){ try{ await window.storage.delete(key,false); }catch(e){} }
+    if(hasStore){ try{ window.localStorage.removeItem(key); }catch(e){} }
     else { delete mem[key]; }
   }
   async function sListKeys(){
-    if(hasStore){ try{ var r=await window.storage.list(PREFIX,false); return (r&&r.keys)? r.keys : []; }catch(e){ return []; } }
+    if(hasStore){
+      try{
+        var out=[];
+        for(var i=0;i<window.localStorage.length;i++){
+          var k=window.localStorage.key(i);
+          if(k && k.indexOf(PREFIX)===0) out.push(k);
+        }
+        return out;
+      }catch(e){ return []; }
+    }
     return Object.keys(mem).filter(function(k){return k.indexOf(PREFIX)===0;});
   }
 
@@ -373,6 +425,7 @@
     });
     $("sTemas").textContent=temas;
     $("sTentativas").textContent=regs;
+    var pill=$("totalPill"); if(pill){ pill.textContent = regs + " registro" + (regs!==1?"s":""); }
     $("sQuestoes").textContent=qs;
     $("sMedia").textContent = regs? fmtPct(somaPct/regs) : "—";
     $("sMedia").className = "n" + (regs? " "+band(somaPct/regs).replace("good","").trim():"");
@@ -614,7 +667,7 @@
 
     if(!hasStore){
       var b=$("banner"); b.className="banner show";
-      b.textContent="Modo de preview: o salvamento permanente não está disponível neste ambiente, então os dados ficam só nesta sessão. Abra o artefato em tela cheia no Claude para persistir entre sessões — e use o backup .json por segurança.";
+      b.textContent="O armazenamento do navegador está bloqueado (ex.: aba anônima ou cookies/dados de site desativados), então os registros ficam só nesta sessão e somem ao recarregar. Use o backup .json por segurança.";
       $("storeNote").textContent="armazenamento: sessão";
     } else {
       $("storeNote").textContent="armazenamento: persistente";
