@@ -31,6 +31,11 @@
 .empty button { margin-top: 18px; background: var(--cobalt); color: #fff; border: none; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
 .top-stats { display: flex; gap: 28px; text-align: right; }
 .top-stats .val { font-family: 'Fraunces', serif; font-size: 36px; letter-spacing: -0.03em; font-weight: 500; line-height: 1; }
+.sem-context { background: var(--paper); border: 1px solid var(--line); border-left: 3px solid var(--cobalt); padding: 12px 16px; margin-top: 22px; font-size: 13px; color: var(--ink2); }
+.sem-context.none { border-left-color: var(--amber); }
+.sem-context b { color: var(--ink); font-weight: 600; }
+.sem-context a { color: var(--cobalt); text-decoration: none; font-weight: 600; }
+.sem-context a:hover { text-decoration: underline; }
 
 /* Modal */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(10,19,48,0.55); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
@@ -115,6 +120,7 @@
     <div><div class="kicker">Meta estudo</div><div class="val" style="color:var(--cobalt)" id="statMeta">0<span style="font-size:16px;color:var(--muted)">h</span></div></div>
   </div>
 </div>
+<div id="semBanner"></div>
 <div class="section" id="listaContainer">
   <!-- rendered by JS -->
 </div>
@@ -430,9 +436,19 @@ function horasDaAula(a) {
 function fmtData(d) { if(!d) return ''; const [y,m,dd]=d.split('-'); return `${dd}/${m}/${y.slice(2)}`; }
 function diasAte(d) { if(!d) return null; const t=new Date(d+'T12:00'); const n=new Date(); n.setHours(0,0,0,0); return Math.round((t-n)/86400000); }
 
+function semCtxHTML() {
+  const id = localStorage.getItem('trackermed.semestreAtivo.v1');
+  let planos = [];
+  try { planos = JSON.parse(localStorage.getItem('trackermed.planos.v1') || '[]'); } catch {}
+  const p = id ? planos.find(x => x.id === id) : null;
+  if (!p) return `<div class="sem-context none">Nenhum semestre ativo — <a href="planos.html">crie ou ative um semestre em Planos</a> pra organizar as disciplinas por período. As disciplinas abaixo entram no semestre que você ativar.</div>`;
+  return `<div class="sem-context">📚 Disciplinas do semestre: <b>${esc(p.nome)}</b> · <a href="planos.html">trocar de semestre</a></div>`;
+}
+
 function render() {
   const list = load();
   const cont = document.getElementById('listaContainer');
+  document.getElementById('semBanner').innerHTML = semCtxHTML();
   document.getElementById('statusPill').textContent = `${list.length} disciplina${list.length!==1?'s':''}`;
   const aulasTotal = list.reduce((s,d)=>s + (d.aulas||[]).reduce((a,au)=>a+horasDaAula(au),0), 0);
   const metaTotal = list.reduce((s,d)=>s+(d.metaHorasSemana||0), 0);

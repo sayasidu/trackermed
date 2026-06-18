@@ -281,6 +281,11 @@
 .pend-banner .pb-msg b { color: #6B4500; }
 .pend-banner button { background: #FB8C00; color: #fff; border: none; padding: 8px 14px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; letter-spacing: 0.04em; text-transform: uppercase; }
 .pend-banner button:hover { background: #EF6C00; }
+.sem-context { background: var(--paper); border: 1px solid var(--line); border-left: 3px solid var(--cobalt); padding: 12px 16px; margin-bottom: 20px; font-size: 13px; color: var(--ink2); }
+.sem-context.none { border-left-color: var(--amber); }
+.sem-context b { color: var(--ink); font-weight: 600; }
+.sem-context a { color: var(--cobalt); text-decoration: none; font-weight: 600; }
+.sem-context a:hover { text-decoration: underline; }
 </style></head><body>
 <div class="app">
 <aside class="sidebar">
@@ -308,6 +313,8 @@
     <button class="btn-ghost" onclick="mudarSemana(1)">seguinte ›</button>
   </div>
 </div>
+
+<div id="semBanner"></div>
 
 <div class="stat-row">
   <div class="stat-card"><div class="lbl">Horas planejadas</div><div class="val" id="statPlan">0<sup>h00m</sup></div><div class="sub" id="statPlanSub">na semana toda</div></div>
@@ -1832,6 +1839,19 @@ function render() {
   renderHistPanel();
 }
 
+function renderSemBanner() {
+  const id = localStorage.getItem('trackermed.semestreAtivo.v1');
+  let planos = [];
+  try { planos = JSON.parse(localStorage.getItem('trackermed.planos.v1') || '[]'); } catch {}
+  const p = id ? planos.find(x => x.id === id) : null;
+  const el = document.getElementById('semBanner');
+  if (!el) return;
+  el.innerHTML = p
+    ? `<div class="sem-context">📅 Planejamento do semestre: <b>${escH(p.nome)}</b> · <a href="planos.html">trocar de semestre</a></div>`
+    : `<div class="sem-context none">Nenhum semestre ativo — <a href="planos.html">crie ou ative um semestre em Planos</a>. As disciplinas, a disponibilidade e o cronograma abaixo pertencem ao semestre ativo.</div>`;
+}
+
+renderSemBanner();
 renderDisp();
 renderRotina();
 bindPeriodoInputs();
