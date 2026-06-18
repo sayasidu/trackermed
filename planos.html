@@ -38,6 +38,27 @@
 .add-more button { background: transparent; border: 1.5px dashed var(--line); color: var(--ink2); padding: 14px 24px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; width: 100%; transition: all .15s; }
 .add-more button:hover { border-color: var(--cobalt); color: var(--cobalt); border-style: solid; }
 
+/* Semestre: ativo / arquivo */
+.plano-card.is-ativo { box-shadow: 0 0 0 1px var(--mint) inset; }
+.plano-card.is-fechado { opacity: 0.72; }
+.sem-badge { font-size: 10px; letter-spacing: 0.1em; font-weight: 700; padding: 2px 7px; margin-left: 8px; text-transform: uppercase; vertical-align: middle; }
+.sem-badge.ativo { background: var(--mint); color: #06351f; }
+.sem-badge.fechado { background: var(--line); color: var(--muted); }
+.sem-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--mint); padding: 16px 20px; margin-bottom: 16px; flex-wrap: wrap; }
+.sem-banner.none { border-left-color: var(--amber); font-size: 14px; }
+.sem-banner .sb-lbl { font-size: 11px; letter-spacing: 0.16em; color: var(--muted); font-weight: 700; text-transform: uppercase; }
+.sem-banner .sb-nome { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; letter-spacing: -0.02em; margin-top: 2px; }
+.sem-banner .sb-meta { font-size: 12px; color: var(--ink2); margin-top: 4px; }
+.sem-banner .sb-close { background: var(--ink); color: var(--paper); border: none; padding: 11px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.sem-banner .sb-close:hover { background: var(--cobalt); }
+.sem-ctrl { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: var(--paper); border: 1px solid var(--line); padding: 14px 18px; margin-bottom: 28px; font-size: 13px; color: var(--ink2); flex-wrap: wrap; }
+.sem-ctrl.ativo { border-left: 3px solid var(--mint); }
+.sem-ctrl.fechado { border-left: 3px solid var(--muted); }
+.sem-ctrl b { color: var(--ink); }
+.sem-ctrl button { background: var(--ink); color: var(--paper); border: none; padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.sem-ctrl button:hover { background: var(--cobalt); }
+.sem-ctrl.fechado button { background: var(--mint); color: #06351f; }
+
 /* Detalhe do plano */
 #detalheView { display: none; }
 #detalheView.show { display: block; }
@@ -239,6 +260,92 @@ function save(list) { localStorage.setItem(KEY, JSON.stringify(list)); }
 function uid() { return 'p-' + Date.now() + '-' + Math.random().toString(36).slice(2,6); }
 function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+/* ---------- Semestres: ativo + arquivo ---------- */
+const SEM_KEY   = 'trackermed.semestres.v1';      // { [idDoSemestre]: snapshot das chaves vivas }
+const SEM_ATIVO = 'trackermed.semestreAtivo.v1';  // id do plano semestre ativo
+// Chaves "vivas": sempre contêm os dados do semestre ATIVO. As outras páginas leem/gravam aqui.
+const LIVE_KEYS = {
+  disciplinas: 'trackermed.disciplinas.v1',
+  plan:        'trackermed.plan.v1',
+  periodo:     'trackermed.planner.periodo.v1',
+  rotina:      'trackermed.planner.rotina.v1',
+  disp:        'planejamento.disponibilidade',
+  excluidas:   'trackermed.planner.excluidas.v1',
+  plannerHist: 'trackermed.planner.historico.v1',
+  pend:        'trackermed.planner.pendDispensados.v1'
+};
+function semStore() { try { return JSON.parse(localStorage.getItem(SEM_KEY) || '{}'); } catch { return {}; } }
+function semStoreSave(o) { localStorage.setItem(SEM_KEY, JSON.stringify(o)); }
+function semAtivo() { return localStorage.getItem(SEM_ATIVO) || null; }
+function setSemAtivo(id) { if (id) localStorage.setItem(SEM_ATIVO, id); else localStorage.removeItem(SEM_ATIVO); }
+function snapshotLive() {
+  const s = {};
+  for (const k in LIVE_KEYS) { const v = localStorage.getItem(LIVE_KEYS[k]); if (v != null) s[k] = v; }
+  return s;
+}
+function restoreLive(snap) {
+  for (const k in LIVE_KEYS) {
+    const key = LIVE_KEYS[k];
+    if (snap && snap[k] != null) localStorage.setItem(key, snap[k]);
+    else localStorage.removeItem(key);
+  }
+}
+
+// Na 1ª carga, adota os dados globais que já existem como o primeiro semestre ativo.
+function migrarSemestres() {
+  if (semAtivo()) return;
+  let list = load();
+  const abertos = list.filter(p => p.tipo === 'semestre' && p.status !== 'fechado');
+  let alvo;
+  if (abertos.length) {
+    alvo = abertos[abertos.length - 1];
+  } else {
+    const temDados = (localStorage.getItem(LIVE_KEYS.disciplinas) || '[]') !== '[]';
+    if (!list.some(p => p.tipo === 'semestre') && !temDados) return; // nada a migrar ainda
+    alvo = { id: uid(), tipo: 'semestre', nome: 'Meu semestre', status: 'aberto' };
+    list.push(alvo); save(list);
+  }
+  setSemAtivo(alvo.id);
+}
+
+// Torna um semestre o ativo: arquiva o atual e carrega o snapshot do alvo (ou zera, se novo).
+function ativarSemestre(id) {
+  const cur = semAtivo();
+  const store = semStore();
+  if (cur && cur !== id) store[cur] = snapshotLive();
+  if (cur !== id) {
+    restoreLive(store[id] || null);
+    if (store[id]) delete store[id];
+  }
+  semStoreSave(store);
+  setSemAtivo(id);
+  // Reabre, caso estivesse fechado.
+  let list = load(), mudou = false;
+  list = list.map(p => {
+    if (p.id === id && p.status === 'fechado') { mudou = true; const c = { ...p, status: 'aberto' }; delete c.fechadoEm; return c; }
+    return p;
+  });
+  if (mudou) save(list);
+}
+
+// Fecha o semestre: arquiva os dados vivos, marca como fechado e zera as chaves vivas.
+function fecharSemestre(id) {
+  const store = semStore();
+  store[id] = snapshotLive();
+  semStoreSave(store);
+  restoreLive(null);
+  setSemAtivo(null);
+  let list = load();
+  list = list.map(p => p.id === id ? { ...p, status: 'fechado', fechadoEm: new Date().toISOString().slice(0,10) } : p);
+  save(list);
+}
+
+// Snapshot de um semestre, esteja ele ativo (chaves vivas) ou arquivado.
+function snapshotDe(id) {
+  if (semAtivo() === id) return snapshotLive();
+  return semStore()[id] || null;
+}
+
 let editingId = null;
 
 function toggleTipo() {
@@ -298,6 +405,9 @@ function salvar() {
   if (!nome) { alert('Dá um nome pro plano antes de salvar.'); return; }
   let p = { id: editingId || uid(), tipo, nome };
   if (tipo === 'semestre') {
+    const antigo = editingId ? load().find(x => x.id === editingId) : null;
+    p.status = antigo?.status || 'aberto';
+    if (antigo?.fechadoEm) p.fechadoEm = antigo.fechadoEm;
     p.inicio = document.getElementById('sInicio').value;
     p.fim = document.getElementById('sFim').value;
     if (p.inicio && p.fim && p.inicio > p.fim) {
@@ -325,18 +435,61 @@ function salvar() {
   if (editingId) list = list.map(x => x.id === editingId ? p : x);
   else list.push(p);
   save(list);
+  // Primeiro semestre cadastrado (ou recém-aberto após fechar outro) vira o ativo.
+  // Como não há ativo, as chaves vivas atuais (vazias após fechar, ou os dados legados
+  // na 1ª vez) ficam vinculadas a ele — sem sobrescrever nada.
+  if (!editingId && tipo === 'semestre' && !semAtivo()) setSemAtivo(p.id);
   fechar();
   refreshView();
 }
 
+// Remove um plano e limpa vestígios de semestre (snapshot arquivado e ponteiro de ativo).
+function apagarPlano(id) {
+  save(load().filter(x => x.id !== id));
+  const store = semStore();
+  if (store[id]) { delete store[id]; semStoreSave(store); }
+  if (semAtivo() === id) { setSemAtivo(null); restoreLive(null); }
+}
+
 function apagar() {
   if (!editingId) return;
-  if (!confirm('Apagar esse plano?')) return;
+  const ativo = semAtivo() === editingId;
+  const msg = ativo
+    ? 'Apagar o semestre ATIVO? As disciplinas e o planejamento dele serão removidos junto.'
+    : 'Apagar esse plano?';
+  if (!confirm(msg)) return;
   const wasOpen = location.hash.slice(1) === editingId;
-  save(load().filter(x => x.id !== editingId));
+  apagarPlano(editingId);
   fechar();
   if (wasOpen) location.hash = '';
   else refreshView();
+}
+
+// Fecha o semestre ativo e já abre o modal pra criar o próximo do zero.
+function fecharEAbrirNovo(id) {
+  if (!confirm('Fechar este semestre? Ele fica só-leitura e você vai configurar um novo do zero — disciplinas e planejamento serão zerados (erros, simulados e histórico continuam).')) return;
+  fecharSemestre(id);
+  location.hash = '';
+  showLista();
+  abrirNovo();
+  document.getElementById('modalTitle').innerHTML = 'Abrir <i>novo semestre</i>';
+  document.getElementById('modalSub').textContent = 'Configure o semestre que começa agora. As disciplinas e o planejamento começam zerados.';
+}
+
+function trocarAtivo(id) {
+  const p = load().find(x => x.id === id);
+  if (!p) return;
+  if (!confirm(`Tornar “${p.nome}” o semestre ativo? O semestre atual será arquivado e você passa a editar este.`)) return;
+  ativarSemestre(id);
+  refreshView();
+}
+
+function reabrirSemestre(id) {
+  const p = load().find(x => x.id === id);
+  if (!p) return;
+  if (!confirm(`Reabrir “${p.nome}” como semestre ativo? Ele volta a ser editável e o semestre atual é arquivado.`)) return;
+  ativarSemestre(id);
+  refreshView();
 }
 
 function fmtData(d) { if(!d) return '—'; const [y,m,dd]=d.split('-'); return `${parseInt(dd)} ${MESES[parseInt(m)-1]} ${y.slice(2)}`; }
@@ -347,6 +500,67 @@ function diasAte(d) {
   const t = new Date(y, m-1, dd); t.setHours(0,0,0,0);
   const n = new Date(); n.setHours(0,0,0,0);
   return Math.round((t-n)/86400000);
+}
+
+function bannerAtivoHTML() {
+  const id = semAtivo();
+  if (!id) {
+    const temSemestre = load().some(p => p.tipo === 'semestre' && p.status !== 'fechado');
+    return `<div class="sem-banner none">
+      <div><b>Nenhum semestre ativo.</b> ${temSemestre ? 'Escolha um semestre aberto abaixo e clique em ★ pra ativá-lo.' : 'Cadastre um semestre pra organizar disciplinas e planejamento por período.'}</div>
+    </div>`;
+  }
+  const p = load().find(x => x.id === id);
+  if (!p) return '';
+  let nDisc = 0;
+  try { nDisc = JSON.parse(localStorage.getItem(LIVE_KEYS.disciplinas) || '[]').length; } catch {}
+  return `<div class="sem-banner">
+    <div class="sb-info">
+      <div class="sb-lbl">Semestre ativo</div>
+      <div class="sb-nome">${esc(p.nome)}</div>
+      <div class="sb-meta">${nDisc} disciplina${nDisc!==1?'s':''} · disciplinas e planejamento que você cadastra pertencem a ele</div>
+    </div>
+    <button class="sb-close" onclick="fecharEAbrirNovo('${p.id}')">Fechar semestre e abrir novo →</button>
+  </div>`;
+}
+
+// Controle de ciclo de vida exibido no detalhe de um semestre.
+function semControlHTML(p) {
+  if (p.tipo !== 'semestre') return '';
+  if (p.status === 'fechado') {
+    return `<div class="sem-ctrl fechado">
+      <div><b>Semestre fechado · só-leitura.</b> Mostra o que estava cadastrado quando foi encerrado${p.fechadoEm ? ' em ' + fmtData(p.fechadoEm) : ''}.</div>
+      <button onclick="reabrirSemestre('${p.id}')">Reabrir como ativo</button>
+    </div>` + arquivoHTML(p.id);
+  }
+  if (semAtivo() === p.id) {
+    return `<div class="sem-ctrl ativo">
+      <div><b>● Semestre ativo.</b> As disciplinas e o planejamento que você cadastra pertencem a este semestre.</div>
+      <button onclick="fecharEAbrirNovo('${p.id}')">Fechar e abrir novo →</button>
+    </div>`;
+  }
+  return `<div class="sem-ctrl">
+    <div>Este semestre está aberto, mas não é o ativo. Ative-o pra editar as disciplinas e o planejamento dele.</div>
+    <button onclick="trocarAtivo('${p.id}')">★ Tornar ativo</button>
+  </div>`;
+}
+
+// Render só-leitura das disciplinas arquivadas de um semestre.
+function arquivoHTML(id) {
+  const snap = snapshotDe(id);
+  let discs = [];
+  try { discs = JSON.parse((snap && snap.disciplinas) || '[]'); } catch {}
+  if (!discs.length) return `<div class="det-no-mat" style="margin-top:24px"><p>Nenhuma disciplina ficou arquivada neste semestre.</p></div>`;
+  const cards = discs.map((d, i) => `
+    <div class="det-mat-card">
+      <div class="det-mat-num">Disciplina ${String(i+1).padStart(2,'0')}${d.cor ? ` · <span style="color:${esc(d.cor)}">●</span>` : ''}</div>
+      <div class="det-mat-nome">${esc(d.nome || 'Sem nome')}</div>
+      <div class="det-mat-vazio">${(d.aulas||[]).length} aula(s) · ${(d.provas||[]).length} prova(s) · meta ${(d.metaHorasSemana||0)}h/sem</div>
+    </div>`).join('');
+  return `<div style="margin-top:28px">
+    <div class="det-section-title">Disciplinas arquivadas · ${discs.length}</div>
+    <div class="det-materias">${cards}</div>
+  </div>`;
 }
 
 function render() {
@@ -388,14 +602,21 @@ function render() {
     }
 
     const tipoLabel = p.tipo === 'residencia' ? '🏥 Residência' : (p.tipo === 'enamed' ? '📋 ENAMED' : '🎓 Semestre');
+    const isAtivo = p.tipo === 'semestre' && semAtivo() === p.id;
+    const isFechado = p.tipo === 'semestre' && p.status === 'fechado';
+    const badge = isAtivo ? '<span class="sem-badge ativo">● Ativo</span>'
+                : isFechado ? '<span class="sem-badge fechado">Fechado</span>' : '';
+    const ativarBtn = (p.tipo === 'semestre' && !isAtivo && !isFechado)
+      ? `<button onclick="event.stopPropagation(); trocarAtivo('${p.id}')" title="Tornar ativo">★</button>` : '';
 
-    return `<div class="plano-card ${p.tipo}" onclick="clicarCard(event, '${p.id}')">
+    return `<div class="plano-card ${p.tipo}${isAtivo ? ' is-ativo' : ''}${isFechado ? ' is-fechado' : ''}" onclick="clicarCard(event, '${p.id}')">
       <div class="plano-actions">
+        ${ativarBtn}
         <button onclick="event.stopPropagation(); abrirEdit('${p.id}')" title="Editar">✎</button>
-        <button class="del" onclick="event.stopPropagation(); if(confirm('Apagar esse plano?')){ save(load().filter(x=>x.id!=='${p.id}')); render(); }" title="Apagar">×</button>
+        <button class="del" onclick="event.stopPropagation(); if(confirm('Apagar esse plano?')){ apagarPlano('${p.id}'); render(); }" title="Apagar">×</button>
       </div>
       <div>
-        <div class="tipo">${tipoLabel}</div>
+        <div class="tipo">${tipoLabel}${badge}</div>
         <h3>${esc(p.nome)}</h3>
         <div class="meta">${metaInfo}</div>
         ${materias ? `<div class="plano-materias">${materias}</div>` : ''}
@@ -404,7 +625,7 @@ function render() {
     </div>`;
   }).join('');
 
-  cont.innerHTML = cards + `<div class="add-more"><button onclick="abrirNovo()">+ Adicionar outro plano</button></div>`;
+  cont.innerHTML = bannerAtivoHTML() + cards + `<div class="add-more"><button onclick="abrirNovo()">+ Adicionar outro plano</button></div>`;
 }
 
 function clicarCard(ev, id) {
@@ -477,6 +698,7 @@ function renderDetalhe(id) {
       </div>
       <div class="det-countdown ${p.tipo}">${countdown}</div>
     </div>
+    ${semControlHTML(p)}
     <div>
       <div class="det-section-title">Matérias${mats.length ? ` · ${mats.length}` : ''}</div>
       ${matsHTML}
@@ -526,6 +748,7 @@ function refreshView() {
   else showLista();
 }
 
+migrarSemestres();
 window.addEventListener('hashchange', refreshView);
 
 document.addEventListener('keydown', e => {
