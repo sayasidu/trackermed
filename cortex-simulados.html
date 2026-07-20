@@ -69,8 +69,10 @@
 
   .card{
     background:var(--surface); border:1px solid var(--line);
-    border-radius:var(--r); box-shadow:var(--shadow); padding:22px;
+    border-radius:var(--r); box-shadow:var(--sh-1); padding:22px;
+    transition:box-shadow .25s var(--ease), border-color .2s var(--ease);
   }
+  .card:hover{box-shadow:var(--sh-2)}
   .card-title{
     font-family:var(--display); font-weight:600; font-size:13px;
     letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft);
@@ -85,10 +87,10 @@
   input[type=text], input[type=number]{
     width:100%; font-family:var(--body); font-size:15px; color:var(--ink);
     background:var(--surface-2); border:1.5px solid var(--line); border-radius:var(--r-sm);
-    padding:11px 13px; transition:border-color .15s, background .15s;
+    padding:11px 13px; transition:border-color .2s var(--ease), background .2s var(--ease), box-shadow .2s var(--ease);
   }
   input::placeholder{color:var(--ink-faint)}
-  input:focus{outline:none; border-color:var(--brand); background:#fff}
+  input:focus{outline:none; border-color:var(--brand); background:#fff; box-shadow:0 0 0 3px var(--brand-soft)}
   input:focus-visible{outline:3px solid var(--brand-soft); outline-offset:1px}
   .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
 
@@ -98,7 +100,7 @@
     padding:13px 15px; background:var(--surface-2); border:1px dashed var(--line-strong);
     border-radius:var(--r-sm);
   }
-  .readout .big{font-family:var(--mono); font-weight:700; font-size:30px; letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+  .readout .big{font-family:var(--mono); font-weight:700; font-size:30px; letter-spacing:-.02em; font-variant-numeric:tabular-nums; transition:color .25s var(--ease)}
   .readout .lbl{font-size:12px; color:var(--ink-soft); letter-spacing:.02em}
   .readout.good .big{color:var(--good)} .readout.warn .big{color:var(--warn)} .readout.bad .big{color:var(--bad)}
 
@@ -161,13 +163,14 @@
   }
   .empty .em-t{font-family:var(--display); font-weight:600; font-size:16px; color:var(--ink); margin-bottom:6px}
 
-  .sim{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow); padding:18px 20px; margin-bottom:14px}
+  .sim{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--sh-1); padding:18px 20px; margin-bottom:14px; transition:transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease)}
+  .sim:hover{transform:translateY(-3px); box-shadow:var(--sh-2); border-color:var(--brand)}
   .sim-top{display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap}
   .sim-id .m{font-family:var(--display); font-weight:600; font-size:16px; color:var(--ink)}
   .sim-id .c{font-size:13px; color:var(--ink-soft); margin-top:1px}
   .sim-trend{display:flex; align-items:center; gap:14px}
   .spark{display:block}
-  .trend-badge{font-family:var(--mono); font-size:12px; font-weight:700; padding:4px 9px; border-radius:20px; white-space:nowrap; font-variant-numeric:tabular-nums}
+  .trend-badge{font-family:var(--mono); font-size:12px; font-weight:700; padding:4px 9px; border-radius:20px; white-space:nowrap; font-variant-numeric:tabular-nums; box-shadow:0 1px 2px rgba(10,19,48,.08)}
   .trend-badge.good{background:var(--good-bg); color:var(--good)}
   .trend-badge.bad{background:var(--bad-bg); color:var(--bad)}
   .trend-badge.warn{background:var(--warn-bg); color:var(--warn)}
@@ -178,8 +181,8 @@
   .att:last-child{border-bottom:none}
   .att .ix{font-family:var(--mono); font-size:11px; color:var(--ink-faint); width:46px}
   .att .frac{font-family:var(--mono); font-size:13px; color:var(--ink-soft); font-variant-numeric:tabular-nums}
-  .att .bar{height:7px; border-radius:6px; background:var(--surface-2); overflow:hidden; min-width:60px}
-  .att .bar > span{display:block; height:100%; border-radius:6px}
+  .att .bar{height:7px; border-radius:999px; background:var(--surface-2); overflow:hidden; min-width:60px}
+  .att .bar > span{display:block; height:100%; border-radius:999px; transition:width .6s var(--ease)}
   .att .pp{font-family:var(--mono); font-size:12.5px; font-weight:700; font-variant-numeric:tabular-nums; text-align:right; width:64px}
   .att .pp.good{color:var(--good)} .att .pp.bad{color:var(--bad)} .att .pp.warn{color:var(--warn)} .att .pp.neutral{color:var(--ink-faint)}
   .att .date{font-family:var(--mono); font-size:11px; color:var(--ink-faint); width:78px; text-align:right}
