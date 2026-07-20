@@ -283,6 +283,8 @@
 .pend-banner button:hover { background: #EF6C00; }
 .sem-context { background: var(--paper); border: 1px solid var(--line); border-left: 3px solid var(--cobalt); padding: 12px 16px; margin-bottom: 20px; font-size: 13px; color: var(--ink2); }
 .sem-context.none { border-left-color: var(--amber); }
+.sem-context.objetivo { border-left-color: #7C5CFC; }
+.sem-context.objetivo b { color: #7C5CFC; }
 .sem-context b { color: var(--ink); font-weight: 600; }
 .sem-context a { color: var(--cobalt); text-decoration: none; font-weight: 600; }
 .sem-context a:hover { text-decoration: underline; }
@@ -1847,8 +1849,10 @@ function renderSemBanner() {
   const el = document.getElementById('semBanner');
   if (!el) return;
   el.innerHTML = p
-    ? `<div class="sem-context">📅 Planejamento do semestre: <b>${escH(p.nome)}</b> · <a href="planos.html">trocar de semestre</a></div>`
-    : `<div class="sem-context none">Nenhum semestre ativo — <a href="planos.html">crie ou ative um semestre em Planos</a>. As disciplinas, a disponibilidade e o cronograma abaixo pertencem ao semestre ativo.</div>`;
+    ? (p.tipo === 'objetivo'
+        ? `<div class="sem-context objetivo">📌 Planejamento do objetivo: <b>${escH(p.nome)}</b> · <a href="planos.html">trocar de contexto</a></div>`
+        : `<div class="sem-context">📅 Planejamento do semestre: <b>${escH(p.nome)}</b> · <a href="planos.html">trocar de contexto</a></div>`)
+    : `<div class="sem-context none">Nenhum contexto ativo — <a href="planos.html">crie ou ative um semestre ou objetivo em Planos</a>. As disciplinas, a disponibilidade e o cronograma abaixo pertencem ao contexto ativo.</div>`;
 }
 
 renderSemBanner();

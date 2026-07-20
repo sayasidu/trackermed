@@ -58,5 +58,56 @@
     else if (mq.addListener) mq.addListener(listener);
   }
 
+  // ---- Indicador global de contexto ativo -------------------------------
+  // Um "objetivo" independente (planos.html) usa as mesmas chaves vivas que o
+  // semestre. Quando um objetivo é o contexto ativo, TODAS as abas mostram só o
+  // conteúdo dele. Este chip na barra lateral avisa esse "modo objetivo" em todo
+  // o site, pra ninguém confundir com o semestre. (Só aparece nesse modo.)
+  function escTxt(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function activeObjetivo() {
+    var id = null, planos = [];
+    try { id = localStorage.getItem('trackermed.semestreAtivo.v1'); } catch (e) {}
+    if (!id) return null;
+    try { planos = JSON.parse(localStorage.getItem('trackermed.planos.v1') || '[]'); } catch (e) {}
+    var p = planos.find(function (x) { return x && x.id === id; });
+    return (p && p.tipo === 'objetivo') ? p : null;
+  }
+  function renderContextIndicator() {
+    var sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    var old = sidebar.querySelector('.ctx-indicator');
+    if (old) old.remove();
+    var p = activeObjetivo();
+    if (!p) return;
+    var a = document.createElement('a');
+    a.href = 'planos.html';
+    a.className = 'ctx-indicator';
+    a.title = 'Objetivo ativo — as outras abas mostram só o conteúdo dele. Clique pra gerenciar em Planos.';
+    a.style.cssText = 'display:block;margin-top:16px;padding:10px 12px;border:1px solid rgba(124,92,252,0.5);border-left:3px solid #7C5CFC;background:rgba(124,92,252,0.16);border-radius:2px;text-decoration:none;line-height:1.35;';
+    a.innerHTML =
+      '<span style="display:block;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;color:#B9A9FF">📌 Objetivo ativo</span>' +
+      '<b style="display:block;font-family:\'Fraunces\',serif;font-size:14px;font-weight:600;margin-top:3px;color:var(--paper)">' + escTxt(p.nome) + '</b>' +
+      '<span style="display:block;font-size:10px;color:rgba(244,241,234,0.6);margin-top:2px">as outras abas mostram só ele</span>';
+    var foot = sidebar.querySelector('.sidebar-foot');
+    if (foot) sidebar.insertBefore(a, foot);
+    else sidebar.appendChild(a);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderContextIndicator);
+  } else {
+    renderContextIndicator();
+  }
+  // Atualiza quando outra aba muda o contexto, ou quando a própria página pede.
+  window.addEventListener('storage', function (e) {
+    if (!e || !e.key || e.key === 'trackermed.semestreAtivo.v1' || e.key === 'trackermed.planos.v1') {
+      renderContextIndicator();
+    }
+  });
+
   window.TrackerMedTheme = { toggle, apply, current };
+  window.TrackerMedContext = { refresh: renderContextIndicator };
 })();

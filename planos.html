@@ -110,7 +110,7 @@
 .mfield textarea { min-height: 80px; resize: vertical; }
 .mfield input:focus, .mfield select:focus, .mfield textarea:focus { outline: 2px solid var(--cobalt); outline-offset: -1px; }
 .mfield.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.type-choice { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.type-choice { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .type-choice label { cursor: pointer; padding: 12px 10px; border: 1.5px solid var(--line); background: var(--paper); transition: all .15s; display: flex; flex-direction: column; gap: 3px; position: relative; }
 .type-choice label:hover { border-color: var(--ink2); }
 .type-choice input { position: absolute; opacity: 0; }
@@ -125,6 +125,18 @@
 .mbtn-cancel { background: transparent; border: 1px solid var(--line); padding: 10px 18px; font-size: 13px; cursor: pointer; font-family: inherit; }
 .mbtn-save { background: var(--cobalt); color: #fff; border: none; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
 .mbtn-delete { background: transparent; border: none; color: var(--rose); padding: 10px 0; font-size: 12px; cursor: pointer; font-family: inherit; font-weight: 600; }
+
+/* Objetivo (meta de estudo independente) — accent violeta */
+.plano-card.objetivo { border-left: 4px solid #7C5CFC; }
+.plano-card.objetivo .tipo { color: #7C5CFC; }
+.plano-card.objetivo.is-ativo { box-shadow: 0 0 0 1px #7C5CFC inset; }
+.det-tipo.objetivo { color: #7C5CFC; }
+.det-titulo i.obj, .det-countdown.objetivo .num { color: #7C5CFC; }
+.sem-badge.obj-ativo { background: #7C5CFC; color: #fff; }
+.sem-badge.concluido { background: var(--line); color: var(--muted); }
+.sem-banner.objetivo { border-left-color: #7C5CFC; }
+.sem-banner.objetivo .sb-nome i { color: #7C5CFC; font-style: normal; }
+.sem-ctrl.objetivo { border-left: 3px solid #7C5CFC; }
 </style></head><body>
 <div class="app">
 <aside class="sidebar">
@@ -154,7 +166,7 @@
   <div>
     <div class="kicker">Longo prazo</div>
     <h1 class="page-title">Seus <i>planos</i> de estudo.</h1>
-    <p class="page-lede">Cadastre o semestre que está cursando ou uma prova de residência — ele vira a base do seu cronograma.</p>
+    <p class="page-lede">Cadastre o semestre que está cursando, uma prova de residência ou um objetivo independente (monitoria, liga, extras) — ele vira a base do seu cronograma.</p>
   </div>
   <div class="section" id="listaContainer"></div>
 </div>
@@ -190,12 +202,19 @@
             <div class="t-title">ENAMED</div>
             <div class="t-desc">Avaliação nacional.</div>
           </label>
+          <label>
+            <input type="radio" name="tipo" value="objetivo" onchange="toggleTipo()">
+            <div class="t-icon">📌</div>
+            <div class="t-title">Objetivo</div>
+            <div class="t-desc">Meta independente do semestre.</div>
+          </label>
         </div>
       </div>
 
       <div class="mfield">
         <label>Nome do plano</label>
         <input type="text" id="pNome" placeholder="Ex: 6º Semestre 2026.1" required>
+        <div class="mhelp" id="nomeHelp" style="display:none">Ex: Prova de monitoria de Fisiologia, Liga de Cardio…</div>
       </div>
 
       <div class="conditional show" id="camposSemestre">
@@ -238,6 +257,21 @@
           <label>Áreas / temas do ENAMED</label>
           <textarea id="eMaterias" placeholder="Uma por linha.&#10;Clínica Médica&#10;Cirurgia&#10;Pediatria&#10;Ginecologia/Obstetrícia&#10;Saúde Coletiva"></textarea>
           <div class="mhelp">Uma por linha.</div>
+        </div>
+      </div>
+
+      <div class="conditional" id="camposObjetivo">
+        <div class="mfield row2">
+          <div><label>Data alvo <span style="text-transform:none;font-weight:400">(opcional)</span></label><input type="date" id="oData"></div>
+          <div><label>Início <span style="text-transform:none;font-weight:400">(opcional)</span></label><input type="date" id="oInicio"></div>
+        </div>
+        <div class="mfield">
+          <label>Foco / conteúdos</label>
+          <textarea id="oMaterias" placeholder="Uma por linha.&#10;Fisiologia cardiovascular&#10;Fisiologia renal&#10;Casos clínicos"></textarea>
+          <div class="mhelp">Uma por linha. É só um resumo — as disciplinas e o cronograma detalhado deste objetivo você monta nas outras abas depois de ativá-lo.</div>
+        </div>
+        <div class="mhelp" style="border-left:3px solid #7C5CFC;padding-left:12px;font-style:normal;color:var(--ink2)">
+          📌 Um <b>objetivo</b> é um contexto próprio, separado do semestre. Ao ativá-lo, as abas Disciplinas, Planejamento e Revisões passam a mostrar só o conteúdo dele — sem misturar com o semestre.
         </div>
       </div>
 
@@ -296,20 +330,32 @@ function migrarSemestres() {
   if (semAtivo()) return;
   let list = load();
   const abertos = list.filter(p => p.tipo === 'semestre' && p.status !== 'fechado');
-  let alvo;
   if (abertos.length) {
-    alvo = abertos[abertos.length - 1];
-  } else {
-    const temDados = (localStorage.getItem(LIVE_KEYS.disciplinas) || '[]') !== '[]';
-    if (!list.some(p => p.tipo === 'semestre') && !temDados) return; // nada a migrar ainda
-    alvo = { id: uid(), tipo: 'semestre', nome: 'Meu semestre', status: 'aberto' };
-    list.push(alvo); save(list);
+    const alvo = abertos[abertos.length - 1];
+    // Se este semestre tem dados arquivados (ex.: o contexto ativo era um
+    // objetivo que foi apagado/desativado), recarrega-os nas chaves vivas ao
+    // reativá-lo — senão ele apareceria vazio. Se não há snapshot, as chaves
+    // vivas atuais já são as dele (1ª migração/legado) e são adotadas como estão.
+    const store = semStore();
+    if (store[alvo.id]) {
+      restoreLive(store[alvo.id]);
+      delete store[alvo.id];
+      semStoreSave(store);
+    }
+    setSemAtivo(alvo.id);
+    return;
   }
+  const temDados = (localStorage.getItem(LIVE_KEYS.disciplinas) || '[]') !== '[]';
+  if (!list.some(p => p.tipo === 'semestre') && !temDados) return; // nada a migrar ainda
+  const alvo = { id: uid(), tipo: 'semestre', nome: 'Meu semestre', status: 'aberto' };
+  list.push(alvo); save(list);
   setSemAtivo(alvo.id);
 }
 
-// Torna um semestre o ativo: arquiva o atual e carrega o snapshot do alvo (ou zera, se novo).
-function ativarSemestre(id) {
+// Torna um contexto (semestre OU objetivo) o ativo: arquiva o atual e carrega
+// o snapshot do alvo (ou zera, se novo). As demais abas passam a ler os dados
+// vivos deste contexto — disciplinas, planejamento e revisões dele, sem mistura.
+function ativarContexto(id) {
   const cur = semAtivo();
   const store = semStore();
   if (cur && cur !== id) store[cur] = snapshotLive();
@@ -319,13 +365,31 @@ function ativarSemestre(id) {
   }
   semStoreSave(store);
   setSemAtivo(id);
-  // Reabre, caso estivesse fechado.
+  // Reabre, caso um semestre estivesse fechado.
   let list = load(), mudou = false;
   list = list.map(p => {
     if (p.id === id && p.status === 'fechado') { mudou = true; const c = { ...p, status: 'aberto' }; delete c.fechadoEm; return c; }
     return p;
   });
   if (mudou) save(list);
+}
+
+// Desativa o contexto atual sem ativar outro: arquiva os dados vivos e zera as
+// chaves vivas. Usado ao sair de um objetivo quando não há semestre pra voltar.
+function desativarContexto() {
+  const cur = semAtivo();
+  if (!cur) return;
+  const store = semStore();
+  store[cur] = snapshotLive();
+  semStoreSave(store);
+  restoreLive(null);
+  setSemAtivo(null);
+}
+
+// Semestre aberto mais recente — alvo natural do "voltar ao semestre".
+function semestreAbertoRecente() {
+  const abertos = load().filter(p => p.tipo === 'semestre' && p.status !== 'fechado');
+  return abertos.length ? abertos[abertos.length - 1] : null;
 }
 
 // Fecha o semestre: arquiva os dados vivos, marca como fechado e zera as chaves vivas.
@@ -353,6 +417,16 @@ function toggleTipo() {
   document.getElementById('camposSemestre').classList.toggle('show', t === 'semestre');
   document.getElementById('camposResidencia').classList.toggle('show', t === 'residencia');
   document.getElementById('camposEnamed').classList.toggle('show', t === 'enamed');
+  document.getElementById('camposObjetivo').classList.toggle('show', t === 'objetivo');
+  const nome = document.getElementById('pNome');
+  const nomeHelp = document.getElementById('nomeHelp');
+  if (t === 'objetivo') {
+    nome.placeholder = 'Ex: Prova de monitoria de Fisiologia';
+    nomeHelp.style.display = '';
+  } else {
+    nome.placeholder = 'Ex: 6º Semestre 2026.1';
+    nomeHelp.style.display = 'none';
+  }
 }
 
 function abrirNovo() {
@@ -389,10 +463,14 @@ function abrirEdit(id) {
     document.getElementById('rInicio').value = p.inicio || '';
     document.getElementById('rInst').value = p.instituicao || '';
     document.getElementById('rMaterias').value = (p.materias || []).join('\n');
-  } else {
+  } else if (p.tipo === 'enamed') {
     document.getElementById('eData').value = p.dataProva || '';
     document.getElementById('eInicio').value = p.inicio || '';
     document.getElementById('eMaterias').value = (p.materias || []).join('\n');
+  } else {
+    document.getElementById('oData').value = p.dataAlvo || '';
+    document.getElementById('oInicio').value = p.inicio || '';
+    document.getElementById('oMaterias').value = (p.materias || []).join('\n');
   }
   document.getElementById('planoModal').classList.add('open');
 }
@@ -423,13 +501,22 @@ function salvar() {
     }
     p.instituicao = document.getElementById('rInst').value.trim();
     p.materias = document.getElementById('rMaterias').value.split('\n').map(x=>x.trim()).filter(Boolean);
-  } else {
+  } else if (tipo === 'enamed') {
     p.dataProva = document.getElementById('eData').value;
     p.inicio = document.getElementById('eInicio').value;
     if (p.inicio && p.dataProva && p.inicio > p.dataProva) {
       alert('O início dos estudos precisa ser antes da data do ENAMED.'); return;
     }
     p.materias = document.getElementById('eMaterias').value.split('\n').map(x=>x.trim()).filter(Boolean);
+  } else {
+    const antigo = editingId ? load().find(x => x.id === editingId) : null;
+    if (antigo?.concluido) p.concluido = true;
+    p.dataAlvo = document.getElementById('oData').value;
+    p.inicio = document.getElementById('oInicio').value;
+    if (p.inicio && p.dataAlvo && p.inicio > p.dataAlvo) {
+      alert('O início precisa ser antes da data alvo.'); return;
+    }
+    p.materias = document.getElementById('oMaterias').value.split('\n').map(x=>x.trim()).filter(Boolean);
   }
   let list = load();
   if (editingId) list = list.map(x => x.id === editingId ? p : x);
@@ -439,6 +526,10 @@ function salvar() {
   // Como não há ativo, as chaves vivas atuais (vazias após fechar, ou os dados legados
   // na 1ª vez) ficam vinculadas a ele — sem sobrescrever nada.
   if (!editingId && tipo === 'semestre' && !semAtivo()) setSemAtivo(p.id);
+  // Objetivo criado sem nenhum contexto ativo: adota as chaves vivas atuais
+  // (vazias) como as dele, pra já funcionar nas outras abas sem sobrescrever
+  // nada. Se já houver um contexto ativo, não mexemos — o usuário ativa quando quiser.
+  if (!editingId && tipo === 'objetivo' && !semAtivo()) setSemAtivo(p.id);
   fechar();
   refreshView();
 }
@@ -453,9 +544,12 @@ function apagarPlano(id) {
 
 function apagar() {
   if (!editingId) return;
+  const alvo = load().find(x => x.id === editingId);
   const ativo = semAtivo() === editingId;
   const msg = ativo
-    ? 'Apagar o semestre ATIVO? As disciplinas e o planejamento dele serão removidos junto.'
+    ? (alvo && alvo.tipo === 'objetivo'
+        ? 'Apagar o objetivo ATIVO? As disciplinas e o planejamento dele serão removidos junto.'
+        : 'Apagar o semestre ATIVO? As disciplinas e o planejamento dele serão removidos junto.')
     : 'Apagar esse plano?';
   if (!confirm(msg)) return;
   const wasOpen = location.hash.slice(1) === editingId;
@@ -479,16 +573,41 @@ function fecharEAbrirNovo(id) {
 function trocarAtivo(id) {
   const p = load().find(x => x.id === id);
   if (!p) return;
-  if (!confirm(`Tornar “${p.nome}” o semestre ativo? O semestre atual será arquivado e você passa a editar este.`)) return;
-  ativarSemestre(id);
+  const atual = semAtivo() ? load().find(x => x.id === semAtivo()) : null;
+  const msg = p.tipo === 'objetivo'
+    ? `Ativar o objetivo “${p.nome}”? As abas Disciplinas, Planejamento e Revisões passam a mostrar só o conteúdo dele${atual ? ` — “${atual.nome}” fica guardado e volta quando você reativar` : ''}.`
+    : `Tornar “${p.nome}” o contexto ativo? O contexto atual será arquivado e você passa a editar este.`;
+  if (!confirm(msg)) return;
+  ativarContexto(id);
   refreshView();
 }
 
 function reabrirSemestre(id) {
   const p = load().find(x => x.id === id);
   if (!p) return;
-  if (!confirm(`Reabrir “${p.nome}” como semestre ativo? Ele volta a ser editável e o semestre atual é arquivado.`)) return;
-  ativarSemestre(id);
+  if (!confirm(`Reabrir “${p.nome}” como semestre ativo? Ele volta a ser editável e o contexto atual é arquivado.`)) return;
+  ativarContexto(id);
+  refreshView();
+}
+
+// Sai de um objetivo ativo: volta pro semestre aberto mais recente ou, se não
+// houver, apenas desativa (arquivando os dados do objetivo).
+function voltarAoSemestre() {
+  const s = semestreAbertoRecente();
+  if (s) ativarContexto(s.id);
+  else desativarContexto();
+  refreshView();
+}
+
+// Marca/desmarca um objetivo como concluído (não apaga nada — os dados ficam
+// guardados e o objetivo continua reativável).
+function toggleConcluido(id) {
+  let list = load();
+  const p = list.find(x => x.id === id);
+  if (!p) return;
+  const novo = !p.concluido;
+  list = list.map(x => x.id === id ? (novo ? { ...x, concluido: true } : (() => { const c = { ...x }; delete c.concluido; return c; })()) : x);
+  save(list);
   refreshView();
 }
 
@@ -502,18 +621,38 @@ function diasAte(d) {
   return Math.round((t-n)/86400000);
 }
 
+function nDiscVivas() {
+  try { return JSON.parse(localStorage.getItem(LIVE_KEYS.disciplinas) || '[]').length; } catch { return 0; }
+}
+
 function bannerAtivoHTML() {
   const id = semAtivo();
-  if (!id) {
-    const temSemestre = load().some(p => p.tipo === 'semestre' && p.status !== 'fechado');
+  const p = id ? load().find(x => x.id === id) : null;
+
+  // Contexto ativo é um objetivo independente.
+  if (p && p.tipo === 'objetivo') {
+    const nDisc = nDiscVivas();
+    const temSemestre = !!semestreAbertoRecente();
+    return `<div class="sem-banner objetivo">
+      <div class="sb-info">
+        <div class="sb-lbl">Objetivo ativo</div>
+        <div class="sb-nome">📌 <i>${esc(p.nome)}</i></div>
+        <div class="sb-meta">${nDisc} disciplina${nDisc!==1?'s':''} · as outras abas mostram só o conteúdo deste objetivo, separado do semestre</div>
+      </div>
+      <button class="sb-close" onclick="voltarAoSemestre()">${temSemestre ? 'Voltar ao semestre →' : 'Desativar objetivo →'}</button>
+    </div>`;
+  }
+
+  // Sem contexto ativo (ou ponteiro pendurado).
+  if (!p) {
+    const temSemestre = load().some(x => x.tipo === 'semestre' && x.status !== 'fechado');
     return `<div class="sem-banner none">
       <div><b>Nenhum semestre ativo.</b> ${temSemestre ? 'Escolha um semestre aberto abaixo e clique em ★ pra ativá-lo.' : 'Cadastre um semestre pra organizar disciplinas e planejamento por período.'}</div>
     </div>`;
   }
-  const p = load().find(x => x.id === id);
-  if (!p) return '';
-  let nDisc = 0;
-  try { nDisc = JSON.parse(localStorage.getItem(LIVE_KEYS.disciplinas) || '[]').length; } catch {}
+
+  // Contexto ativo é um semestre.
+  const nDisc = nDiscVivas();
   return `<div class="sem-banner">
     <div class="sb-info">
       <div class="sb-lbl">Semestre ativo</div>
@@ -524,8 +663,9 @@ function bannerAtivoHTML() {
   </div>`;
 }
 
-// Controle de ciclo de vida exibido no detalhe de um semestre.
-function semControlHTML(p) {
+// Controle de ciclo de vida exibido no detalhe de um contexto (semestre ou objetivo).
+function contextoControlHTML(p) {
+  if (p.tipo === 'objetivo') return objetivoControlHTML(p);
   if (p.tipo !== 'semestre') return '';
   if (p.status === 'fechado') {
     return `<div class="sem-ctrl fechado">
@@ -545,12 +685,44 @@ function semControlHTML(p) {
   </div>`;
 }
 
-// Render só-leitura das disciplinas arquivadas de um semestre.
-function arquivoHTML(id) {
+// Controle do objetivo: ativar/voltar + concluir, e prévia das disciplinas dele.
+function objetivoControlHTML(p) {
+  const ativo = semAtivo() === p.id;
+  const temSemestre = !!semestreAbertoRecente();
+  const preview = discPreviewHTML(
+    p.id, 'Disciplinas deste objetivo',
+    ativo ? 'Nenhuma disciplina neste objetivo ainda. Vá em <b>Disciplinas</b> pra adicionar as deste objetivo.'
+          : 'Nenhuma disciplina neste objetivo ainda. Ative-o e vá em Disciplinas pra montar o conteúdo dele.'
+  );
+  const concluirBtn = `<button onclick="toggleConcluido('${p.id}')" style="background:transparent;border:1px solid var(--line);color:var(--ink2)">${p.concluido ? '↺ Reabrir objetivo' : '✓ Marcar como concluído'}</button>`;
+  let ctrl;
+  if (ativo) {
+    ctrl = `<div class="sem-ctrl objetivo">
+      <div><b>📌 Objetivo ativo.</b> As abas Disciplinas, Planejamento e Revisões mostram só o conteúdo deste objetivo — sem misturar com o semestre.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${concluirBtn}
+        <button onclick="voltarAoSemestre()">${temSemestre ? 'Voltar ao semestre →' : 'Desativar →'}</button>
+      </div>
+    </div>`;
+  } else {
+    ctrl = `<div class="sem-ctrl objetivo">
+      <div>${p.concluido ? '<b>Objetivo concluído.</b> ' : ''}Este objetivo não está ativo. Ative-o pra montar e ver as disciplinas, o planejamento e as revisões dele nas outras abas.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${concluirBtn}
+        <button onclick="trocarAtivo('${p.id}')">★ Ativar objetivo</button>
+      </div>
+    </div>`;
+  }
+  return ctrl + preview;
+}
+
+// Render só-leitura das disciplinas de um contexto (lê os dados vivos se ele for
+// o ativo, senão o snapshot arquivado). Reusado por semestres e objetivos.
+function discPreviewHTML(id, titulo, vazioMsg) {
   const snap = snapshotDe(id);
   let discs = [];
   try { discs = JSON.parse((snap && snap.disciplinas) || '[]'); } catch {}
-  if (!discs.length) return `<div class="det-no-mat" style="margin-top:24px"><p>Nenhuma disciplina ficou arquivada neste semestre.</p></div>`;
+  if (!discs.length) return `<div class="det-no-mat" style="margin-top:24px"><p>${vazioMsg}</p></div>`;
   const cards = discs.map((d, i) => `
     <div class="det-mat-card">
       <div class="det-mat-num">Disciplina ${String(i+1).padStart(2,'0')}${d.cor ? ` · <span style="color:${esc(d.cor)}">●</span>` : ''}</div>
@@ -558,9 +730,12 @@ function arquivoHTML(id) {
       <div class="det-mat-vazio">${(d.aulas||[]).length} aula(s) · ${(d.provas||[]).length} prova(s) · meta ${(d.metaHorasSemana||0)}h/sem</div>
     </div>`).join('');
   return `<div style="margin-top:28px">
-    <div class="det-section-title">Disciplinas arquivadas · ${discs.length}</div>
+    <div class="det-section-title">${titulo} · ${discs.length}</div>
     <div class="det-materias">${cards}</div>
   </div>`;
+}
+function arquivoHTML(id) {
+  return discPreviewHTML(id, 'Disciplinas arquivadas', 'Nenhuma disciplina ficou arquivada neste semestre.');
 }
 
 function render() {
@@ -571,7 +746,7 @@ function render() {
   if (list.length === 0) {
     cont.innerHTML = `<div class="empty">
       <h3>Nenhum plano ainda.</h3>
-      <p>Cadastre um semestre ou um objetivo de residência pra começar.</p>
+      <p>Cadastre um semestre, uma prova de residência ou um objetivo de estudo independente pra começar.</p>
       <button onclick="abrirNovo()">+ Criar primeiro plano</button>
     </div>`;
     return;
@@ -593,6 +768,14 @@ function render() {
         ${dias !== null ? `<div class="num" style="color:var(--amber)">${Math.max(0,dias)}</div><div class="lbl">${dias < 0 ? 'enamed passou' : (dias === 1 ? 'dia até o enamed' : 'dias até o enamed')}</div>` : '<div class="lbl">sem data</div>'}
       </div>`;
       metaInfo = `ENAMED: <b>${fmtData(p.dataProva)}</b>${p.inicio ? ` · início <b>${fmtData(p.inicio)}</b>` : ''}`;
+    } else if (p.tipo === 'objetivo') {
+      const dias = diasAte(p.dataAlvo);
+      rightCol = `<div class="plano-countdown">
+        ${dias !== null ? `<div class="num" style="color:#7C5CFC">${Math.max(0,dias)}</div><div class="lbl">${dias < 0 ? 'data passou' : (dias === 1 ? 'dia até o alvo' : 'dias até o alvo')}</div>` : '<div class="lbl">sem data alvo</div>'}
+      </div>`;
+      metaInfo = p.dataAlvo
+        ? `Alvo: <b>${fmtData(p.dataAlvo)}</b>${p.inicio ? ` · início <b>${fmtData(p.inicio)}</b>` : ''}`
+        : (p.inicio ? `Início <b>${fmtData(p.inicio)}</b>` : 'Objetivo independente · sem prazo');
     } else {
       const diasFim = diasAte(p.fim);
       rightCol = `<div class="plano-countdown">
@@ -601,13 +784,20 @@ function render() {
       metaInfo = `${p.instituicao ? esc(p.instituicao) + ' · ' : ''}<b>${fmtData(p.inicio)}</b> — <b>${fmtData(p.fim)}</b>`;
     }
 
-    const tipoLabel = p.tipo === 'residencia' ? '🏥 Residência' : (p.tipo === 'enamed' ? '📋 ENAMED' : '🎓 Semestre');
-    const isAtivo = p.tipo === 'semestre' && semAtivo() === p.id;
+    const tipoLabel = p.tipo === 'residencia' ? '🏥 Residência'
+                    : p.tipo === 'enamed' ? '📋 ENAMED'
+                    : p.tipo === 'objetivo' ? '📌 Objetivo'
+                    : '🎓 Semestre';
+    const ativavel = p.tipo === 'semestre' || p.tipo === 'objetivo';
+    const isAtivo = ativavel && semAtivo() === p.id;
     const isFechado = p.tipo === 'semestre' && p.status === 'fechado';
-    const badge = isAtivo ? '<span class="sem-badge ativo">● Ativo</span>'
-                : isFechado ? '<span class="sem-badge fechado">Fechado</span>' : '';
-    const ativarBtn = (p.tipo === 'semestre' && !isAtivo && !isFechado)
-      ? `<button onclick="event.stopPropagation(); trocarAtivo('${p.id}')" title="Tornar ativo">★</button>` : '';
+    const isConcluido = p.tipo === 'objetivo' && !!p.concluido && !isAtivo;
+    const badge = isAtivo
+                    ? `<span class="sem-badge ${p.tipo === 'objetivo' ? 'obj-ativo' : 'ativo'}">● Ativo</span>`
+                : isFechado ? '<span class="sem-badge fechado">Fechado</span>'
+                : isConcluido ? '<span class="sem-badge concluido">✓ Concluído</span>' : '';
+    const ativarBtn = (ativavel && !isAtivo && !isFechado)
+      ? `<button onclick="event.stopPropagation(); trocarAtivo('${p.id}')" title="${p.tipo === 'objetivo' ? 'Ativar objetivo' : 'Tornar ativo'}">★</button>` : '';
 
     return `<div class="plano-card ${p.tipo}${isAtivo ? ' is-ativo' : ''}${isFechado ? ' is-fechado' : ''}" onclick="clicarCard(event, '${p.id}')">
       <div class="plano-actions">
@@ -652,7 +842,10 @@ function renderDetalhe(id) {
   lista.style.display = 'none';
   det.classList.add('show');
 
-  const tipoLabel = p.tipo === 'residencia' ? '🏥 Residência' : (p.tipo === 'enamed' ? '📋 ENAMED' : '🎓 Semestre');
+  const tipoLabel = p.tipo === 'residencia' ? '🏥 Residência'
+                  : p.tipo === 'enamed' ? '📋 ENAMED'
+                  : p.tipo === 'objetivo' ? '📌 Objetivo'
+                  : '🎓 Semestre';
   document.getElementById('crumb').innerHTML = `<a href="#" onclick="event.preventDefault(); voltarLista()" style="color:inherit;text-decoration:none">Home <i>›</i> Planos</a> <i>›</i> ${esc(p.nome)}`;
 
   let metaInfo = '';
@@ -669,6 +862,14 @@ function renderDetalhe(id) {
     countdown = dias !== null
       ? `<div class="num">${Math.max(0,dias)}</div><div class="lbl">${dias < 0 ? 'enamed passou' : (dias === 1 ? 'dia até o enamed' : 'dias até o enamed')}</div>`
       : '<div class="lbl">sem data</div>';
+  } else if (p.tipo === 'objetivo') {
+    const dias = diasAte(p.dataAlvo);
+    metaInfo = p.dataAlvo
+      ? `Alvo: <b>${fmtData(p.dataAlvo)}</b>${p.inicio ? ` · início <b>${fmtData(p.inicio)}</b>` : ''}`
+      : (p.inicio ? `Início <b>${fmtData(p.inicio)}</b>` : 'Objetivo independente · sem prazo definido');
+    countdown = dias !== null
+      ? `<div class="num">${Math.max(0,dias)}</div><div class="lbl">${dias < 0 ? 'data passou' : (dias === 1 ? 'dia até o alvo' : 'dias até o alvo')}</div>`
+      : '<div class="lbl">sem prazo</div>';
   } else {
     const diasFim = diasAte(p.fim);
     metaInfo = `${p.instituicao ? esc(p.instituicao) + ' · ' : ''}<b>${fmtData(p.inicio)}</b> — <b>${fmtData(p.fim)}</b>`;
@@ -678,14 +879,16 @@ function renderDetalhe(id) {
   }
 
   const mats = p.materias || [];
+  const matsLabel = p.tipo === 'objetivo' ? 'Foco / conteúdos' : 'Matérias';
+  const matUnidade = p.tipo === 'objetivo' ? 'Foco' : 'Matéria';
   const matsHTML = mats.length
     ? `<div class="det-materias">${mats.map((m, i) => `
         <div class="det-mat-card">
-          <div class="det-mat-num">Matéria ${String(i+1).padStart(2,'0')}</div>
+          <div class="det-mat-num">${matUnidade} ${String(i+1).padStart(2,'0')}</div>
           <div class="det-mat-nome">${esc(m)}</div>
           <div class="det-mat-vazio">em breve · tópicos, progresso, anotações</div>
         </div>`).join('')}</div>`
-    : `<div class="det-no-mat"><p>Nenhuma matéria cadastrada nesse plano ainda.<br>Edita o plano pra adicionar.</p></div>`;
+    : `<div class="det-no-mat"><p>${p.tipo === 'objetivo' ? 'Nenhum foco anotado nesse objetivo ainda.' : 'Nenhuma matéria cadastrada nesse plano ainda.'}<br>Edita o plano pra adicionar.</p></div>`;
 
   det.innerHTML = `
     <button class="det-back" onclick="voltarLista()">← Voltar pros planos</button>
@@ -698,9 +901,9 @@ function renderDetalhe(id) {
       </div>
       <div class="det-countdown ${p.tipo}">${countdown}</div>
     </div>
-    ${semControlHTML(p)}
+    ${contextoControlHTML(p)}
     <div>
-      <div class="det-section-title">Matérias${mats.length ? ` · ${mats.length}` : ''}</div>
+      <div class="det-section-title">${matsLabel}${mats.length ? ` · ${mats.length}` : ''}</div>
       ${matsHTML}
     </div>
     <div class="det-notas-wrap">
@@ -746,6 +949,8 @@ function refreshView() {
   const h = location.hash.slice(1);
   if (h) renderDetalhe(h);
   else showLista();
+  // Mantém o chip de contexto da barra lateral em sincronia após ativar/trocar.
+  if (window.TrackerMedContext) window.TrackerMedContext.refresh();
 }
 
 migrarSemestres();
