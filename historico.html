@@ -162,6 +162,17 @@ html[data-theme="dark"] .blk-item.done.revisao .mins { color: #7BD389; }
 .met-class.muito-bom { background: var(--cobalt); color: #fff; }
 .met-class.extremamente-bom { background: var(--mint); color: var(--ink); }
 .met-class.excelente { background: var(--acid); color: var(--ink); }
+
+/* Modal: conteúdo concluído? */
+.conc-resumo { background: var(--paper); border: 1px solid #E0E0E0; border-radius: 10px; padding: 4px 16px; margin: 4px 0 18px; }
+.conc-linha { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.conc-linha:last-child { border-bottom: none; }
+.conc-lbl { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #70757A; font-weight: 600; white-space: nowrap; }
+.conc-val { font-family: 'Fraunces', serif; font-size: 16px; color: var(--ink); text-align: right; font-style: italic; }
+.conc-pergunta { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; letter-spacing: -0.01em; text-align: center; margin-top: 6px; }
+.conc-help { font-size: 12px; color: #70757A; text-align: center; margin-top: 6px; }
+.conc-help b { color: var(--cobalt); }
+.conc-btn { padding: 11px 30px; font-weight: 600; }
 .met-class.refazer { background: var(--rose); color: #fff; }
 </style></head><body>
 <div class="app">
@@ -398,6 +409,26 @@ html[data-theme="dark"] .blk-item.done.revisao .mins { color: #7BD389; }
         <button type="button" class="mbtn-cancel" onclick="voltarMetodoRevStep1()">← Trocar método</button>
         <button type="button" class="mbtn-save" onclick="salvarMetodoRevQuestoes()">Concluir revisão</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: conteúdo concluído? (após finalizar o cronômetro de um estudo) -->
+<div class="modal-backdrop" id="conclusaoContModal" onclick="if(event.target===this) responderConclusaoConteudo(false)">
+  <div class="modal-box" style="width:460px">
+    <button class="mbtn-close" onclick="responderConclusaoConteudo(false)">×</button>
+    <h2>Sessão <i>finalizada</i></h2>
+    <div class="modal-sub">Confira os dados da sessão e diga se o conteúdo foi concluído.</div>
+    <div class="conc-resumo">
+      <div class="conc-linha"><span class="conc-lbl">Matéria estudada</span><span class="conc-val" id="concMateria">—</span></div>
+      <div class="conc-linha"><span class="conc-lbl">Tempo de estudo</span><span class="conc-val" id="concTempo">—</span></div>
+      <div class="conc-linha" id="concConteudoWrap"><span class="conc-lbl">Conteúdo estudado</span><span class="conc-val" id="concConteudo">—</span></div>
+    </div>
+    <div class="conc-pergunta">Você concluiu este conteúdo?</div>
+    <div class="conc-help" id="concHelp">Só entra nas <b>revisões</b> se você marcar “Sim”.</div>
+    <div class="mactions" style="justify-content:space-between">
+      <button type="button" class="mbtn-cancel conc-btn" onclick="responderConclusaoConteudo(false)">Não</button>
+      <button type="button" class="mbtn-save conc-btn" onclick="responderConclusaoConteudo(true)">Sim, concluí</button>
     </div>
   </div>
 </div>
@@ -833,19 +864,51 @@ function timerFinish(auto) {
     return;
   }
 
-  // Estudo comum: entra no feed de revisões automaticamente como sugestão pra revisar depois.
+  // Estudo comum: a sessão já foi salva no histórico (bloco do planner acima).
+  // Antes de alimentar o feed de revisões, pergunta se o conteúdo foi concluído —
+  // apenas conteúdos confirmados como concluídos entram em revisoes.html.
+  const resumoConclusao = {
+    materia: sessaoMateria || 'Estudo',
+    conteudo: sessaoConteudo,
+    minutos: studied
+  };
+  timerClose();
+  render();
+  abrirConclusaoConteudo(resumoConclusao);
+}
+
+// ===== Modal: conteúdo concluído? =====
+// Ao finalizar o cronômetro de um estudo comum, pergunta se o conteúdo foi
+// concluído. A sessão já está registrada no histórico (bloco do planner); aqui
+// só decidimos se o conteúdo deve alimentar o feed de revisões (revisoes.html).
+// "Não" => fica apenas no histórico. "Sim" => histórico + revisão pendente.
+let conclusaoCtx = null;
+function abrirConclusaoConteudo(ctx) {
+  conclusaoCtx = ctx;
+  document.getElementById('concMateria').textContent = ctx.materia || 'Estudo';
+  document.getElementById('concTempo').textContent = fmtHrange(ctx.minutos || 0);
+  const conteudo = (ctx.conteudo || '').trim();
+  document.getElementById('concConteudo').textContent = conteudo || '—';
+  document.getElementById('concConteudoWrap').style.display = conteudo ? '' : 'none';
+  document.getElementById('conclusaoContModal').classList.add('open');
+}
+function responderConclusaoConteudo(concluiu) {
+  const ctx = conclusaoCtx;
+  conclusaoCtx = null;
+  document.getElementById('conclusaoContModal').classList.remove('open');
+  if (!ctx) return;
+  // Registra no feed. `revisar` só é true quando o aluno confirma "Sim" — é isso
+  // que faz o conteúdo aparecer em revisoes.html. Entra como revisão pendente
+  // (concluido:false) para poder ser efetivamente revisado depois.
   pushHist({
     data: fmtDataBR(new Date()),
-    materia: timerState.discNome,
-    conteudo: timerState.conteudo || '',
-    minutos: studied,
-    concluido: concluidoNatural,
-    revisar: true,
+    materia: ctx.materia || 'Estudo',
+    conteudo: ctx.conteudo || '',
+    minutos: ctx.minutos || 0,
+    concluido: false,
+    revisar: !!concluiu,
     auto: true
   });
-
-  if (auto) alert(`🎉 Sessão de ${Math.round(totalPlannedSec/60)}min completa! Registrada.`);
-  timerClose();
   render();
 }
 
