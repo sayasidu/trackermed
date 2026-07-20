@@ -288,6 +288,69 @@
 .sem-context b { color: var(--ink); font-weight: 600; }
 .sem-context a { color: var(--cobalt); text-decoration: none; font-weight: 600; }
 .sem-context a:hover { text-decoration: underline; }
+
+/* ===== Calendário geral — todos os planos reunidos ===== */
+.calgeral { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--cobalt); border-radius: 8px; padding: 20px 22px; margin-bottom: 24px; }
+.calgeral .cg-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.calgeral h3 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; letter-spacing: -0.02em; color: var(--text); }
+.calgeral h3 i { color: var(--cobalt); font-style: italic; }
+.calgeral .cal-help { font-size: 12px; color: var(--text-mute); margin-top: 4px; }
+.cal-nav { display: inline-flex; align-items: center; gap: 6px; }
+.cal-nav button { background: var(--surface-soft); border: 1px solid var(--border); padding: 6px 11px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; color: var(--text-soft); border-radius: 4px; }
+.cal-nav button:hover { border-color: var(--cobalt); color: var(--cobalt); }
+.cal-lbl { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 500; color: var(--text); min-width: 130px; text-align: center; text-transform: capitalize; font-variant-numeric: tabular-nums; }
+.cal-controls { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; margin: 16px 0 14px; }
+.cal-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.cal-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--border); background: var(--surface-soft); font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; color: var(--text-soft); border-radius: 999px; }
+.cal-chip:hover { border-color: var(--cobalt); }
+.cal-chip .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.cal-chip.active { color: var(--text); background: var(--surface); box-shadow: 0 0 0 1.5px var(--cobalt) inset; border-color: var(--cobalt); }
+.cal-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.cal-toggle button { background: var(--surface-soft); border: none; padding: 7px 15px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; color: var(--text-soft); }
+.cal-toggle button.active { background: var(--cobalt); color: #fff; }
+
+/* Grade mensal */
+.cal-month { display: grid; grid-template-columns: repeat(7, 1fr); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--surface); }
+.cal-month > * { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); min-width: 0; }
+.cal-month > *:nth-child(7n) { border-right: none; }
+.cm-dow { background: var(--surface-soft); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; color: var(--text-mute); text-align: center; padding: 7px 4px; }
+.cal-cell { min-height: 100px; padding: 5px 6px 7px; display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+.cal-cell.other { background: var(--surface-soft); }
+.cal-cell .cc-num { font-size: 12px; font-weight: 600; color: var(--text-soft); font-variant-numeric: tabular-nums; align-self: flex-start; }
+.cal-cell.other .cc-num { color: var(--text-mute); opacity: 0.6; }
+.cal-cell.hoje { background: var(--row-hover); }
+.cal-cell.hoje .cc-num { background: var(--cobalt); color: #fff; border-radius: 50%; width: 21px; height: 21px; display: inline-flex; align-items: center; justify-content: center; }
+.cc-act { font-size: 10.5px; line-height: 1.25; padding: 2px 5px 2px 6px; border-left: 3px solid var(--cobalt); background: var(--surface-soft); border-radius: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+.cc-act.feito { opacity: 0.5; text-decoration: line-through; }
+.cc-more { font-size: 9.5px; color: var(--text-mute); font-weight: 600; padding-left: 2px; }
+.cc-mark { font-size: 8.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: #fff; padding: 1px 5px; border-radius: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Grade semanal (agenda por dia) */
+.cal-week { display: grid; grid-template-columns: repeat(7, 1fr); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--surface); }
+.cw-col { border-right: 1px solid var(--border); min-width: 0; display: flex; flex-direction: column; }
+.cw-col:last-child { border-right: none; }
+.cw-head { text-align: center; padding: 8px 4px; border-bottom: 1px solid var(--border); background: var(--surface-soft); }
+.cw-head .cw-dow { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; color: var(--text-mute); }
+.cw-head .cw-num { font-family: 'Fraunces', serif; font-size: 20px; color: var(--text-soft); line-height: 1.1; }
+.cw-col.hoje .cw-head { background: var(--ink); }
+.cw-col.hoje .cw-dow { color: var(--acid); }
+.cw-col.hoje .cw-num { color: var(--paper); }
+.cw-acts { display: flex; flex-direction: column; gap: 4px; padding: 8px 6px; flex: 1; }
+.cw-mark { font-size: 9px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: #fff; padding: 2px 5px; border-radius: 2px; }
+.cw-act { font-size: 11px; line-height: 1.3; padding: 4px 7px; border-left: 3px solid var(--cobalt); background: var(--surface-soft); border-radius: 3px; color: var(--text); }
+.cw-act .cw-time { font-size: 10px; color: var(--text-mute); font-variant-numeric: tabular-nums; display: block; }
+.cw-act.feito { opacity: 0.5; text-decoration: line-through; }
+.cw-tot { font-size: 10px; color: var(--text-mute); text-align: center; padding: 6px 4px; border-top: 1px dashed var(--border); }
+.cw-empty { font-size: 10px; color: var(--text-mute); text-align: center; padding: 14px 4px; font-style: italic; opacity: 0.7; }
+.cal-empty { text-align: center; padding: 40px 20px; color: var(--text-mute); font-size: 13px; line-height: 1.5; }
+.cal-legenda { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px; font-size: 11px; color: var(--text-mute); align-items: center; }
+.cal-legenda .lg { display: inline-flex; align-items: center; gap: 5px; }
+.cal-legenda .lg b { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+@media (max-width: 720px) {
+  .cal-cell { min-height: 70px; }
+  .cal-cell .cc-act { font-size: 9px; }
+  .cw-head .cw-num { font-size: 16px; }
+}
 </style></head><body>
 <div class="app">
 <aside class="sidebar">
@@ -317,6 +380,14 @@
 </div>
 
 <div id="semBanner"></div>
+
+<div class="calgeral" id="calGeral"></div>
+
+<div class="editor-head" style="margin:6px 0 16px">
+  <div class="kicker">Plano ativo</div>
+  <h2 style="font-family:'Fraunces',serif;font-size:26px;font-weight:500;letter-spacing:-0.02em;color:var(--text)">Montar o <i style="color:var(--cobalt)">planejamento</i> do plano ativo</h2>
+  <p style="font-size:13px;color:var(--text-mute);margin-top:4px;max-width:640px">A configuração e o cronograma abaixo pertencem ao plano ativo. Ative outro plano em <a href="planos.html" style="color:var(--cobalt);font-weight:600">Planos</a> pra montar o dele — todos aparecem juntos no calendário acima.</p>
+</div>
 
 <div class="stat-row">
   <div class="stat-card"><div class="lbl">Horas planejadas</div><div class="val" id="statPlan">0<sup>h00m</sup></div><div class="sub" id="statPlanSub">na semana toda</div></div>
@@ -1794,6 +1865,7 @@ function render() {
       <p>Pra montar o planejamento, adicione primeiro suas matérias com horários de aula e meta de estudo.</p>
       <a href="disciplinas.html">+ Ir para Disciplinas</a>
     </div>`;
+    renderCalGeral(); // o calendário reúne TODOS os planos, mesmo se o ativo estiver vazio
     return;
   }
 
@@ -1839,6 +1911,228 @@ function render() {
   document.getElementById('gradeContainer').innerHTML = renderGrade(discList);
   bindBlocoInteracoes();
   renderHistPanel();
+  renderCalGeral();
+}
+
+/* ============================================================
+   Calendário geral — reúne o cronograma de TODOS os planos
+   (o ativo vem das chaves vivas; os demais, do arquivo de
+   snapshots trackermed.semestres.v1). Visualização mês/semana
+   com filtro por plano. Somente leitura — a edição continua no
+   planejamento do plano ativo, abaixo.
+   ============================================================ */
+const CAL_VIEW_KEY = 'trackermed.planner.calView.v1';
+const CAL_FILTER_KEY = 'trackermed.planner.calFilter.v1';
+let calView = (localStorage.getItem(CAL_VIEW_KEY) === 'semana') ? 'semana' : 'mes';
+let calFilter = localStorage.getItem(CAL_FILTER_KEY) || 'todos';
+let calAnchor = (function(){ const d = new Date(); d.setHours(12,0,0,0); return d; })();
+const MES_LONG = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const MES_ABREV = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+function planCor(tipo) {
+  return ({ semestre:'#1FC28A', residencia:'#1E3AE8', enamed:'#F4A72F', objetivo:'#7C5CFC' })[tipo] || '#6B6A5F';
+}
+
+// Junta todos os planos: disciplinas + cronograma. Ativo = chaves vivas; demais = snapshots.
+function calCollect() {
+  let planos = [];
+  try { planos = JSON.parse(localStorage.getItem('trackermed.planos.v1') || '[]'); } catch {}
+  const ativoId = localStorage.getItem('trackermed.semestreAtivo.v1');
+  let store = {};
+  try { store = JSON.parse(localStorage.getItem('trackermed.semestres.v1') || '{}'); } catch {}
+  const plans = [], acts = [], marks = [];
+  for (const plano of planos) {
+    let disciplinas = [], plan = {};
+    if (plano.id === ativoId) {
+      try { disciplinas = JSON.parse(localStorage.getItem('trackermed.disciplinas.v1') || '[]'); } catch {}
+      try { plan = JSON.parse(localStorage.getItem('trackermed.plan.v1') || '{}'); } catch {}
+    } else {
+      const snap = store[plano.id];
+      if (snap) {
+        try { disciplinas = JSON.parse(snap.disciplinas || '[]'); } catch {}
+        try { plan = JSON.parse(snap.plan || '{}'); } catch {}
+      }
+    }
+    const cor = planCor(plano.tipo);
+    const discMap = {};
+    for (const d of (disciplinas || [])) discMap[d.id] = d;
+    let temAtividade = false;
+    for (const wk in plan) {
+      for (const b of (plan[wk] || [])) {
+        if (b.tipo !== 'estudo' && b.tipo !== 'revisao') continue;
+        const date = blocoDataReal(wk, b);
+        if (!date) continue;
+        const disc = b.discId ? discMap[b.discId] : null;
+        const nome = disc ? disc.nome : (b.matNome || (b.tipo === 'revisao' ? 'Revisão' : 'Estudo'));
+        acts.push({
+          date, ini: b.ini || '', fim: b.fim || '', min: blocoPlannedMin(b),
+          feito: !!b.feito, nome, discCor: disc ? corDisc(disc) : cor,
+          planoId: plano.id, planoNome: plano.nome, cor, tipo: b.tipo
+        });
+        temAtividade = true;
+      }
+    }
+    plans.push({ id: plano.id, tipo: plano.tipo, nome: plano.nome, cor, temAtividade });
+    const keyDate = plano.dataProva || plano.dataAlvo || plano.fim;
+    if (keyDate && /^\d{4}-\d{2}-\d{2}$/.test(keyDate)) {
+      const lbl = plano.tipo === 'semestre' ? 'fim' : (plano.tipo === 'objetivo' ? 'alvo' : 'prova');
+      marks.push({ date: keyDate, planoId: plano.id, cor, label: lbl, nome: plano.nome });
+    }
+  }
+  return { plans, acts, marks };
+}
+
+function calSetView(v) { calView = v; localStorage.setItem(CAL_VIEW_KEY, v); renderCalGeral(); }
+function calSetFilter(id) { calFilter = id; localStorage.setItem(CAL_FILTER_KEY, id); renderCalGeral(); }
+function calNav(dir) {
+  if (dir === 0) { calAnchor = new Date(); calAnchor.setHours(12,0,0,0); }
+  else if (calView === 'mes') calAnchor = new Date(calAnchor.getFullYear(), calAnchor.getMonth() + dir, 1, 12, 0, 0);
+  else calAnchor = addDays(calAnchor, dir * 7);
+  renderCalGeral();
+}
+function calHoras(min) {
+  const h = Math.floor(min / 60), m = min % 60;
+  return m ? (h ? `${h}h${String(m).padStart(2,'0')}` : `${m}min`) : `${h}h`;
+}
+
+function renderCalGeral() {
+  const el = document.getElementById('calGeral');
+  if (!el) return;
+  const data = calCollect();
+  if (calFilter !== 'todos' && !data.plans.some(p => p.id === calFilter)) calFilter = 'todos';
+
+  const filtros = [`<button class="cal-chip ${calFilter==='todos'?'active':''}" onclick="calSetFilter('todos')">Todos os planos</button>`]
+    .concat(data.plans.map(p =>
+      `<button class="cal-chip ${calFilter===p.id?'active':''}" onclick="calSetFilter('${p.id}')" title="${escH(p.nome)}"><span class="dot" style="background:${p.cor}"></span>${escH(p.nome)}${p.temAtividade?'':' <span style=\"opacity:.55\">(vazio)</span>'}</button>`
+    )).join('');
+
+  const lbl = calView === 'mes'
+    ? `${MES_LONG[calAnchor.getMonth()]} ${calAnchor.getFullYear()}`
+    : semanaLabel(calAnchor);
+
+  const acts = calFilter === 'todos' ? data.acts : data.acts.filter(a => a.planoId === calFilter);
+  const marks = calFilter === 'todos' ? data.marks : data.marks.filter(m => m.planoId === calFilter);
+
+  let body;
+  if (!data.plans.length) {
+    body = `<div class="cal-empty">Você ainda não criou nenhum plano. Vá em <a href="planos.html" style="color:var(--cobalt);font-weight:600">Planos</a> pra criar um semestre, uma prova (ENAMED, residência) ou um objetivo.</div>`;
+  } else if (!data.acts.length) {
+    body = `<div class="cal-empty">Nenhuma atividade planejada ainda.<br>Ative um plano, configure as horas e clique em <b>Gerar sugestão</b> — o cronograma de cada plano aparece aqui reunido.</div>`;
+  } else {
+    body = calView === 'mes' ? renderCalMonth(acts, marks) : renderCalWeek(acts, marks);
+  }
+
+  const legenda = data.acts.length
+    ? `<div class="cal-legenda">${data.plans.filter(p=>p.temAtividade).map(p=>`<span class="lg"><b style="background:${p.cor}"></b>${escH(p.nome)}</span>`).join('')}</div>`
+    : '';
+
+  el.innerHTML = `
+    <div class="cg-head">
+      <div>
+        <h3>Calendário <i>geral</i></h3>
+        <div class="cal-help">Todos os seus planos reunidos em um só lugar. Filtre por plano ou veja a rotina completa.</div>
+      </div>
+      <div class="cal-nav">
+        <button onclick="calNav(-1)" title="Anterior">‹</button>
+        <button onclick="calNav(0)">Hoje</button>
+        <button onclick="calNav(1)" title="Seguinte">›</button>
+        <span class="cal-lbl">${lbl}</span>
+      </div>
+    </div>
+    <div class="cal-controls">
+      <div class="cal-filters">${filtros}</div>
+      <div class="cal-toggle">
+        <button class="${calView==='mes'?'active':''}" onclick="calSetView('mes')">Mês</button>
+        <button class="${calView==='semana'?'active':''}" onclick="calSetView('semana')">Semana</button>
+      </div>
+    </div>
+    ${body}
+    ${legenda}`;
+}
+
+function semanaLabel(anchor) {
+  const ini = startOfWeek(anchor), fim = addDays(ini, 6);
+  const mi = MES_ABREV[ini.getMonth()], mf = MES_ABREV[fim.getMonth()];
+  return mi === mf
+    ? `${ini.getDate()}–${fim.getDate()} ${mf}`
+    : `${ini.getDate()} ${mi} – ${fim.getDate()} ${mf}`;
+}
+
+function calMarksHTML(marks, dateStr, cls) {
+  return marks.filter(m => m.date === dateStr).map(m =>
+    `<div class="${cls}" style="background:${m.cor}" title="${escH(m.nome)} · ${m.label}">${escH(m.nome)} · ${m.label}</div>`
+  ).join('');
+}
+
+function renderCalMonth(acts, marks) {
+  const byDate = {};
+  for (const a of acts) (byDate[a.date] = byDate[a.date] || []).push(a);
+  for (const k in byDate) byDate[k].sort((a,b) => (a.ini||'').localeCompare(b.ini||''));
+
+  const first = new Date(calAnchor.getFullYear(), calAnchor.getMonth(), 1, 12, 0, 0);
+  const start = startOfWeek(first);
+  const mesAtual = calAnchor.getMonth();
+  const hojeStr = toISODate(new Date());
+  const DOW = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+
+  let cells = DOW.map(d => `<div class="cm-dow">${d}</div>`).join('');
+  for (let i = 0; i < 42; i++) {
+    const d = addDays(start, i);
+    const ds = toISODate(d);
+    const outra = d.getMonth() !== mesAtual;
+    const hoje = ds === hojeStr;
+    const dayActs = byDate[ds] || [];
+    const marksHTML = calMarksHTML(marks, ds, 'cc-mark');
+    const MAX = 3;
+    const chips = dayActs.slice(0, MAX).map(a =>
+      `<div class="cc-act ${a.feito?'feito':''}" style="border-left-color:${a.cor}" title="${escH(a.nome)} · ${escH(a.planoNome)}${a.ini?` · ${a.ini}–${a.fim}`:''}">${a.ini?`<span style="color:var(--text-mute)">${a.ini}</span> `:''}${escH(a.nome)}</div>`
+    ).join('');
+    const mais = dayActs.length > MAX ? `<div class="cc-more">+${dayActs.length - MAX} mais</div>` : '';
+    // Parar o clique num dia com atividade: abre a semana daquele dia
+    const onclick = dayActs.length || marksHTML ? ` onclick="calAbrirSemana('${ds}')" style="cursor:pointer"` : '';
+    cells += `<div class="cal-cell ${outra?'other':''} ${hoje?'hoje':''}"${onclick}>
+      <span class="cc-num">${d.getDate()}</span>
+      ${marksHTML}${chips}${mais}
+    </div>`;
+  }
+  return `<div class="cal-month">${cells}</div>`;
+}
+
+function calAbrirSemana(ds) {
+  const d = fromISODate(ds); if (!d) return;
+  calAnchor = d; calView = 'semana'; localStorage.setItem(CAL_VIEW_KEY, 'semana');
+  renderCalGeral();
+}
+
+function renderCalWeek(acts, marks) {
+  const byDate = {};
+  for (const a of acts) (byDate[a.date] = byDate[a.date] || []).push(a);
+  for (const k in byDate) byDate[k].sort((a,b) => (a.ini||'').localeCompare(b.ini||''));
+
+  const start = startOfWeek(calAnchor);
+  const hojeStr = toISODate(new Date());
+  const DOW = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  let cols = '';
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(start, i);
+    const ds = toISODate(d);
+    const hoje = ds === hojeStr;
+    const dayActs = byDate[ds] || [];
+    const totMin = dayActs.reduce((s,a) => s + (a.min||0), 0);
+    const marksHTML = calMarksHTML(marks, ds, 'cw-mark');
+    const chips = dayActs.map(a =>
+      `<div class="cw-act ${a.feito?'feito':''}" style="border-left-color:${a.cor}" title="${escH(a.planoNome)}">
+        ${a.ini?`<span class="cw-time">${a.ini}–${a.fim}</span>`:''}${escH(a.nome)}
+      </div>`
+    ).join('');
+    const inner = (marksHTML || chips) ? (marksHTML + chips) : `<div class="cw-empty">—</div>`;
+    cols += `<div class="cw-col ${hoje?'hoje':''}">
+      <div class="cw-head"><div class="cw-dow">${DOW[i]}</div><div class="cw-num">${d.getDate()}</div></div>
+      <div class="cw-acts">${inner}</div>
+      ${totMin ? `<div class="cw-tot">${calHoras(totMin)}</div>` : ''}
+    </div>`;
+  }
+  return `<div class="cal-week">${cols}</div>`;
 }
 
 function renderSemBanner() {
@@ -1848,11 +2142,14 @@ function renderSemBanner() {
   const p = id ? planos.find(x => x.id === id) : null;
   const el = document.getElementById('semBanner');
   if (!el) return;
-  el.innerHTML = p
-    ? (p.tipo === 'objetivo'
-        ? `<div class="sem-context objetivo">📌 Planejamento do objetivo: <b>${escH(p.nome)}</b> · <a href="planos.html">trocar de contexto</a></div>`
-        : `<div class="sem-context">📅 Planejamento do semestre: <b>${escH(p.nome)}</b> · <a href="planos.html">trocar de contexto</a></div>`)
-    : `<div class="sem-context none">Nenhum contexto ativo — <a href="planos.html">crie ou ative um semestre ou objetivo em Planos</a>. As disciplinas, a disponibilidade e o cronograma abaixo pertencem ao contexto ativo.</div>`;
+  if (!p) {
+    el.innerHTML = `<div class="sem-context none">Nenhum contexto ativo — <a href="planos.html">crie ou ative um plano em Planos</a>. As disciplinas, a disponibilidade e o cronograma abaixo pertencem ao contexto ativo.</div>`;
+  } else if (p.tipo !== 'semestre') {
+    const fi = ({residencia:['🏥','Residência','var(--cobalt)'],enamed:['📋','ENAMED','var(--amber)'],objetivo:['📌','Objetivo','#7C5CFC']})[p.tipo] || ['📘','Plano','var(--muted)'];
+    el.innerHTML = `<div class="sem-context objetivo" style="border-left-color:${fi[2]}">${fi[0]} Planejamento · ${fi[1]}: <b style="color:${fi[2]}">${escH(p.nome)}</b> · edita este plano aqui · <a href="planos.html">trocar de contexto</a></div>`;
+  } else {
+    el.innerHTML = `<div class="sem-context">📅 Planejamento do semestre: <b>${escH(p.nome)}</b> · <a href="planos.html">trocar de contexto</a></div>`;
+  }
 }
 
 renderSemBanner();
