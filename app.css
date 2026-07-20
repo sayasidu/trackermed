@@ -296,3 +296,126 @@ tr:hover td { background: var(--row-hover); }
 [data-theme="dark"] th { background: var(--surface-soft); }
 
 
+/* ══════════════════════════════════════════════════════════════════════
+   MODERNIZAÇÃO 2026 · camada de realce (editorial-tech)
+   Mantém a identidade Cobalto (creme + cobalto + ácido + Fraunces) e
+   adiciona: gradiente-assinatura, profundidade em camadas, vidro, brilho,
+   micro-interações e movimento. Não altera estrutura de HTML nem JS —
+   só realça o que já existe. Fica no fim do arquivo pra vencer no cascade.
+   ══════════════════════════════════════════════════════════════════════ */
+:root {
+  --grad-brand: linear-gradient(120deg, #1E3AE8 0%, #4361FF 46%, #7C5CFC 100%);
+  --grad-brand-soft: linear-gradient(120deg, rgba(30,58,232,0.12), rgba(124,92,252,0.12));
+  --ease: cubic-bezier(.22,.61,.36,1);
+  --radius: 4px;
+  --radius-lg: 10px;
+  --ring: 0 0 0 3px rgba(30,58,232,0.30);
+  --sh-1: 0 1px 2px rgba(10,19,48,.05), 0 3px 10px rgba(10,19,48,.05);
+  --sh-2: 0 4px 14px rgba(10,19,48,.08), 0 14px 34px rgba(10,19,48,.09);
+  --sh-3: 0 12px 34px rgba(10,19,48,.13), 0 30px 70px rgba(10,19,48,.14);
+  --sh-glow: 0 8px 26px rgba(30,58,232,.34);
+}
+[data-theme="dark"] {
+  --ring: 0 0 0 3px rgba(124,148,255,0.40);
+  --sh-1: 0 1px 2px rgba(0,0,0,.45), 0 3px 12px rgba(0,0,0,.45);
+  --sh-2: 0 6px 20px rgba(0,0,0,.5), 0 18px 44px rgba(0,0,0,.5);
+  --sh-3: 0 14px 42px rgba(0,0,0,.6), 0 40px 90px rgba(0,0,0,.6);
+  --sh-glow: 0 8px 28px rgba(124,148,255,.42);
+}
+
+html { scroll-behavior: smooth; }
+body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+/* Transições suaves nas superfícies interativas */
+.card, .btn, .nav-item, .pill, .theme-toggle, .tag, .qcard, .quick,
+.kpi, .perf-card, .disc-card, .met-card, .rev-row, .today-item, .sim-row,
+.erro-card, .hist-item, .play-mode-btn {
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease),
+              border-color .2s var(--ease), background-color .2s var(--ease),
+              color .2s var(--ease);
+}
+
+/* Cartões com profundidade e leve elevação no hover */
+.card { box-shadow: var(--sh-1); }
+.card:hover { box-shadow: var(--sh-2); }
+
+/* Botões — profundidade, elevação e primário com gradiente + brilho */
+.btn { border-radius: var(--radius); box-shadow: var(--sh-1); }
+.btn:hover { transform: translateY(-2px); box-shadow: var(--sh-2); opacity: 1; }
+.btn:active { transform: translateY(0); box-shadow: var(--sh-1); }
+.btn.cobalt { background-image: var(--grad-brand); border-color: transparent; box-shadow: var(--sh-glow); }
+.btn.cobalt:hover { box-shadow: 0 12px 32px rgba(30,58,232,.48); }
+.btn.acid:hover { box-shadow: 0 10px 26px rgba(230,255,61,.45); }
+
+/* Sidebar — degradê sutil na base navy + trilho gradiente na borda */
+.sidebar {
+  background-image: linear-gradient(180deg, #0B1533 0%, #0A1330 55%, #080F27 100%);
+  box-shadow: inset -1px 0 0 rgba(244,241,234,0.06);
+  position: relative;
+}
+.sidebar::before {
+  content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 2px;
+  background: linear-gradient(180deg, transparent, rgba(124,92,252,.55), rgba(30,58,232,.55), transparent);
+  opacity: .7; pointer-events: none;
+}
+[data-theme="dark"] .sidebar { background-image: linear-gradient(180deg, #070C1E 0%, #050A1F 60%, #04081A 100%); }
+
+/* Logo com ponto-acento que pulsa suavemente */
+.sidebar .logo::after { box-shadow: 0 0 0 0 rgba(230,255,61,.55); }
+@media (prefers-reduced-motion: no-preference) {
+  .sidebar .logo::after { animation: tmPulse 2.8s var(--ease) infinite; }
+  @keyframes tmPulse {
+    0% { box-shadow: 0 0 0 0 rgba(230,255,61,.5); }
+    70% { box-shadow: 0 0 0 9px rgba(230,255,61,0); }
+    100% { box-shadow: 0 0 0 0 rgba(230,255,61,0); }
+  }
+}
+
+/* Navegação — cantos suaves, deslize no hover, ativo com gradiente + brilho */
+.nav-item { border-radius: 8px; }
+.nav-item:hover:not(.active) { transform: translateX(3px); }
+.nav-item.active { background-image: var(--grad-brand); box-shadow: var(--sh-glow); }
+
+/* Pills / toggles / tags com um respiro de sombra */
+.pill, .theme-toggle { box-shadow: var(--sh-1); }
+.theme-toggle:hover { transform: translateY(-1px); }
+.tag { box-shadow: 0 1px 2px rgba(10,19,48,.08); }
+
+/* Barras de progresso com gradiente-assinatura */
+.progress i { background-image: var(--grad-brand); }
+
+/* Texto-acento em gradiente nos títulos (as palavras em itálico cobalto) */
+h1.page-title i, .section-title i, .greet h1 i, .box h2 i {
+  background-image: var(--grad-brand);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+
+/* Anéis de foco acessíveis e modernos */
+a:focus-visible, button:focus-visible, input:focus-visible,
+textarea:focus-visible, select:focus-visible, .nav-item:focus-visible,
+.theme-toggle:focus-visible, [tabindex]:focus-visible {
+  outline: none; box-shadow: var(--ring); border-radius: var(--radius);
+}
+
+/* Entrada suave do conteúdo (só quando o usuário permite movimento) */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes tmFadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .main > * { animation: tmFadeUp .5s var(--ease) both; }
+  .main > *:nth-child(2) { animation-delay: .05s; }
+  .main > *:nth-child(3) { animation-delay: .10s; }
+  .main > *:nth-child(4) { animation-delay: .15s; }
+  .main > *:nth-child(n+5) { animation-delay: .2s; }
+}
+
+/* Barra de rolagem moderna e discreta */
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+  background: var(--border); border-radius: 20px;
+  border: 2px solid transparent; background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-mute); background-clip: content-box; }
+::selection { background: rgba(30,58,232,.18); }
+[data-theme="dark"] ::selection { background: rgba(124,148,255,.28); }
+
