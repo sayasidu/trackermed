@@ -174,6 +174,11 @@ html[data-theme="dark"] .blk-item.done.revisao .mins { color: #7BD389; }
 .conc-help b { color: var(--cobalt); }
 .conc-btn { padding: 11px 30px; font-weight: 600; }
 .met-class.refazer { background: var(--rose); color: #fff; }
+/* Modal: continuar estudo extra? — barra de progresso do tempo planejado */
+.cont-extra-prog { display: flex; align-items: center; gap: 12px; margin: 2px 0 16px; }
+.cont-extra-bar { flex: 1; height: 10px; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.cont-extra-fill { height: 100%; width: 0; background: var(--cobalt); border-radius: 999px; transition: width .35s ease; }
+.cont-extra-pct { font-family: 'Fraunces', serif; font-size: 20px; font-style: italic; color: var(--cobalt); min-width: 48px; text-align: right; }
 </style></head><body>
 <div class="app">
 <aside class="sidebar">
@@ -433,6 +438,29 @@ html[data-theme="dark"] .blk-item.done.revisao .mins { color: #7BD389; }
   </div>
 </div>
 
+<!-- Modal: continuar estudo extra? (após cada sessão de Pomodoro) -->
+<div class="modal-backdrop" id="continuarExtraModal" onclick="if(event.target===this) encerrarExtra()">
+  <div class="modal-box" style="width:460px">
+    <button class="mbtn-close" onclick="encerrarExtra()">×</button>
+    <h2>Sessão <i>concluída</i></h2>
+    <div class="modal-sub" id="contExtraSub">Você concluiu uma sessão de Pomodoro.</div>
+    <div class="conc-resumo">
+      <div class="conc-linha"><span class="conc-lbl">Matéria</span><span class="conc-val" id="contExtraMateria">—</span></div>
+      <div class="conc-linha" id="contExtraConteudoWrap"><span class="conc-lbl">Conteúdo</span><span class="conc-val" id="contExtraConteudo">—</span></div>
+      <div class="conc-linha"><span class="conc-lbl">Tempo estudado</span><span class="conc-val" id="contExtraTempo">—</span></div>
+    </div>
+    <div class="cont-extra-prog">
+      <div class="cont-extra-bar"><div class="cont-extra-fill" id="contExtraFill"></div></div>
+      <div class="cont-extra-pct" id="contExtraPct">0%</div>
+    </div>
+    <div class="conc-help" id="contExtraHelp">Quer iniciar outra sessão de Pomodoro ou encerrar por aqui?</div>
+    <div class="mactions" style="justify-content:space-between">
+      <button type="button" class="mbtn-cancel conc-btn" onclick="encerrarExtra()">Encerrar estudo</button>
+      <button type="button" class="mbtn-save conc-btn" id="contExtraContinuarBtn" onclick="continuarExtra()">Iniciar outra sessão</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const DISC_KEY = 'trackermed.disciplinas.v1';
 const PLAN_KEY = 'trackermed.plan.v1';
@@ -567,7 +595,7 @@ function pickMeme(seed, lista) {
 
 // Timer state
 function makeTimerState() {
-  return { discId: null, discNome: '', conteudo: '', focusSec: 0, pauseSec: 0, sections: 1, currentSection: 1, mode: 'focus', leftSec: 0, running: false, intervalId: null, linkedBlocoId: null, fromModal: false, revisar: false, studiedSec: 0, freeMode: false, elapsedSec: 0, revHistId: null };
+  return { discId: null, discNome: '', conteudo: '', focusSec: 0, pauseSec: 0, sections: 1, currentSection: 1, mode: 'focus', leftSec: 0, running: false, intervalId: null, linkedBlocoId: null, fromModal: false, revisar: false, studiedSec: 0, freeMode: false, elapsedSec: 0, revHistId: null, extraFlow: false, plannedTotalMin: 0, pomodoroMin: 0, accumStudiedMin: 0 };
 }
 let timerState = makeTimerState();
 function beep() {
@@ -590,7 +618,11 @@ function timerOpen(discId, discNome, mins, linkedBlocoId, opts) {
     fromModal: !!opts.fromModal, revisar: !!opts.revisar,
     studiedSec: 0,
     freeMode: false, elapsedSec: 0,
-    revHistId: opts.revHistId || null
+    revHistId: opts.revHistId || null,
+    extraFlow: !!opts.extraFlow,
+    plannedTotalMin: Math.max(0, parseInt(opts.plannedTotalMin) || 0),
+    pomodoroMin: Math.max(1, parseInt(opts.pomodoroMin) || mins),
+    accumStudiedMin: 0
   };
   document.getElementById('tDisc').textContent = discNome;
   document.getElementById('tPlayBtn').textContent = 'Iniciar';
@@ -724,6 +756,10 @@ function onTick() {
           timerState.running = true;
           timerState.intervalId = setInterval(onTick, 1000);
         }
+      } else if (timerState.extraFlow && timerState.plannedTotalMin > 0) {
+        // Estudo extra com tempo planejado: não inicia a próxima sessão
+        // sozinho — acumula o tempo e pergunta se o aluno quer continuar.
+        extraSessionDone();
       } else {
         // última seção: timerFinish soma o tempo restante (focusSec - 0 = focusSec)
         timerFinish(true);
@@ -765,6 +801,8 @@ function timerFinish(auto) {
     let studiedSec = timerState.studiedSec;
     if (timerState.mode === 'focus') studiedSec += Math.max(0, timerState.focusSec - Math.max(0, timerState.leftSec));
     studied = Math.round(studiedSec/60);
+    // Estudo extra: soma o tempo das sessões de Pomodoro já concluídas.
+    if (timerState.extraFlow) studied += timerState.accumStudiedMin;
     totalPlannedSec = timerState.focusSec * timerState.sections;
   }
   if (studied < 1) { timerClose(); return; }
@@ -843,7 +881,16 @@ function timerFinish(auto) {
     const now = new Date();
     const endH = now.getHours() + now.getMinutes()/60;
     const startH = Math.max(0, endH - studied/60);
-    plan[wk].push({ id: uid(), tipo:'estudo', discId: timerState.discId, matNome: timerState.discNome, conteudo: timerState.conteudo || '', dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: true, fromTimer: true, minutos: studied, extra: true, data: todayKey(), revisar: timerState.revisar });
+    const bloco = { id: uid(), tipo:'estudo', discId: timerState.discId, matNome: timerState.discNome, conteudo: timerState.conteudo || '', dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: true, fromTimer: true, minutos: studied, extra: true, data: todayKey(), revisar: timerState.revisar };
+    // Estudo extra com tempo máximo planejado: guarda plano x realizado e só
+    // marca "feito" quando o tempo estudado alcança o total planejado.
+    if (timerState.extraFlow && timerState.plannedTotalMin > 0) {
+      bloco.planoMin = timerState.plannedTotalMin;
+      bloco.minutos = timerState.plannedTotalMin;
+      bloco.minutosFeitos = studied;
+      bloco.feito = studied >= timerState.plannedTotalMin;
+    }
+    plan[wk].push(bloco);
     savePlan(plan);
   }
 
@@ -875,6 +922,70 @@ function timerFinish(auto) {
   timerClose();
   render();
   abrirConclusaoConteudo(resumoConclusao);
+}
+
+// ===== Estudo extra: continuar ou encerrar após cada sessão de Pomodoro =====
+// Fecha a sessão de foco recém-terminada sem iniciar a próxima. Acumula o tempo
+// estudado e abre o modal que mostra o % concluído em relação ao tempo máximo
+// planejado, deixando o aluno decidir se continua ou encerra o estudo.
+function extraSessionDone() {
+  if (timerState.intervalId) clearInterval(timerState.intervalId);
+  timerState.running = false;
+  // Tempo desta sessão (na última seção o leftSec chega a 0 => sessão completa).
+  let sessaoSec = timerState.studiedSec;
+  if (timerState.mode === 'focus') sessaoSec += Math.max(0, timerState.focusSec - Math.max(0, timerState.leftSec));
+  timerState.accumStudiedMin += Math.round(sessaoSec/60);
+  // Prepara uma nova sessão de foco (só inicia se o aluno pedir).
+  timerState.studiedSec = 0;
+  timerState.currentSection = 1;
+  timerState.mode = 'focus';
+  timerState.leftSec = timerState.focusSec;
+  updatePhaseUI();
+  updateClock();
+  document.getElementById('tPlayBtn').textContent = 'Iniciar';
+  abrirContinuarExtra();
+}
+function abrirContinuarExtra() {
+  const estudado = timerState.accumStudiedMin;
+  const plano = timerState.plannedTotalMin;
+  const pct = plano > 0 ? Math.min(100, Math.round(estudado / plano * 100)) : 0;
+  document.getElementById('contExtraMateria').textContent = timerState.discNome || 'Estudo';
+  const conteudo = (timerState.conteudo || '').trim();
+  document.getElementById('contExtraConteudo').textContent = conteudo || '—';
+  document.getElementById('contExtraConteudoWrap').style.display = conteudo ? '' : 'none';
+  document.getElementById('contExtraTempo').textContent = `${fmtHrange(estudado)} de ${fmtHrange(plano)}`;
+  document.getElementById('contExtraFill').style.width = pct + '%';
+  document.getElementById('contExtraPct').textContent = pct + '%';
+  const btn = document.getElementById('contExtraContinuarBtn');
+  if (estudado >= plano) {
+    document.getElementById('contExtraSub').textContent = 'Você concluiu 100% do tempo máximo planejado.';
+    document.getElementById('contExtraHelp').innerHTML = 'Pode <b>encerrar</b> por aqui ou seguir estudando além do planejado.';
+    btn.textContent = `Estudar mais (${timerState.pomodoroMin} min)`;
+  } else {
+    document.getElementById('contExtraSub').textContent = `Sessão de ${fmtHrange(timerState.pomodoroMin)} concluída.`;
+    document.getElementById('contExtraHelp').textContent = 'Quer iniciar outra sessão de Pomodoro ou encerrar por aqui?';
+    btn.textContent = `Iniciar outra sessão (${timerState.pomodoroMin} min)`;
+  }
+  document.getElementById('continuarExtraModal').classList.add('open');
+}
+function continuarExtra() {
+  document.getElementById('continuarExtraModal').classList.remove('open');
+  // Nova sessão de foco com a mesma duração de Pomodoro; o tempo acumulado
+  // das sessões anteriores continua guardado em accumStudiedMin.
+  timerState.mode = 'focus';
+  timerState.currentSection = 1;
+  timerState.studiedSec = 0;
+  timerState.leftSec = timerState.focusSec;
+  timerState.running = false;
+  document.getElementById('timerFloat').classList.add('open');
+  updatePhaseUI();
+  updateClock();
+  timerToggle();
+}
+function encerrarExtra() {
+  document.getElementById('continuarExtraModal').classList.remove('open');
+  // Finaliza o estudo somando o tempo já acumulado (nenhuma sessão em curso).
+  timerFinish(false);
 }
 
 // ===== Modal: conteúdo concluído? =====
@@ -1186,14 +1297,20 @@ function salvarExtraTimer() {
   const mat = getMateriaExtra();
   if (!mat) return;
   const conteudo = getConteudoExtra();
+  // "Duração (Pomodoro)" define quanto tempo cada sessão do cronômetro dura.
+  // "Tempo máximo planejado" é só o total previsto para o conteúdo — serve
+  // para calcular o % concluído, não a duração da sessão.
+  const pomodoroMin = getMinsSelected();
   const planoMin = getPlanoMinSelected();
-  const sessoesUso = extraMulti === 'sim' ? extraSecoes : 1;
-  const pausaUso = extraMulti === 'sim' ? extraPausa : 0;
-  // Se o aluno informou o plano total, cada sessão = plano / sessões. Senão, usa Duração.
-  const minsPorSessao = planoMin ? Math.max(1, Math.round(planoMin / sessoesUso)) : getMinsSelected();
   const revisar = getRevisarSelected();
   fecharExtra();
-  timerOpen(mat.discId, mat.nome, minsPorSessao, null, { fromModal: true, revisar, sections: sessoesUso, pauseMins: pausaUso, conteudo });
+  // Roda uma sessão de Pomodoro por vez. Ao terminar, se houver tempo
+  // planejado, mostramos o % concluído e o aluno decide se inicia outra
+  // sessão ou encerra — nunca começa a próxima automaticamente.
+  timerOpen(mat.discId, mat.nome, pomodoroMin, null, {
+    fromModal: true, revisar, conteudo,
+    extraFlow: true, plannedTotalMin: planoMin || 0, pomodoroMin
+  });
 }
 function salvarExtraTimerLivre() {
   const mat = getMateriaExtra();
