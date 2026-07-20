@@ -132,10 +132,16 @@
 .plano-card.objetivo.is-ativo { box-shadow: 0 0 0 1px #7C5CFC inset; }
 .det-tipo.objetivo { color: #7C5CFC; }
 .det-titulo i.obj, .det-countdown.objetivo .num { color: #7C5CFC; }
-.sem-badge.obj-ativo { background: #7C5CFC; color: #fff; }
+.det-countdown.residencia .num { color: var(--cobalt); }
+.sem-badge.foco-ativo { background: var(--ink); color: var(--paper); }
 .sem-badge.concluido { background: var(--line); color: var(--muted); }
+/* Planos de foco ativos (residência/ENAMED/objetivo) — realce por tipo */
+.plano-card.residencia.is-ativo { box-shadow: 0 0 0 1px var(--cobalt) inset; }
+.plano-card.enamed.is-ativo { box-shadow: 0 0 0 1px var(--amber) inset; }
+.sem-banner.foco, .sem-ctrl.foco { border-left-width: 4px; border-left-style: solid; }
+.sem-ctrl.foco { border-left-width: 3px; }
+.sem-banner.foco .sb-nome i, .sem-banner.objetivo .sb-nome i { font-style: normal; }
 .sem-banner.objetivo { border-left-color: #7C5CFC; }
-.sem-banner.objetivo .sb-nome i { color: #7C5CFC; font-style: normal; }
 .sem-ctrl.objetivo { border-left: 3px solid #7C5CFC; }
 </style></head><body>
 <div class="app">
@@ -547,8 +553,8 @@ function apagar() {
   const alvo = load().find(x => x.id === editingId);
   const ativo = semAtivo() === editingId;
   const msg = ativo
-    ? (alvo && alvo.tipo === 'objetivo'
-        ? 'Apagar o objetivo ATIVO? As disciplinas e o planejamento dele serão removidos junto.'
+    ? (alvo && ehFoco(alvo.tipo)
+        ? `Apagar o ${tipoInfo(alvo.tipo).label.toLowerCase()} ATIVO? As disciplinas e o planejamento dele serão removidos junto.`
         : 'Apagar o semestre ATIVO? As disciplinas e o planejamento dele serão removidos junto.')
     : 'Apagar esse plano?';
   if (!confirm(msg)) return;
@@ -574,8 +580,8 @@ function trocarAtivo(id) {
   const p = load().find(x => x.id === id);
   if (!p) return;
   const atual = semAtivo() ? load().find(x => x.id === semAtivo()) : null;
-  const msg = p.tipo === 'objetivo'
-    ? `Ativar o objetivo “${p.nome}”? As abas Disciplinas, Planejamento e Revisões passam a mostrar só o conteúdo dele${atual ? ` — “${atual.nome}” fica guardado e volta quando você reativar` : ''}.`
+  const msg = ehFoco(p.tipo)
+    ? `Ativar “${p.nome}”? As abas Disciplinas, Planejamento e Revisões passam a mostrar só o conteúdo dele${atual ? ` — “${atual.nome}” fica guardado e volta quando você reativar` : ''}.`
     : `Tornar “${p.nome}” o contexto ativo? O contexto atual será arquivado e você passa a editar este.`;
   if (!confirm(msg)) return;
   ativarContexto(id);
@@ -625,21 +631,34 @@ function nDiscVivas() {
   try { return JSON.parse(localStorage.getItem(LIVE_KEYS.disciplinas) || '[]').length; } catch { return 0; }
 }
 
+// Apresentação por tipo de plano (ícone, rótulo e cor de destaque).
+function tipoInfo(tipo) {
+  return ({
+    semestre:   { icon: '🎓', label: 'Semestre',   cor: 'var(--mint)' },
+    residencia: { icon: '🏥', label: 'Residência', cor: 'var(--cobalt)' },
+    enamed:     { icon: '📋', label: 'ENAMED',     cor: 'var(--amber)' },
+    objetivo:   { icon: '📌', label: 'Objetivo',   cor: '#7C5CFC' }
+  })[tipo] || { icon: '📘', label: 'Plano', cor: 'var(--muted)' };
+}
+// Tipos que funcionam como "foco" — um contexto próprio ativável, distinto do semestre.
+function ehFoco(tipo) { return tipo === 'residencia' || tipo === 'enamed' || tipo === 'objetivo'; }
+
 function bannerAtivoHTML() {
   const id = semAtivo();
   const p = id ? load().find(x => x.id === id) : null;
 
-  // Contexto ativo é um objetivo independente.
-  if (p && p.tipo === 'objetivo') {
+  // Contexto ativo é um plano de foco (residência, ENAMED ou objetivo).
+  if (p && ehFoco(p.tipo)) {
     const nDisc = nDiscVivas();
     const temSemestre = !!semestreAbertoRecente();
-    return `<div class="sem-banner objetivo">
+    const info = tipoInfo(p.tipo);
+    return `<div class="sem-banner foco" style="border-left-color:${info.cor}">
       <div class="sb-info">
-        <div class="sb-lbl">Objetivo ativo</div>
-        <div class="sb-nome">📌 <i>${esc(p.nome)}</i></div>
-        <div class="sb-meta">${nDisc} disciplina${nDisc!==1?'s':''} · as outras abas mostram só o conteúdo deste objetivo, separado do semestre</div>
+        <div class="sb-lbl">${esc(info.label)} ativo</div>
+        <div class="sb-nome">${info.icon} <i>${esc(p.nome)}</i></div>
+        <div class="sb-meta">${nDisc} disciplina${nDisc!==1?'s':''} · as outras abas mostram só o conteúdo deste plano, separado do semestre</div>
       </div>
-      <button class="sb-close" onclick="voltarAoSemestre()">${temSemestre ? 'Voltar ao semestre →' : 'Desativar objetivo →'}</button>
+      <button class="sb-close" onclick="voltarAoSemestre()">${temSemestre ? 'Voltar ao semestre →' : 'Desativar →'}</button>
     </div>`;
   }
 
@@ -663,9 +682,9 @@ function bannerAtivoHTML() {
   </div>`;
 }
 
-// Controle de ciclo de vida exibido no detalhe de um contexto (semestre ou objetivo).
+// Controle de ciclo de vida exibido no detalhe de um contexto.
 function contextoControlHTML(p) {
-  if (p.tipo === 'objetivo') return objetivoControlHTML(p);
+  if (ehFoco(p.tipo)) return focoControlHTML(p);
   if (p.tipo !== 'semestre') return '';
   if (p.status === 'fechado') {
     return `<div class="sem-ctrl fechado">
@@ -685,31 +704,34 @@ function contextoControlHTML(p) {
   </div>`;
 }
 
-// Controle do objetivo: ativar/voltar + concluir, e prévia das disciplinas dele.
-function objetivoControlHTML(p) {
+// Controle de um plano de foco (residência, ENAMED, objetivo): ativar/voltar +
+// concluir, e prévia das disciplinas dele.
+function focoControlHTML(p) {
   const ativo = semAtivo() === p.id;
   const temSemestre = !!semestreAbertoRecente();
+  const info = tipoInfo(p.tipo);
+  const rot = info.label.toLowerCase();
   const preview = discPreviewHTML(
-    p.id, 'Disciplinas deste objetivo',
-    ativo ? 'Nenhuma disciplina neste objetivo ainda. Vá em <b>Disciplinas</b> pra adicionar as deste objetivo.'
-          : 'Nenhuma disciplina neste objetivo ainda. Ative-o e vá em Disciplinas pra montar o conteúdo dele.'
+    p.id, 'Disciplinas deste plano',
+    ativo ? 'Nenhuma disciplina neste plano ainda. Vá em <b>Disciplinas</b> pra montar o conteúdo dele.'
+          : 'Nenhuma disciplina neste plano ainda. Ative-o e vá em Disciplinas pra montar o conteúdo dele.'
   );
-  const concluirBtn = `<button onclick="toggleConcluido('${p.id}')" style="background:transparent;border:1px solid var(--line);color:var(--ink2)">${p.concluido ? '↺ Reabrir objetivo' : '✓ Marcar como concluído'}</button>`;
+  const concluirBtn = `<button onclick="toggleConcluido('${p.id}')" style="background:transparent;border:1px solid var(--line);color:var(--ink2)">${p.concluido ? '↺ Reabrir plano' : '✓ Marcar como concluído'}</button>`;
   let ctrl;
   if (ativo) {
-    ctrl = `<div class="sem-ctrl objetivo">
-      <div><b>📌 Objetivo ativo.</b> As abas Disciplinas, Planejamento e Revisões mostram só o conteúdo deste objetivo — sem misturar com o semestre.</div>
+    ctrl = `<div class="sem-ctrl foco" style="border-left-color:${info.cor}">
+      <div><b>${info.icon} ${esc(info.label)} ativo.</b> As abas Disciplinas, Planejamento e Revisões mostram só o conteúdo deste plano — sem misturar com o semestre. Ele aparece no <a href="plannerstudy.html">calendário geral</a>.</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         ${concluirBtn}
         <button onclick="voltarAoSemestre()">${temSemestre ? 'Voltar ao semestre →' : 'Desativar →'}</button>
       </div>
     </div>`;
   } else {
-    ctrl = `<div class="sem-ctrl objetivo">
-      <div>${p.concluido ? '<b>Objetivo concluído.</b> ' : ''}Este objetivo não está ativo. Ative-o pra montar e ver as disciplinas, o planejamento e as revisões dele nas outras abas.</div>
+    ctrl = `<div class="sem-ctrl foco" style="border-left-color:${info.cor}">
+      <div>${p.concluido ? '<b>Plano concluído.</b> ' : ''}Este ${esc(rot)} não está ativo. Ative-o pra montar e ver as disciplinas, o planejamento e as revisões dele nas outras abas.</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         ${concluirBtn}
-        <button onclick="trocarAtivo('${p.id}')">★ Ativar objetivo</button>
+        <button onclick="trocarAtivo('${p.id}')">★ Ativar ${esc(rot)}</button>
       </div>
     </div>`;
   }
@@ -788,16 +810,16 @@ function render() {
                     : p.tipo === 'enamed' ? '📋 ENAMED'
                     : p.tipo === 'objetivo' ? '📌 Objetivo'
                     : '🎓 Semestre';
-    const ativavel = p.tipo === 'semestre' || p.tipo === 'objetivo';
-    const isAtivo = ativavel && semAtivo() === p.id;
+    const ativavel = true; // todos os tipos são contextos ativáveis
+    const isAtivo = semAtivo() === p.id;
     const isFechado = p.tipo === 'semestre' && p.status === 'fechado';
-    const isConcluido = p.tipo === 'objetivo' && !!p.concluido && !isAtivo;
+    const isConcluido = ehFoco(p.tipo) && !!p.concluido && !isAtivo;
     const badge = isAtivo
-                    ? `<span class="sem-badge ${p.tipo === 'objetivo' ? 'obj-ativo' : 'ativo'}">● Ativo</span>`
+                    ? `<span class="sem-badge ${ehFoco(p.tipo) ? 'foco-ativo' : 'ativo'}">● Ativo</span>`
                 : isFechado ? '<span class="sem-badge fechado">Fechado</span>'
                 : isConcluido ? '<span class="sem-badge concluido">✓ Concluído</span>' : '';
-    const ativarBtn = (ativavel && !isAtivo && !isFechado)
-      ? `<button onclick="event.stopPropagation(); trocarAtivo('${p.id}')" title="${p.tipo === 'objetivo' ? 'Ativar objetivo' : 'Tornar ativo'}">★</button>` : '';
+    const ativarBtn = (!isAtivo && !isFechado)
+      ? `<button onclick="event.stopPropagation(); trocarAtivo('${p.id}')" title="Ativar plano">★</button>` : '';
 
     return `<div class="plano-card ${p.tipo}${isAtivo ? ' is-ativo' : ''}${isFechado ? ' is-fechado' : ''}" onclick="clicarCard(event, '${p.id}')">
       <div class="plano-actions">

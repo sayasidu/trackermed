@@ -443,8 +443,11 @@ function semCtxHTML() {
   let planos = [];
   try { planos = JSON.parse(localStorage.getItem('trackermed.planos.v1') || '[]'); } catch {}
   const p = id ? planos.find(x => x.id === id) : null;
-  if (!p) return `<div class="sem-context none">Nenhum contexto ativo — <a href="planos.html">crie ou ative um semestre ou objetivo em Planos</a> pra organizar as disciplinas. As disciplinas abaixo entram no contexto que você ativar.</div>`;
-  if (p.tipo === 'objetivo') return `<div class="sem-context objetivo">📌 Disciplinas do objetivo: <b>${esc(p.nome)}</b> · <a href="planos.html">trocar de contexto</a></div>`;
+  if (!p) return `<div class="sem-context none">Nenhum contexto ativo — <a href="planos.html">crie ou ative um plano em Planos</a> pra organizar as disciplinas. As disciplinas abaixo entram no contexto que você ativar.</div>`;
+  if (p.tipo !== 'semestre') {
+    const fi = ({residencia:['🏥','Residência','var(--cobalt)'],enamed:['📋','ENAMED','var(--amber)'],objetivo:['📌','Objetivo','#7C5CFC']})[p.tipo] || ['📘','Plano','var(--muted)'];
+    return `<div class="sem-context objetivo" style="border-left-color:${fi[2]}">${fi[0]} Disciplinas · ${fi[1]}: <b style="color:${fi[2]}">${esc(p.nome)}</b> · <a href="planos.html">trocar de contexto</a></div>`;
+  }
   return `<div class="sem-context">📚 Disciplinas do semestre: <b>${esc(p.nome)}</b> · <a href="planos.html">trocar de contexto</a></div>`;
 }
 
