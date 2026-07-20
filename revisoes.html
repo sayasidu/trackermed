@@ -92,7 +92,7 @@
   <div>
     <div class="kicker">Feed do histórico</div>
     <h1 class="page-title">Sua <i>revisão</i>.</h1>
-    <p class="page-lede">Cadastre revisões manualmente ou deixe o cronômetro do <a href="historico.html" style="color:var(--cobalt);font-weight:600">histórico</a> alimentá-las automaticamente.</p>
+    <p class="page-lede">Cadastre revisões manualmente ou deixe o cronômetro do <a href="historico.html" style="color:var(--cobalt);font-weight:600">histórico</a> alimentá-las — ao finalizar uma sessão, você confirma se concluiu o conteúdo.</p>
   </div>
   <button class="rev-add-btn" onclick="abrirNovaRevisao()">+ Nova revisão</button>
 </div>
@@ -589,7 +589,7 @@ function render() {
   pill.textContent = itens.length ? `${itens.length} ${plural(itens.length, 'item', 'itens')}` : 'vazio';
 
   if (itens.length === 0) {
-    root.innerHTML = `<div class="rev-empty">Nenhuma revisão por aqui ainda.<span class="sub">Use <a href="#" onclick="event.preventDefault();abrirNovaRevisao()">+ Nova revisão</a> para cadastrar manualmente, ou finalize um cronômetro no <a href="historico.html">histórico</a> — ele alimenta esta lista automaticamente.</span></div>`;
+    root.innerHTML = `<div class="rev-empty">Nenhuma revisão por aqui ainda.<span class="sub">Use <a href="#" onclick="event.preventDefault();abrirNovaRevisao()">+ Nova revisão</a> para cadastrar manualmente, ou finalize um cronômetro no <a href="historico.html">histórico</a> e confirme que concluiu o conteúdo — só assim ele entra nesta lista.</span></div>`;
     return;
   }
 
