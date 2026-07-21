@@ -32,6 +32,9 @@
 .rev-status { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
 .rev-status.ok { color: var(--mint); }
 .rev-status.pend { color: var(--amber); }
+.rev-status.cfg { color: var(--cobalt); }
+.rev-row.awaiting { border-left: 4px solid var(--cobalt); }
+.rev-row.configured { border-left: 4px solid var(--mint); }
 .rev-count { font-family: 'Fraunces', serif; font-size: 28px; letter-spacing: -0.03em; font-weight: 500; color: var(--cobalt); min-width: 70px; text-align: right; font-variant-numeric: tabular-nums; }
 .rev-count span { font-size: 12px; color: var(--muted); font-family: 'Inter Tight', sans-serif; font-weight: 500; }
 .rev-empty { background: var(--card); border: 1px solid var(--line); padding: 60px 32px; text-align: center; color: var(--muted); font-size: 14px; font-style: italic; border-radius: 12px; box-shadow: var(--sh-1); }
@@ -398,7 +401,8 @@ function salvarNovaRevisao() {
     discId,
     metodologia: metodologiaKey,
     revOffsets: metodologia.offsets.slice(),
-    isParent: metodologia.offsets.length > 0
+    isParent: metodologia.offsets.length > 0,
+    revConfigured: true
   });
 
   // Gera revisões agendadas (entradas no histórico + blocos no planner)
@@ -489,6 +493,7 @@ function aplicarMetodologia(parentId, offsets, baseIso) {
       r.revOffsets = offsets.slice();
       r.metodologia = metodologiaKey;
       r.isParent = offsets.length > 0;
+      r.revConfigured = true;
       r.data = isoToBR(baseIso) || r.data;
     }
   });
@@ -832,41 +837,69 @@ function render() {
       <div class="rev-list">
         ${arr.map(r => {
           const concluido = !!r.concluido;
+          const scheduled = !!r.scheduled;
           const mins = parseInt(r.minutos) || 0;
           const conteudo = (r.conteudo || '').trim();
           const idAttr = escapeHtml(r.id || '');
-          const pOffsets = (!r.scheduled && r.isParent) ? offsetsFromRev(r).slice().sort((a, b) => a - b) : [];
-          const tag = r.scheduled
+          const pOffsets = scheduled ? [] : offsetsFromRev(r).slice().sort((a, b) => a - b);
+          const isParentNow = pOffsets.length > 0;
+          // Base recém-vinda do histórico: o ESTUDO já foi concluído, mas o aluno
+          // ainda não configurou as revisões espaçadas. Não é "revisão pendente".
+          const awaiting = !scheduled && !isParentNow && !r.revConfigured;
+          const singleReview = !scheduled && !isParentNow && !awaiting; // revisão única
+          const tag = scheduled
             ? `<span class="rev-tag sched">↻ rev ${r.revisaoOrdem}/${r.revisaoTotal} · ${escapeHtml(r.revisaoOffset || '')}</span>`
-            : pOffsets.length
+            : isParentNow
               ? `<span class="rev-tag parent">base · ${escapeHtml(offsetsLbl(pOffsets))}</span>`
-              : (r.manual ? '<span class="rev-tag">manual</span>' : (r.auto ? '<span class="rev-tag auto">cronômetro</span>' : ''));
-          // Datas calculadas das próximas revisões, exibidas na base do conteúdo.
+              : (r.manual ? '<span class="rev-tag">manual</span>' : (r.auto ? '<span class="rev-tag auto">do histórico</span>' : ''));
+          // Meta extra: datas calculadas (base configurada) ou aviso de configuração pendente.
           let revDatesHtml = '';
-          if (pOffsets.length) {
+          if (isParentNow) {
             const base = dateFromISO(brToISO(r.data)) || new Date();
             const ds = pOffsets.map(d => addDays(base, d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
             revDatesHtml = `<div class="rev-meta"><span>↻ ${pOffsets.length} ${plural(pOffsets.length, 'revisão', 'revisões')}: ${ds.join(' · ')}</span></div>`;
+          } else if (awaiting) {
+            revDatesHtml = `<div class="rev-meta"><span>✓ Estudo concluído — aguardando configuração das revisões</span></div>`;
           }
-          const rowExtra = r.scheduled ? ' scheduled' : '';
-          const editCell = r.scheduled
+          // Estado visual da linha.
+          let rowState;
+          if (scheduled) rowState = concluido ? 'done' : 'pending';
+          else if (awaiting) rowState = 'awaiting';
+          else if (isParentNow) rowState = 'configured';
+          else rowState = concluido ? 'done' : 'pending';
+          const rowExtra = scheduled ? ' scheduled' : '';
+          // Célula de status conforme o tipo de linha.
+          let statusHtml;
+          if (awaiting) {
+            statusHtml = `<div class="rev-status cfg" onclick="abrirEditRev('${idAttr}')" style="cursor:pointer" title="Escolher os intervalos de revisão espaçada">⚙ Configurar revisões</div>`;
+          } else if (isParentNow) {
+            statusHtml = `<div class="rev-status ok" title="Estudo concluído — revisões agendadas">✓ ${pOffsets.length} ${plural(pOffsets.length, 'revisão agendada', 'revisões agendadas')}</div>`;
+          } else {
+            statusHtml = `<div class="rev-status ${concluido ? 'ok' : 'pend'}" onclick="toggleConcluida('${idAttr}')" style="cursor:pointer" title="Alternar status da revisão">${concluido ? '✓ Revisado' : '◯ A revisar'}</div>`;
+          }
+          // Ações: lápis (configurar) em toda base; ▶ iniciar só onde há revisão a fazer.
+          const editCell = scheduled
             ? '<div></div>'
             : `<button class="rev-edit" onclick="abrirEditRev('${idAttr}')" title="Configurar revisão espaçada">✎</button>`;
-          return `<div class="rev-row ${concluido ? 'done' : 'pending'}${rowExtra}">
+          const canPlay = !concluido && (scheduled || singleReview);
+          const playCell = canPlay
+            ? `<button class="rev-play" onclick="abrirPlayRevisao('${idAttr}')" title="Iniciar revisão">▶</button>`
+            : '<div></div>';
+          return `<div class="rev-row ${rowState}${rowExtra}">
             <div>
               <div class="rev-title">${escapeHtml(r.materia || 'Estudo')} ${tag}</div>
               ${conteudo ? `<div class="rev-meta"><span>${escapeHtml(conteudo)}</span></div>` : ''}
               <div class="rev-meta">
                 <span>📅 ${escapeHtml(r.data || '')}</span>
                 ${mins > 0 ? `<span>· ${mins} min</span>` : ''}
-                ${r.scheduled ? `<span>· no calendário e no histórico</span>` : ''}
+                ${scheduled ? `<span>· no calendário e no histórico</span>` : ''}
               </div>
               ${revDatesHtml}
             </div>
-            <div class="rev-status ${concluido ? 'ok' : 'pend'}" onclick="toggleConcluida('${idAttr}')" style="cursor:pointer" title="Alternar status">${concluido ? '✓ Concluído' : '◯ Não concluído'}</div>
+            ${statusHtml}
             <div class="rev-count">${mins}<br><span>min</span></div>
             ${editCell}
-            ${concluido ? '<div></div>' : `<button class="rev-play" onclick="abrirPlayRevisao('${idAttr}')" title="Iniciar revisão">▶</button>`}
+            ${playCell}
             <button class="rev-del" onclick="apagarRevisao('${idAttr}')" title="Apagar">×</button>
           </div>`;
         }).join('')}
