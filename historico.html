@@ -1009,8 +1009,9 @@ function responderConclusaoConteudo(concluiu) {
   document.getElementById('conclusaoContModal').classList.remove('open');
   if (!ctx) return;
   // Registra no feed. `revisar` só é true quando o aluno confirma "Sim" — é isso
-  // que faz o conteúdo aparecer em revisoes.html. Entra como revisão pendente
-  // (concluido:false) para poder ser efetivamente revisado depois.
+  // que faz o conteúdo aparecer em revisoes.html. O ESTUDO já está concluído; o
+  // conteúdo entra como base aguardando o aluno configurar as revisões espaçadas
+  // (revConfigured:false) — não como "revisão pendente".
   pushHist({
     data: fmtDataBR(new Date()),
     materia: ctx.materia || 'Estudo',
@@ -1018,6 +1019,7 @@ function responderConclusaoConteudo(concluiu) {
     minutos: ctx.minutos || 0,
     concluido: false,
     revisar: !!concluiu,
+    revConfigured: false,
     auto: true
   });
   render();
