@@ -135,7 +135,7 @@
 <a href="plannerstudy.html" class="nav-item">Planejamento</a>
 <a href="revisoes.html" class="nav-item">Revisões</a>
 <a href="historico.html" class="nav-item">Histórico</a>
-<a href="erros.html" class="nav-item">Caderno de erros</a>
+<a href="graficos.html" class="nav-item">Gráficos</a>
 <a href="dashboard.html" class="nav-item active">Dashboard</a>
 <a href="simulados.html" class="nav-item">Simulados</a>
 <a href="cortex-simulados.html" class="nav-item">Córtex</a>
@@ -202,7 +202,7 @@
     <div class="quick-links">
       <a href="plannerstudy.html" class="quick"><div class="qi">→</div><div class="qt">Planejamento</div><div class="qs">grade semanal</div></a>
       <a href="historico.html" class="quick"><div class="qi">→</div><div class="qt">Cronômetro</div><div class="qs">iniciar sessão</div></a>
-      <a href="erros.html" class="quick"><div class="qi">→</div><div class="qt">+ Registrar erro</div><div class="qs">caderno</div></a>
+      <a href="graficos.html" class="quick"><div class="qi">→</div><div class="qt">Gráficos</div><div class="qs">desempenho</div></a>
       <a href="disciplinas.html" class="quick"><div class="qi">→</div><div class="qt">Disciplinas</div><div class="qs">cadastros</div></a>
     </div>
   </div>
@@ -503,15 +503,15 @@ function render() {
   const discById = Object.fromEntries(disc.map(d => [d.id, d]));
   const recentes = erros.filter(e => !e.revisado).slice(0, 3);
   if (recentes.length === 0) {
-    eEl.innerHTML = `<div class="empty-inline">${erros.length ? 'Nenhum erro pendente — tudo revisado 🎯' : 'Nenhum erro registrado ainda.'} <a href="erros.html">Abrir caderno →</a></div>`;
+    eEl.innerHTML = `<div class="empty-inline">${erros.length ? 'Nenhum erro pendente — tudo revisado 🎯' : 'Nenhum erro registrado.'} <a href="graficos.html">Ver gráficos →</a></div>`;
   } else {
     eEl.innerHTML = recentes.map(e => {
       const d = discById[e.discId];
-      return `<a href="erros.html" class="erro-preview" style="display:block">
+      return `<div class="erro-preview" style="display:block">
         <div class="disc">${esc(d?d.nome:'?')}</div>
         <div class="assunto">${esc(e.assunto)}</div>
         <div class="por-que">${esc(e.porQue)}</div>
-      </a>`;
+      </div>`;
     }).join('');
   }
 }
