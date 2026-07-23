@@ -181,7 +181,7 @@
   <div>
     <div class="kicker">Longo prazo</div>
     <h1 class="page-title">Seus <i>planos</i> de estudo.</h1>
-    <p class="page-lede">Cadastre o semestre que está cursando, uma prova de residência ou um objetivo independente (monitoria, liga, extras) — ele vira a base do seu cronograma.</p>
+    <p class="page-lede">Cadastre o semestre que está cursando, uma prova (residência, ENAMED) ou um objetivo independente (monitoria, liga, extras) — ele vira a base do seu cronograma. Você pode manter <b>vários planos ao mesmo tempo</b>: as disciplinas e configurações de cada um ficam separadas, mas as atividades aparecem juntas no Planejamento e no Histórico, com filtro por plano.</p>
   </div>
   <div class="section" id="listaContainer"></div>
 </div>
@@ -590,8 +590,8 @@ function trocarAtivo(id) {
   if (!p) return;
   const atual = semAtivo() ? load().find(x => x.id === semAtivo()) : null;
   const msg = ehFoco(p.tipo)
-    ? `Ativar “${p.nome}”? As abas Disciplinas, Planejamento e Revisões passam a mostrar só o conteúdo dele${atual ? ` — “${atual.nome}” fica guardado e volta quando você reativar` : ''}.`
-    : `Tornar “${p.nome}” o contexto ativo? O contexto atual será arquivado e você passa a editar este.`;
+    ? `Passar a editar “${p.nome}”? As abas Disciplinas, Planejamento e Revisões passam a mostrar este plano${atual ? ` — “${atual.nome}” continua guardado e aparecendo no calendário e no histórico` : ''}. No Planejamento geral e no Histórico, todos os planos aparecem juntos, com filtro por plano.`
+    : `Passar a editar “${p.nome}”? Você edita as disciplinas e o cronograma dele; no Planejamento geral e no Histórico, todos os planos continuam aparecendo juntos, com filtro por plano.`;
   if (!confirm(msg)) return;
   ativarContexto(id);
   refreshView();
@@ -600,7 +600,7 @@ function trocarAtivo(id) {
 function reabrirSemestre(id) {
   const p = load().find(x => x.id === id);
   if (!p) return;
-  if (!confirm(`Reabrir “${p.nome}” como semestre ativo? Ele volta a ser editável e o contexto atual é arquivado.`)) return;
+  if (!confirm(`Reabrir “${p.nome}” e passar a editá-lo? Ele volta a ser editável; o plano atual continua guardado e aparecendo no calendário e no histórico.`)) return;
   ativarContexto(id);
   refreshView();
 }

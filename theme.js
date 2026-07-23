@@ -58,11 +58,13 @@
     else if (mq.addListener) mq.addListener(listener);
   }
 
-  // ---- Indicador global de contexto ativo -------------------------------
-  // Um "objetivo" independente (planos.html) usa as mesmas chaves vivas que o
-  // semestre. Quando um objetivo é o contexto ativo, TODAS as abas mostram só o
-  // conteúdo dele. Este chip na barra lateral avisa esse "modo objetivo" em todo
-  // o site, pra ninguém confundir com o semestre. (Só aparece nesse modo.)
+  // ---- Indicador global de plano em foco --------------------------------
+  // Vários planos podem ficar ativos ao mesmo tempo. O plano "em foco" é o que
+  // você edita nas abas Disciplinas, Planejamento e Revisões (usa as chaves
+  // vivas). Já o Planejamento geral (calendário) e o Histórico reúnem TODOS os
+  // planos, com filtro por plano. Este chip na barra lateral mostra qual plano
+  // de foco (residência/ENAMED/objetivo) está em edição, pra não confundir com
+  // o semestre. (Só aparece quando o foco é um desses planos.)
   function escTxt(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -71,9 +73,9 @@
   // Apresentação por tipo de plano de foco no chip (ícone, rótulo e cores que
   // leem bem sobre a barra lateral escura).
   var FOCO_INFO = {
-    residencia: { icon: '🏥', label: 'Residência ativa', base: '124,148,255', txt: '#93B4FF' },
-    enamed:     { icon: '📋', label: 'ENAMED ativo',      base: '244,167,47',  txt: '#F7C77A' },
-    objetivo:   { icon: '📌', label: 'Objetivo ativo',    base: '124,92,252',  txt: '#B9A9FF' }
+    residencia: { icon: '🏥', label: 'Residência em foco', base: '124,148,255', txt: '#93B4FF' },
+    enamed:     { icon: '📋', label: 'ENAMED em foco',      base: '244,167,47',  txt: '#F7C77A' },
+    objetivo:   { icon: '📌', label: 'Objetivo em foco',    base: '124,92,252',  txt: '#B9A9FF' }
   };
   function activeFoco() {
     var id = null, planos = [];
@@ -94,12 +96,12 @@
     var a = document.createElement('a');
     a.href = 'planos.html';
     a.className = 'ctx-indicator';
-    a.title = info.label + ' — as outras abas mostram só o conteúdo dele. Clique pra gerenciar em Planos.';
+    a.title = info.label + ' — você edita as disciplinas e o cronograma dele aqui. No Planejamento geral e no Histórico, todos os planos aparecem juntos (com filtro). Clique pra gerenciar em Planos.';
     a.style.cssText = 'display:block;margin-top:16px;padding:10px 12px;border:1px solid rgba(' + info.base + ',0.5);border-left:3px solid ' + info.txt + ';background:rgba(' + info.base + ',0.16);border-radius:2px;text-decoration:none;line-height:1.35;';
     a.innerHTML =
       '<span style="display:block;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;color:' + info.txt + '">' + info.icon + ' ' + escTxt(info.label) + '</span>' +
       '<b style="display:block;font-family:\'Fraunces\',serif;font-size:14px;font-weight:600;margin-top:3px;color:var(--paper)">' + escTxt(p.nome) + '</b>' +
-      '<span style="display:block;font-size:10px;color:rgba(244,241,234,0.6);margin-top:2px">as outras abas mostram só ele</span>';
+      '<span style="display:block;font-size:10px;color:rgba(244,241,234,0.6);margin-top:2px">em edição · planejamento e histórico reúnem todos os planos</span>';
     var foot = sidebar.querySelector('.sidebar-foot');
     if (foot) sidebar.insertBefore(a, foot);
     else sidebar.appendChild(a);
