@@ -96,6 +96,22 @@ html[data-theme="dark"] .blk-item.done.revisao .mins { color: #7BD389; }
 
 .empty-state { text-align: center; padding: 32px 16px; color: #70757A; font-size: 13px; font-style: italic; }
 .empty-state a { color: var(--cobalt); font-weight: 600; }
+/* Filtro por plano + marcadores de origem (histórico integrado) */
+.plano-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+.plano-filtros .pf-label { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: #70757A; font-weight: 700; margin-right: 2px; }
+.pf-chip { display: inline-flex; align-items: center; gap: 7px; border: 1px solid #E0E0E0; background: #fff; color: var(--ink); padding: 6px 13px; border-radius: 999px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; box-shadow: var(--sh-1); transition: transform .15s var(--ease), border-color .15s var(--ease), background-color .15s var(--ease); }
+.pf-chip:hover { border-color: var(--cobalt); transform: translateY(-1px); }
+.pf-chip.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.pf-chip .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+html[data-theme="dark"] .pf-chip { background: var(--surface); border-color: var(--border); color: var(--text); }
+html[data-theme="dark"] .pf-chip.active { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+.plano-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; letter-spacing: 0.02em; color: #70757A; background: var(--paper); border: 1px solid #E0E0E0; padding: 1px 7px; margin-left: 8px; border-radius: 999px; vertical-align: 1px; }
+.plano-tag .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+html[data-theme="dark"] .plano-tag { background: var(--surface-soft); border-color: var(--border); color: var(--text-mute); }
+.blk-item.readonly { opacity: 0.9; border-left-style: dashed; }
+.hist-row .bar { display: flex; }
+.hist-row .bar .seg { height: 100%; border-radius: 0; transition: width .6s var(--ease); }
+.hist-row .data .d { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 3px; vertical-align: 1px; }
 
 .meta-meme { padding: 14px 18px; margin-bottom: 16px; font-size: 14px; line-height: 1.4; background: #E8F5E9; border-left: 4px solid #43A047; color: #1B5E20; font-style: italic; border-radius: 0 8px 8px 0; }
 .meta-meme.over { background: #FFF8E1; border-left-color: #FB8C00; color: #8D5A00; }
@@ -206,6 +222,8 @@ html[data-theme="dark"] .blk-item.done.revisao .mins { color: #7BD389; }
   <h1 class="page-title">Seu <i>estudo</i> de hoje.</h1>
   <p class="page-lede">Comece pelo que foi planejado — ou registre um estudo extra. O cronômetro fica flutuante pra você seguir com a página aberta.</p>
 </div>
+
+<div id="planoFiltro" class="plano-filtros" style="display:none"></div>
 
 <div id="metaMeme" class="meta-meme" style="display:none"></div>
 
@@ -571,6 +589,145 @@ function getStudiedMin(b) {
   return b.feito ? getPlannedMin(b) : 0;
 }
 function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ---- Histórico integrado de múltiplos planos ----------------------------
+// O estudo de HOJE e o interativo continua no plano em foco (chaves vivas),
+// mas o histórico e as estatísticas reúnem TODOS os planos: o em foco vem das
+// chaves vivas; os demais, dos snapshots (trackermed.semestres.v1). Cada bloco
+// carrega o plano de origem, permitindo filtrar por plano ou ver tudo junto.
+const PLANOS_KEY = 'trackermed.planos.v1';
+const FOCO_KEY   = 'trackermed.semestreAtivo.v1';
+const SNAP_KEY   = 'trackermed.semestres.v1';
+const HFILTER_KEY = 'trackermed.historico.filtro.v1';
+let histFiltro = 'todos';
+try { histFiltro = localStorage.getItem(HFILTER_KEY) || 'todos'; } catch {}
+
+function loadPlanos() { try { return JSON.parse(localStorage.getItem(PLANOS_KEY) || '[]'); } catch { return []; } }
+function planoFocoId() { try { return localStorage.getItem(FOCO_KEY) || null; } catch { return null; } }
+function snapStore() { try { return JSON.parse(localStorage.getItem(SNAP_KEY) || '{}'); } catch { return {}; } }
+function planoCor(tipo) { return ({ semestre:'#1FC28A', residencia:'#1E3AE8', enamed:'#F4A72F', objetivo:'#7C5CFC' })[tipo] || '#6B6A5F'; }
+
+// disciplinas + plan.v1 de um plano: vivo se em foco, senão do snapshot.
+function planData(planoId, focoId) {
+  if (planoId === focoId) return { disc: loadDisc(), plan: loadPlan() };
+  const snap = snapStore()[planoId];
+  if (!snap) return { disc: [], plan: {} };
+  let disc = [], plan = {};
+  try { disc = JSON.parse(snap.disciplinas || '[]'); } catch {}
+  try { plan = JSON.parse(snap.plan || '{}'); } catch {}
+  return { disc, plan };
+}
+
+// Reúne blocos de estudo/revisão de todos os planos, marcando a origem.
+function histCollect() {
+  const planos = loadPlanos();
+  const focoId = planoFocoId();
+  const plans = [], items = [];
+  const seenFoco = planos.some(p => p.id === focoId);
+  const addBloco = (p, cor, wk, b, discMap) => {
+    const isRev = b.tipo === 'revisao' || b.revisao;
+    if (b.tipo !== 'estudo' && !isRev) return false;
+    const date = blocoDate(wk, b);
+    if (!date) return false;
+    const d = b.discId ? discMap[b.discId] : null;
+    const discNome = d ? d.nome : (b.matNome || (isRev ? 'Revisão' : 'Estudo'));
+    items.push({ b, wk, date, isRev, planoId: p.id, planoNome: p.nome, planoCor: cor, planoTipo: p.tipo, discNome, foco: p.foco });
+    return (b.feito || getStudiedMin(b) > 0);
+  };
+  const coletar = (p) => {
+    const { disc, plan } = planData(p.id, focoId);
+    const cor = planoCor(p.tipo);
+    const discMap = {}; for (const d of (disc||[])) discMap[d.id] = d;
+    let temEstudo = false;
+    for (const wk in plan) for (const b of (plan[wk] || [])) { if (addBloco(p, cor, wk, b, discMap)) temEstudo = true; }
+    plans.push({ id: p.id, nome: p.nome, tipo: p.tipo, cor, temEstudo });
+  };
+  for (const p of planos) coletar({ ...p, foco: p.id === focoId });
+  // Segurança: se as chaves vivas não pertencem a nenhum plano listado (usuário
+  // legado sem registro de planos, ou nenhum plano em foco), inclui o estudo
+  // vivo assim mesmo — para o histórico nunca sumir.
+  if (!seenFoco) {
+    const plan = loadPlan();
+    if (plan && Object.keys(plan).length) {
+      const disc = loadDisc(); const discMap = {}; for (const d of (disc||[])) discMap[d.id] = d;
+      const syn = { id: '__foco__', nome: 'Meu plano atual', tipo: 'semestre', foco: true };
+      let temEstudo = false;
+      const cor = planoCor(syn.tipo);
+      for (const wk in plan) for (const b of (plan[wk] || [])) { if (addBloco(syn, cor, wk, b, discMap)) temEstudo = true; }
+      plans.push({ id: syn.id, nome: syn.nome, tipo: syn.tipo, cor, temEstudo });
+    }
+  }
+  return { plans, items, focoId };
+}
+
+function planoTagHTML(it, plansCount) {
+  if (plansCount <= 1) return '';
+  return `<span class="plano-tag" title="${escHtml(it.planoNome)}"><span class="dot" style="background:${it.planoCor}"></span>${escHtml(it.planoNome)}</span>`;
+}
+
+// Renderiza um item de "hoje". Interativo (▶/✓/✎) só no plano em foco;
+// os demais aparecem em modo leitura com o plano de origem marcado.
+function renderTodayItem(it, plansCount) {
+  const b = it.b, wk = it.wk, isRev = it.isRev, interactive = it.foco;
+  const mins = getPlannedMin(b);
+  const studiedMin = getStudiedMin(b);
+  const parcial = !b.feito && studiedMin > 0;
+  const excedeu = b.feito && studiedMin > mins;
+  const discNome = it.discNome;
+  const discNomeAttr = JSON.stringify(discNome).replace(/"/g,'&quot;');
+  const conteudoLine = b.conteudo ? ` · ${escHtml(b.conteudo)}` : '';
+  const tag = planoTagHTML(it, plansCount);
+  let motivoBase;
+  if (isRev) {
+    const ord = b.revisaoOrdem ? `${b.revisaoOrdem}/${b.revisaoTotal||'?'}` : '';
+    const status = b.feito ? (excedeu ? ` · concluído · <span class="super">superou em ${fmtHrange(studiedMin-mins)}</span>` : ' · concluído') : '';
+    motivoBase = `revisão programada${ord?` · ${ord}`:''}${b.revisaoOffset?` · ${escHtml(b.revisaoOffset)}`:''}${status} · vinda das <a href="revisoes.html" style="color:#FB8C00;font-weight:600">Revisões</a>`;
+  } else if (b.feito) {
+    motivoBase = excedeu ? `concluído · <span class="super">superou meta em ${fmtHrange(studiedMin - mins)}</span>` : 'concluído';
+  } else if (parcial) {
+    motivoBase = `parcial · ${fmtHrange(studiedMin)} de ${fmtHrange(mins)}`;
+  } else {
+    motivoBase = 'planejado';
+  }
+  let minsLabel;
+  if (parcial) minsLabel = `${fmtHrange(studiedMin)}<span style="color:#70757A;font-size:13px"> / ${fmtHrange(mins)}</span>`;
+  else if (excedeu) minsLabel = `${fmtHrange(studiedMin)} <span class="over">+${fmtHrange(studiedMin - mins)}</span>`;
+  else minsLabel = fmtHrange(b.feito ? studiedMin : mins);
+  const cls = `${b.feito?'done':''} ${isRev?'revisao':''} ${excedeu?'exceeded':''} ${interactive?'':'readonly'}`.trim();
+  const prefix = isRev ? `<span class="rev-pill">↻ rev</span>` : (b.extra ? '✦ ' : '');
+  if (interactive) {
+    const editBtn = (b.feito || isRev) ? '' : `<button class="edit-btn" onclick="abrirEditarDuracao('${wk}','${b.id}', ${discNomeAttr}, ${mins})" title="Editar duração">✎</button>`;
+    const playBtn = (!isRev && b.discId)
+      ? `<button class="play-btn" onclick="abrirPlayDuracao('${b.discId}', ${discNomeAttr}, '${b.id}')" title="Iniciar cronômetro">▶</button>`
+      : '<div></div>';
+    return `<div class="blk-item ${cls}">
+      <div class="horario">${escHtml(b.ini)}—${escHtml(b.fim)}</div>
+      <div><div class="nome">${prefix}${escHtml(discNome)}${tag}</div><div class="motivo">${motivoBase}${b.extra && !isRev?' · extra':''}${conteudoLine}</div></div>
+      <div class="mins"><span class="mins-wrap">${minsLabel}${editBtn}</span></div>
+      ${playBtn}
+      <button class="check-btn" onclick="toggleFeito('${wk}', '${b.id}')" title="${isRev?'Marcar revisão como feita':'Alternar concluído'}">${b.feito?'✓':'○'}</button>
+    </div>`;
+  }
+  return `<div class="blk-item ${cls}">
+    <div class="horario">${escHtml(b.ini)}—${escHtml(b.fim)}</div>
+    <div><div class="nome">${prefix}${escHtml(discNome)}${tag}</div><div class="motivo">${motivoBase}${conteudoLine} · <a href="planos.html" title="Trocar o plano em foco pra editar" style="color:var(--cobalt);font-weight:600">focar pra editar</a></div></div>
+    <div class="mins">${minsLabel}</div>
+    <div></div><div></div>
+  </div>`;
+}
+
+function setHistFiltro(id) { histFiltro = id; try { localStorage.setItem(HFILTER_KEY, id); } catch {} render(); }
+function renderFiltroChips(plans) {
+  const el = document.getElementById('planoFiltro');
+  if (!el) return;
+  if (plans.length <= 1) { el.innerHTML = ''; el.style.display = 'none'; return; }
+  el.style.display = '';
+  if (histFiltro !== 'todos' && !plans.some(p => p.id === histFiltro)) histFiltro = 'todos';
+  const chips = [`<button class="pf-chip ${histFiltro==='todos'?'active':''}" onclick="setHistFiltro('todos')">Todos os planos</button>`]
+    .concat(plans.map(p => `<button class="pf-chip ${histFiltro===p.id?'active':''}" onclick="setHistFiltro('${escHtml(p.id)}')" title="${escHtml(p.nome)}"><span class="dot" style="background:${p.cor}"></span>${escHtml(p.nome)}${p.temEstudo?'':' <span style="opacity:.5">(vazio)</span>'}</button>`))
+    .join('');
+  el.innerHTML = `<span class="pf-label">Ver</span>${chips}`;
+}
 
 const MEMES_META = [
   'Parabéns, fez o mínimo. Feliz por você.',
@@ -1484,23 +1641,31 @@ function render() {
   if (planMudou) savePlan(plan);
   if (histMudou) saveHist(histRev);
 
-  const blocosHoje = (plan[wk]||[]).filter(b => b.dia === hojeDia);
+  // ==== Coleta integrada de todos os planos (respeitando o filtro) ====
+  const coll = histCollect();
+  renderFiltroChips(coll.plans);
+  if (histFiltro !== 'todos' && !coll.plans.some(p => p.id === histFiltro)) histFiltro = 'todos';
+  const plansCount = coll.plans.length;
+  const selItems = coll.items.filter(it => histFiltro === 'todos' || it.planoId === histFiltro);
+  const todayItems = selItems.filter(it => it.date === yyyy)
+    .sort((a,b) => parseTime(a.b.ini||'00:00') - parseTime(b.b.ini||'00:00'));
   // Aulas fixas pra hoje (das disciplinas)
   const DIA_IDX = { dom:0, seg:1, ter:2, qua:3, qui:4, sex:5, sab:6 };
   const aulasHoje = [];
   disc.forEach(d => (d.aulas||[]).forEach(a => { if (DIA_IDX[a.dia]===hojeDia) aulasHoje.push({disc:d, aula:a}); }));
 
-  // Stats — revisões agendadas não contam como horas de estudo, mas entram na contagem de itens.
-  const blocosEstudoHoje = blocosHoje.filter(b => !(b.tipo === 'revisao' || b.revisao));
-  const revHoje = blocosHoje.filter(b => b.tipo === 'revisao' || b.revisao);
-  const feitosMin = blocosEstudoHoje.reduce((s,b)=>s+getStudiedMin(b),0);
-  const planMin = blocosEstudoHoje.reduce((s,b)=>s+getPlannedMin(b),0);
+  // Stats de hoje — reúnem todos os planos filtrados. Revisões agendadas não
+  // contam como horas de estudo, mas entram na contagem de itens.
+  const estudoHojeItems = todayItems.filter(it => !it.isRev);
+  const revHojeItems = todayItems.filter(it => it.isRev);
+  const feitosMin = estudoHojeItems.reduce((s,it)=>s+getStudiedMin(it.b),0);
+  const planMin = estudoHojeItems.reduce((s,it)=>s+getPlannedMin(it.b),0);
   document.getElementById('totHoje').innerHTML = fmtH(feitosMin/60);
-  const revSub = revHoje.length > 0 ? ` · ${revHoje.filter(b=>b.feito).length}/${revHoje.length} revisões` : '';
+  const revSub = revHojeItems.length > 0 ? ` · ${revHojeItems.filter(it=>it.b.feito).length}/${revHojeItems.length} revisões` : '';
   const excedenteSub = (planMin > 0 && feitosMin > planMin) ? ` · +${fmtHrange(feitosMin - planMin)} além da meta` : '';
-  document.getElementById('subHoje').textContent = `${blocosEstudoHoje.filter(b=>b.feito).length} de ${blocosEstudoHoje.length} ${plural(blocosEstudoHoje.length, 'sessão', 'sessões')}${revSub}${excedenteSub}`;
+  document.getElementById('subHoje').textContent = `${estudoHojeItems.filter(it=>it.b.feito).length} de ${estudoHojeItems.length} ${plural(estudoHojeItems.length, 'sessão', 'sessões')}${revSub}${excedenteSub}`;
   document.getElementById('totPlan').innerHTML = fmtH(planMin/60);
-  document.getElementById('subPlan').textContent = blocosHoje.length ? `${blocosEstudoHoje.filter(b=>!b.feito).length} pendentes${revHoje.length>0?` · ${revHoje.filter(b=>!b.feito).length} revisões`:''}` : 'nada agendado';
+  document.getElementById('subPlan').textContent = todayItems.length ? `${estudoHojeItems.filter(it=>!it.b.feito).length} pendentes${revHojeItems.length>0?` · ${revHojeItems.filter(it=>!it.b.feito).length} revisões`:''}` : 'nada agendado';
 
   // Banner meme: cumpriu ou superou meta diária
   const memeEl = document.getElementById('metaMeme');
@@ -1518,15 +1683,12 @@ function render() {
     memeEl.style.display = 'none';
   }
 
-  // Indexa blocos com qualquer estudo (concluído ou parcial) pela data real.
+  // Indexa o estudo (concluído ou parcial) de todos os planos filtrados, pela
+  // data real. Cada entrada mantém o plano de origem (para as cores/legenda).
   const blocosByDate = {};
-  Object.entries(plan).forEach(([wkPlan, arr]) => {
-    (arr || []).forEach(b => {
-      if (!b.feito && getStudiedMin(b) <= 0) return;
-      const date = blocoDate(wkPlan, b);
-      if (!date) return;
-      (blocosByDate[date] = blocosByDate[date] || []).push(b);
-    });
+  selItems.forEach(it => {
+    if (!it.b.feito && getStudiedMin(it.b) <= 0) return;
+    (blocosByDate[it.date] = blocosByDate[it.date] || []).push(it);
   });
   const diasComEstudo = new Set(Object.keys(blocosByDate));
 
@@ -1541,10 +1703,11 @@ function render() {
   document.getElementById('streak').textContent = streak;
   document.getElementById('subStreak').textContent = streak === 1 ? 'dia seguido' : 'dias seguidos';
 
-  // Planejado hoje lista
+  // Planejado hoje lista — reúne todos os planos filtrados. Itens do plano em
+  // foco são interativos; os demais aparecem em modo leitura (com a origem).
   const plEl = document.getElementById('planList');
   const sess = loadSess();
-  if (blocosHoje.length === 0 && aulasHoje.length === 0) {
+  if (todayItems.length === 0 && aulasHoje.length === 0) {
     plEl.innerHTML = `<div class="empty-state">Nada planejado pra hoje. <br><a href="plannerstudy.html">Ir ao planejamento →</a> ou adiciona um estudo extra aqui em cima.</div>`;
   } else {
     const itens = [];
@@ -1552,79 +1715,40 @@ function render() {
     aulasHoje.sort((a,b)=>parseTime(a.aula.inicio)-parseTime(b.aula.inicio)).forEach(({disc,aula}) => {
       itens.push(`<div class="blk-item" style="border-left-color:#999;background:#fafafa;opacity:0.75">
         <div class="horario">${aula.inicio}—${aula.fim}</div>
-        <div><div class="nome">🎓 ${disc.nome}</div><div class="motivo">aula fixa</div></div>
+        <div><div class="nome">🎓 ${escHtml(disc.nome)}</div><div class="motivo">aula fixa</div></div>
         <div class="mins">${fmtHrange(Math.round((parseTime(aula.fim)-parseTime(aula.inicio))*60))}</div>
         <div></div><div></div>
       </div>`);
     });
-    // blocos de estudo e revisões agendadas
-    blocosHoje.sort((a,b)=>parseTime(a.ini)-parseTime(b.ini)).forEach(b => {
-      const d = disc.find(x=>x.id===b.discId);
-      const mins = getPlannedMin(b);
-      const studiedMin = getStudiedMin(b);
-      const parcial = !b.feito && studiedMin > 0;
-      const excedeu = b.feito && studiedMin > mins;
-      const isRev = b.tipo === 'revisao' || b.revisao;
-      const discNome = d ? d.nome : (b.matNome || (isRev ? 'Revisão' : 'Estudo'));
-      const discNomeAttr = JSON.stringify(discNome).replace(/"/g,'&quot;');
-      const conteudoLine = b.conteudo ? ` · ${escHtml(b.conteudo)}` : '';
-      const editBtn = (b.feito || isRev) ? '' : `<button class="edit-btn" onclick="abrirEditarDuracao('${wk}','${b.id}', ${discNomeAttr}, ${mins})" title="Editar duração">✎</button>`;
-      const playBtn = (!isRev && b.discId)
-        ? `<button class="play-btn" onclick="abrirPlayDuracao('${b.discId}', ${discNomeAttr}, '${b.id}')" title="Iniciar cronômetro">▶</button>`
-        : '<div></div>';
-      let motivoBase;
-      if (isRev) {
-        const ord = b.revisaoOrdem ? `${b.revisaoOrdem}/${b.revisaoTotal||'?'}` : '';
-        const status = b.feito ? (excedeu ? ` · concluído · <span class="super">superou em ${fmtHrange(studiedMin-mins)}</span>` : ' · concluído') : '';
-        motivoBase = `revisão programada${ord?` · ${ord}`:''}${b.revisaoOffset?` · ${escHtml(b.revisaoOffset)}`:''}${status} · vinda das <a href="revisoes.html" style="color:#FB8C00;font-weight:600">Revisões</a>`;
-      } else if (b.feito) {
-        motivoBase = excedeu
-          ? `concluído · <span class="super">superou meta em ${fmtHrange(studiedMin - mins)}</span>`
-          : 'concluído';
-      } else if (parcial) {
-        motivoBase = `parcial · ${fmtHrange(studiedMin)} de ${fmtHrange(mins)}`;
-      } else {
-        motivoBase = 'planejado';
-      }
-      let minsLabel;
-      if (parcial) {
-        minsLabel = `${fmtHrange(studiedMin)}<span style="color:#70757A;font-size:13px"> / ${fmtHrange(mins)}</span>`;
-      } else if (excedeu) {
-        minsLabel = `${fmtHrange(studiedMin)} <span class="over">+${fmtHrange(studiedMin - mins)}</span>`;
-      } else {
-        minsLabel = fmtHrange(b.feito ? studiedMin : mins);
-      }
-      const cls = `${b.feito?'done':''} ${isRev?'revisao':''} ${excedeu?'exceeded':''}`.trim();
-      const prefix = isRev
-        ? `<span class="rev-pill">↻ rev</span>`
-        : (b.extra ? '✦ ' : '');
-      itens.push(`<div class="blk-item ${cls}">
-        <div class="horario">${b.ini}—${b.fim}</div>
-        <div><div class="nome">${prefix}${discNome}</div><div class="motivo">${motivoBase}${b.extra && !isRev?' · extra':''}${conteudoLine}</div></div>
-        <div class="mins"><span class="mins-wrap">${minsLabel}${editBtn}</span></div>
-        ${playBtn}
-        <button class="check-btn" onclick="toggleFeito('${wk}', '${b.id}')" title="${isRev?'Marcar revisão como feita':'Alternar concluído'}">${b.feito?'✓':'○'}</button>
-      </div>`);
-    });
+    // blocos de estudo e revisões agendadas (de todos os planos)
+    todayItems.forEach(it => itens.push(renderTodayItem(it, plansCount)));
     plEl.innerHTML = itens.join('');
   }
 
-  // ==== Histórico 7 dias ====
+  // ==== Histórico 7 dias — barras empilhadas por plano ====
   const histEl = document.getElementById('histList');
   const linhas = [];
+  const maxMins = 360; // 6h = 100%
   for (let i = 0; i < 7; i++) {
     const d = addDays(hoje, -i);
     const dDia = d.getDay();
     const key = dateKey(d);
     const blocos = blocosByDate[key] || [];
-    const mins = blocos.reduce((s,b)=>s+getStudiedMin(b),0);
-    const maxMins = 360; // 6h = 100%
-    const pct = Math.min(100, (mins/maxMins)*100);
+    const mins = blocos.reduce((s,it)=>s+getStudiedMin(it.b),0);
+    // Agrupa os minutos por plano (cor), preservando a ordem de aparição.
+    const byCor = {}, ordem = [];
+    blocos.forEach(it => {
+      const m = getStudiedMin(it.b); if (m <= 0) return;
+      if (byCor[it.planoCor] == null) { byCor[it.planoCor] = 0; ordem.push(it.planoCor); }
+      byCor[it.planoCor] += m;
+    });
+    const segs = ordem.map(c => `<div class="seg" style="width:${Math.min(100,(byCor[c]/maxMins)*100)}%;background:${c}"></div>`).join('');
+    const dots = plansCount > 1 ? ordem.map(c => `<span class="d" style="background:${c}"></span>`).join('') : '';
     const label = i===0 ? 'Hoje' : i===1 ? 'Ontem' : DIAS_LBL[dDia]+', '+d.getDate()+'/'+(d.getMonth()+1);
-    const detail = blocos.length > 0 ? blocos.length+' '+plural(blocos.length, 'sessão', 'sessões') : 'nada';
+    const detail = blocos.length > 0 ? dots+blocos.length+' '+plural(blocos.length, 'sessão', 'sessões') : 'nada';
     linhas.push(`<div class="hist-row">
       <div class="data">${label}<b>${detail}</b></div>
-      <div class="bar"><div style="width:${pct}%"></div></div>
+      <div class="bar">${segs}</div>
       <div class="tot">${mins>0?fmtHrange(mins):'—'}</div>
     </div>`);
   }
@@ -1638,7 +1762,8 @@ setInterval(() => { if (!timerState.running) render(); }, 60000);
 // (por exemplo, quando uma revisão é concluída em revisoes.html).
 window.addEventListener('storage', e => {
   if (!e.key) return;
-  if (e.key === PLAN_KEY || e.key === HIST_KEY) {
+  if (e.key === PLAN_KEY || e.key === HIST_KEY || e.key === PLANOS_KEY ||
+      e.key === SNAP_KEY || e.key === FOCO_KEY || e.key === HFILTER_KEY) {
     if (!timerState.running) render();
   }
 });
