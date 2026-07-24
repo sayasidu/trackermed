@@ -221,6 +221,17 @@
 .limpar-btn:hover { background: rgba(244,241,234,0.08); border-color: rgba(244,241,234,0.6); }
 .limpar-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .gerar-card .g-status { font-size: 11px; color: var(--acid); margin-top: 8px; letter-spacing: 0.04em; min-height: 14px; font-variant-numeric: tabular-nums; }
+/* Seletor de modo de planejamento: várias matérias (geral) x uma matéria (individual) */
+.plan-modo { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.plan-modo-seg { display: inline-flex; align-self: flex-start; background: rgba(244,241,234,0.08); border: 1px solid rgba(244,241,234,0.18); border-radius: 10px; padding: 3px; gap: 3px; max-width: 100%; flex-wrap: wrap; }
+.plan-modo-seg button { background: transparent; color: rgba(244,241,234,0.7); border: none; padding: 8px 14px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; border-radius: 7px; letter-spacing: 0.02em; white-space: nowrap; transition: background .2s var(--ease), color .2s var(--ease); }
+.plan-modo-seg button:hover:not(.active) { color: var(--paper); }
+.plan-modo-seg button.active { background: var(--acid); color: var(--ink); }
+.plan-modo-disc { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.plan-modo-disc label { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(244,241,234,0.6); font-weight: 700; }
+.plan-modo-disc select { background: var(--paper); color: var(--ink); border: 1px solid rgba(244,241,234,0.25); border-radius: 8px; padding: 8px 12px; font-size: 13px; font-family: inherit; font-weight: 500; min-width: 200px; max-width: 100%; cursor: pointer; }
+.plan-modo-disc select:focus { outline: none; border-color: var(--acid); box-shadow: 0 0 0 3px rgba(230,255,61,0.25); }
+.plan-modo-empty { font-size: 12px; color: rgba(244,241,234,0.6); font-style: italic; }
 
 /* Bloco: drag + resize */
 .bloco { user-select: none; }
@@ -908,6 +919,43 @@ function loadExcl() { try { return new Set(JSON.parse(localStorage.getItem(EXCL_
 function saveExcl(s) { localStorage.setItem(EXCL_KEY, JSON.stringify([...s])); }
 function excluirDisc(discId) { const e = loadExcl(); e.add(discId); saveExcl(e); render(); }
 function restaurarDisc(discId) { const e = loadExcl(); e.delete(discId); saveExcl(e); render(); }
+
+// Modo de planejamento: 'geral' (planejar várias matérias juntas) ou
+// 'individual' (planejar só a matéria selecionada). Persistido por aluno.
+const MODO_KEY = 'trackermed.planner.modo.v1';
+function loadModo() {
+  try {
+    const m = JSON.parse(localStorage.getItem(MODO_KEY) || '{}');
+    return { modo: m.modo === 'individual' ? 'individual' : 'geral', discId: m.discId || '' };
+  } catch { return { modo: 'geral', discId: '' }; }
+}
+function saveModo(m) { localStorage.setItem(MODO_KEY, JSON.stringify(m)); }
+// Matérias elegíveis para o planejamento (ativas e não dispensadas)
+function planModoAtivas(discList, excl) {
+  excl = excl || loadExcl();
+  return discList.filter(d => (d.status === 'em-curso' || !d.status) && !excl.has(d.id));
+}
+// Normaliza o modo: no individual, garante que a matéria selecionada ainda é válida.
+function resolveModo(discList, excl) {
+  const m = loadModo();
+  if (m.modo !== 'individual') return { modo: 'geral', discId: '' };
+  const ativas = planModoAtivas(discList, excl);
+  let discId = m.discId;
+  if (!discId || !ativas.some(d => d.id === discId)) discId = ativas.length ? ativas[0].id : '';
+  return { modo: 'individual', discId };
+}
+function setPlanModo(modo) {
+  const m = loadModo();
+  m.modo = modo === 'individual' ? 'individual' : 'geral';
+  if (m.modo === 'individual' && !m.discId) {
+    const ativas = planModoAtivas(loadDisc());
+    if (ativas.length) m.discId = ativas[0].id;
+  }
+  saveModo(m);
+  render();
+}
+function setPlanDisc(discId) { const m = loadModo(); m.discId = discId; saveModo(m); render(); }
+
 function editMetaHoras(discId) {
   abrirFixarModal(discId);
 }
@@ -1089,7 +1137,13 @@ function gerarAuto() {
     return;
   }
   const excl = loadExcl();
-  const ativas = discList.filter(d => (d.status === 'em-curso' || !d.status) && !excl.has(d.id));
+  const modoState = resolveModo(discList, excl);
+  const soDisc = modoState.modo === 'individual' ? modoState.discId : null;
+  let ativas = planModoAtivas(discList, excl);
+  if (soDisc) {
+    ativas = ativas.filter(d => d.id === soDisc);
+    if (ativas.length === 0) { alert('Selecione uma matéria ativa para o planejamento individual.'); return; }
+  }
   if (ativas.length === 0) { alert('Sem disciplinas ativas pra planejar.'); return; }
 
   const totalDisponivel = dias.reduce((s, d) => s + d.capHoras, 0);
@@ -1103,12 +1157,14 @@ function gerarAuto() {
   const plan = loadPlan();
   // Marca como inválidos os blocos auto previamente colocados em dias dentro do período;
   // blocos manuais (auto:false) e blocos fora do período ficam preservados.
+  // No modo individual, só os blocos auto da matéria selecionada são refeitos —
+  // as demais matérias ficam intactas e servem de referência de ocupação.
   const diasSetPeriodo = new Set(dias.map(d => `${d.wkKey}#${d.wd}`));
   wksTocadas.forEach(wk => {
     plan[wk] = (plan[wk] || []).filter(b => {
       if (b.tipo !== 'estudo') return true;
       const k = `${wk}#${b.dia}`;
-      if (b.auto && diasSetPeriodo.has(k)) return false;
+      if (b.auto && diasSetPeriodo.has(k) && (!soDisc || b.discId === soDisc)) return false;
       return true;
     });
   });
@@ -1280,10 +1336,20 @@ function gerarAuto() {
 function limparSemana() {
   const plan = loadPlan();
   const wk = weekKey(anchorDate);
-  const blocos = (plan[wk] || []).filter(b => b.tipo === 'estudo');
+  const modoState = resolveModo(loadDisc(), loadExcl());
+  const soDisc = modoState.modo === 'individual' ? modoState.discId : null;
+  const alvo = b => b.tipo === 'estudo' && (!soDisc || b.discId === soDisc);
+  const blocos = (plan[wk] || []).filter(alvo);
   if (blocos.length === 0) return;
-  if (!confirm(`Limpar os ${blocos.length} bloco${blocos.length!==1?'s':''} de estudo desta semana? Você poderá montar o planejamento manualmente depois.`)) return;
-  plan[wk] = (plan[wk] || []).filter(b => b.tipo !== 'estudo');
+  let msg;
+  if (soDisc) {
+    const nome = (loadDisc().find(d => d.id === soDisc) || {}).nome || 'esta matéria';
+    msg = `Limpar os ${blocos.length} bloco${blocos.length!==1?'s':''} de estudo de ${nome} nesta semana? As demais matérias continuam no calendário.`;
+  } else {
+    msg = `Limpar os ${blocos.length} bloco${blocos.length!==1?'s':''} de estudo desta semana? Você poderá montar o planejamento manualmente depois.`;
+  }
+  if (!confirm(msg)) return;
+  plan[wk] = (plan[wk] || []).filter(b => !alvo(b));
   savePlan(plan);
   render();
 }
@@ -1880,24 +1946,82 @@ function render() {
     return;
   }
 
-  // Card principal: Gerar sugestão
+  // Card principal: Gerar sugestão (modo geral: várias matérias · modo individual: uma matéria)
   const itens = resumoSugestoes(discList, wk, plan, diasLivresCount);
-  const faltaTot = itens.reduce((s,i) => s + i.falta, 0);
   const urgs = itens.filter(i => i.urgente && i.falta > 0.1).length;
-  const metaBatida = faltaTot < 0.1;
-  const blocosSemana = (plan[wk] || []).filter(b => b.tipo === 'estudo').length;
   const periodo = loadPeriodo();
   const dispAtual = loadDisp();
   const periodoTotal = periodoHorasTotal(periodo, dispAtual);
-  const ativasParaPeriodo = discList.filter(d => (d.status === 'em-curso' || !d.status) && !loadExcl().has(d.id));
+  const excl = loadExcl();
+  const ativasParaPeriodo = planModoAtivas(discList, excl);
   const totalMetasPeriodo = ativasParaPeriodo.reduce((s,d) => s + targetHoras(d, diasLivresCount), 0);
   const excedePeriodo = periodoTotal > 0 && totalMetasPeriodo > periodoTotal + 0.05;
-  const statusLine = metaBatida
-    ? 'Meta da semana batida — todas as horas já estão no calendário.'
-    : `Faltam ${faltaTot.toFixed(1)}h p/ bater a meta${urgs ? ` · ${urgs} prova${urgs!==1?'s':''} próxima${urgs!==1?'s':''}` : ''}.`;
-  const avisoPeriodo = excedePeriodo
-    ? `<div class="g-status" style="color:#FF8A8A">⚠ Metas (${totalMetasPeriodo.toFixed(1)}h) ultrapassam ${(totalMetasPeriodo - periodoTotal).toFixed(1)}h a disponibilidade do período (${periodoTotal.toFixed(1)}h). A sugestão será proporcional, priorizando matérias de maior prioridade.</div>`
-    : '';
+
+  // Resolve o modo escolhido e mantém a matéria efetiva sincronizada no storage.
+  const modoStored = loadModo();
+  const modoState = resolveModo(discList, excl);
+  if (modoState.modo !== modoStored.modo || modoState.discId !== modoStored.discId) saveModo(modoState);
+  const modoIndividual = modoState.modo === 'individual';
+  const discSel = modoIndividual ? ativasParaPeriodo.find(d => d.id === modoState.discId) : null;
+
+  // Segmentado: escolher entre planejar várias matérias ou apenas uma.
+  const modoSelHtml = `<div class="plan-modo">
+    <div class="plan-modo-seg" role="tablist" aria-label="Forma de organização do planejamento">
+      <button type="button" role="tab" aria-selected="${!modoIndividual}" class="${!modoIndividual?'active':''}" onclick="setPlanModo('geral')">Várias matérias</button>
+      <button type="button" role="tab" aria-selected="${modoIndividual}" class="${modoIndividual?'active':''}" onclick="setPlanModo('individual')">Uma matéria específica</button>
+    </div>
+    ${modoIndividual ? (ativasParaPeriodo.length > 0
+      ? `<div class="plan-modo-disc">
+          <label for="planModoDisc">Matéria</label>
+          <select id="planModoDisc" onchange="setPlanDisc(this.value)">${
+            ativasParaPeriodo.map(d => `<option value="${escH(d.id)}" ${d.id===modoState.discId?'selected':''}>${escH(d.nome || 'Sem nome')}</option>`).join('')
+          }</select>
+        </div>`
+      : `<div class="plan-modo-disc"><span class="plan-modo-empty">Nenhuma matéria ativa — ative uma em Disciplinas ou restaure as dispensadas acima.</span></div>`) : ''}
+  </div>`;
+
+  let cardH3, cardHelp, statusLine, avisoPeriodo, limparLbl, limparTitle, blocosParaLimpar, metaBatida, gerarDisabled;
+
+  if (modoIndividual && discSel) {
+    const item = itens.find(i => i.disc.id === discSel.id) || { falta: 0, meta: 0, urgente: false };
+    metaBatida = item.falta < 0.1;
+    blocosParaLimpar = (plan[wk] || []).filter(b => b.tipo === 'estudo' && b.discId === discSel.id).length;
+    cardH3 = `Planejar <i>${escH(discSel.nome || 'a matéria')}</i>`;
+    cardHelp = 'Gera blocos só para esta matéria, encaixando-os ao redor das aulas, da rotina fixa e dos blocos que já existem no calendário (inclusive de outras matérias). As demais matérias permanecem intactas.';
+    statusLine = metaBatida
+      ? `Meta de ${discSel.nome || 'da matéria'} batida — ${item.meta.toFixed(1)}h já no calendário.`
+      : `Faltam ${item.falta.toFixed(1)}h p/ bater a meta de ${discSel.nome || 'da matéria'}${item.urgente ? ' · prova próxima' : ''}.`;
+    avisoPeriodo = '';
+    limparLbl = '✕ Limpar matéria';
+    limparTitle = 'Remove os blocos de estudo desta matéria nesta semana';
+    gerarDisabled = diasLivresCount === 0;
+  } else if (modoIndividual) {
+    metaBatida = false;
+    blocosParaLimpar = 0;
+    cardH3 = 'Planejar <i>uma matéria</i>';
+    cardHelp = 'Selecione uma matéria ativa para montar um planejamento individual, focado somente nela.';
+    statusLine = '';
+    avisoPeriodo = '';
+    limparLbl = '✕ Limpar matéria';
+    limparTitle = 'Sem matéria selecionada';
+    gerarDisabled = true;
+  } else {
+    const faltaTot = itens.reduce((s,i) => s + i.falta, 0);
+    metaBatida = faltaTot < 0.1;
+    blocosParaLimpar = (plan[wk] || []).filter(b => b.tipo === 'estudo').length;
+    cardH3 = 'Gerar <i>sugestão</i> de estudo';
+    cardHelp = 'Distribui blocos no período respeitando prioridade (alta → manhã, baixa → noite), meta semanal, limite diário, horários já ocupados e a sua rotina fixa (almoço, jantar e academia). Se as metas excederem a disponibilidade do período, a distribuição é feita proporcionalmente, com peso maior para prioridades altas.';
+    statusLine = metaBatida
+      ? 'Meta da semana batida — todas as horas já estão no calendário.'
+      : `Faltam ${faltaTot.toFixed(1)}h p/ bater a meta${urgs ? ` · ${urgs} prova${urgs!==1?'s':''} próxima${urgs!==1?'s':''}` : ''}.`;
+    avisoPeriodo = excedePeriodo
+      ? `<div class="g-status" style="color:#FF8A8A">⚠ Metas (${totalMetasPeriodo.toFixed(1)}h) ultrapassam ${(totalMetasPeriodo - periodoTotal).toFixed(1)}h a disponibilidade do período (${periodoTotal.toFixed(1)}h). A sugestão será proporcional, priorizando matérias de maior prioridade.</div>`
+      : '';
+    limparLbl = '✕ Limpar semana';
+    limparTitle = 'Remove todos os blocos de estudo desta semana pra você modificar manualmente';
+    gerarDisabled = diasLivresCount === 0;
+  }
+
   const pendentes = findPendentesTransfer();
   const pendHoras = pendentes.reduce((s, p) => s + p.faltaMin, 0) / 60;
   const pendBanner = pendentes.length > 0
@@ -1908,14 +2032,15 @@ function render() {
     : '';
   const sugHtml = pendBanner + `<div class="gerar-card">
     <div class="g-info">
-      <h3>Gerar <i>sugestão</i> de estudo</h3>
-      <div class="help">Distribui blocos no período respeitando prioridade (alta → manhã, baixa → noite), meta semanal, limite diário, horários já ocupados e a sua rotina fixa (almoço, jantar e academia). Se as metas excederem a disponibilidade do período, a distribuição é feita proporcionalmente, com peso maior para prioridades altas.</div>
+      ${modoSelHtml}
+      <h3>${cardH3}</h3>
+      <div class="help">${cardHelp}</div>
       <div class="g-status">${escH(statusLine)}</div>
       ${avisoPeriodo}
     </div>
     <div class="g-acts">
-      <button class="limpar-btn" onclick="limparSemana()" ${blocosSemana===0?'disabled':''} title="Remove todos os blocos de estudo desta semana pra você modificar manualmente">✕ Limpar semana</button>
-      <button class="gerar-btn" onclick="gerarAuto()" ${diasLivresCount===0?'disabled':''}>${metaBatida ? '↻ Regenerar' : '✦ Gerar sugestão'}</button>
+      <button class="limpar-btn" onclick="limparSemana()" ${blocosParaLimpar===0?'disabled':''} title="${escH(limparTitle)}">${limparLbl}</button>
+      <button class="gerar-btn" onclick="gerarAuto()" ${gerarDisabled?'disabled':''}>${metaBatida ? '↻ Regenerar' : '✦ Gerar sugestão'}</button>
     </div>
   </div>`;
   document.getElementById('sugContainer').innerHTML = sugHtml;
