@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js" defer></script>
+<script src="theme.js"></script>
 <style>
 .plano-card { background: var(--card); border: 1px solid var(--line); padding: 26px 28px; margin-top: 16px; position: relative; display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: flex-start; cursor: pointer; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); }
 .plano-card:hover { border-color: var(--cobalt); transform: translateY(-3px); box-shadow: var(--sh-2); }
@@ -367,39 +367,10 @@ function migrarSemestres() {
   setSemAtivo(alvo.id);
 }
 
-// Torna um contexto (semestre OU objetivo) o ativo: arquiva o atual e carrega
-// o snapshot do alvo (ou zera, se novo). As demais abas passam a ler os dados
-// vivos deste contexto — disciplinas, planejamento e revisões dele, sem mistura.
-function ativarContexto(id) {
-  const cur = semAtivo();
-  const store = semStore();
-  if (cur && cur !== id) store[cur] = snapshotLive();
-  if (cur !== id) {
-    restoreLive(store[id] || null);
-    if (store[id]) delete store[id];
-  }
-  semStoreSave(store);
-  setSemAtivo(id);
-  // Reabre, caso um semestre estivesse fechado.
-  let list = load(), mudou = false;
-  list = list.map(p => {
-    if (p.id === id && p.status === 'fechado') { mudou = true; const c = { ...p, status: 'aberto' }; delete c.fechadoEm; return c; }
-    return p;
-  });
-  if (mudou) save(list);
-}
-
-// Desativa o contexto atual sem ativar outro: arquiva os dados vivos e zera as
-// chaves vivas. Usado ao sair de um objetivo quando não há semestre pra voltar.
-function desativarContexto() {
-  const cur = semAtivo();
-  if (!cur) return;
-  const store = semStore();
-  store[cur] = snapshotLive();
-  semStoreSave(store);
-  restoreLive(null);
-  setSemAtivo(null);
-}
+// A troca do plano em foco e o conjunto de planos ativos (até 3) são geridos
+// centralmente por window.TrackerMedContext (em theme.js), pra que o chip da
+// barra lateral e as abas de edição fiquem sempre em sincronia. Ativar um plano
+// SOMA ao conjunto (sem substituir os já ativos); ver ativarPlano/desativarPlano.
 
 // Semestre aberto mais recente — alvo natural do "voltar ao semestre".
 function semestreAbertoRecente() {
@@ -407,16 +378,13 @@ function semestreAbertoRecente() {
   return abertos.length ? abertos[abertos.length - 1] : null;
 }
 
-// Fecha o semestre: arquiva os dados vivos, marca como fechado e zera as chaves vivas.
+// Fecha o semestre: marca como fechado e o desativa (arquiva os dados vivos e,
+// se ele estava em foco, passa o foco pra outro plano ativo — ou pra nenhum).
 function fecharSemestre(id) {
-  const store = semStore();
-  store[id] = snapshotLive();
-  semStoreSave(store);
-  restoreLive(null);
-  setSemAtivo(null);
   let list = load();
   list = list.map(p => p.id === id ? { ...p, status: 'fechado', fechadoEm: new Date().toISOString().slice(0,10) } : p);
   save(list);
+  window.TrackerMedContext.deactivate(id);
 }
 
 // Snapshot de um semestre, esteja ele ativo (chaves vivas) ou arquivado.
@@ -549,18 +517,19 @@ function salvar() {
   refreshView();
 }
 
-// Remove um plano e limpa vestígios de semestre (snapshot arquivado e ponteiro de ativo).
+// Remove um plano e limpa vestígios (desativa antes, pra arquivar/soltar as
+// chaves vivas e trocar o foco se for o caso; depois apaga o snapshot também).
 function apagarPlano(id) {
+  window.TrackerMedContext.deactivate(id);
   save(load().filter(x => x.id !== id));
   const store = semStore();
   if (store[id]) { delete store[id]; semStoreSave(store); }
-  if (semAtivo() === id) { setSemAtivo(null); restoreLive(null); }
 }
 
 function apagar() {
   if (!editingId) return;
   const alvo = load().find(x => x.id === editingId);
-  const ativo = semAtivo() === editingId;
+  const ativo = window.TrackerMedContext.isActive(editingId);
   const msg = ativo
     ? (alvo && ehFoco(alvo.tipo)
         ? `Apagar o ${tipoInfo(alvo.tipo).label.toLowerCase()} ATIVO? As disciplinas e o planejamento dele serão removidos junto.`
@@ -585,34 +554,35 @@ function fecharEAbrirNovo(id) {
   document.getElementById('modalSub').textContent = 'Configure o semestre que começa agora. As disciplinas e o planejamento começam zerados.';
 }
 
-function trocarAtivo(id) {
+// Ativa um plano — SOMA ao conjunto de ativos (sem substituir os que já estão
+// ativos) e passa o foco pra ele. Se já houver o limite de planos ativos, avisa
+// que é preciso desativar um antes.
+function ativarPlano(id) {
   const p = load().find(x => x.id === id);
   if (!p) return;
-  const atual = semAtivo() ? load().find(x => x.id === semAtivo()) : null;
-  const msg = ehFoco(p.tipo)
-    ? `Passar a editar “${p.nome}”? As abas Disciplinas, Planejamento e Revisões passam a mostrar este plano${atual ? ` — “${atual.nome}” continua guardado e aparecendo no calendário e no histórico` : ''}. No Planejamento geral e no Histórico, todos os planos aparecem juntos, com filtro por plano.`
-    : `Passar a editar “${p.nome}”? Você edita as disciplinas e o cronograma dele; no Planejamento geral e no Histórico, todos os planos continuam aparecendo juntos, com filtro por plano.`;
-  if (!confirm(msg)) return;
-  ativarContexto(id);
+  const r = window.TrackerMedContext.activate(id);
+  if (!r.ok && r.reason === 'limit') {
+    alert('Você já tem ' + r.max + ' planos ativos ao mesmo tempo — esse é o limite.\n\nPra ativar “' + p.nome + '”, desative um dos planos ativos primeiro (pelo botão Desativar no plano ativo, ou pelo × no indicador de planos ativos no canto inferior esquerdo).');
+    return;
+  }
   refreshView();
 }
 
-function reabrirSemestre(id) {
-  const p = load().find(x => x.id === id);
-  if (!p) return;
-  if (!confirm(`Reabrir “${p.nome}” e passar a editá-lo? Ele volta a ser editável; o plano atual continua guardado e aparecendo no calendário e no histórico.`)) return;
-  ativarContexto(id);
+// Passa o foco pra um plano que JÁ está ativo, sem mexer no conjunto de ativos.
+// As abas de edição passam a mostrar/editar este plano.
+function focarPlano(id) {
+  window.TrackerMedContext.setFocus(id);
   refreshView();
 }
 
-// Sai de um objetivo ativo: volta pro semestre aberto mais recente ou, se não
-// houver, apenas desativa (arquivando os dados do objetivo).
-function voltarAoSemestre() {
-  const s = semestreAbertoRecente();
-  if (s) ativarContexto(s.id);
-  else desativarContexto();
+// Desativa um plano: tira do conjunto de ativos. Nada é apagado — os dados ficam
+// guardados e o plano segue aparecendo no Planejamento geral e no Histórico.
+function desativarPlano(id) {
+  window.TrackerMedContext.deactivate(id);
   refreshView();
 }
+
+function reabrirSemestre(id) { ativarPlano(id); }
 
 // Marca/desmarca um objetivo como concluído (não apaga nada — os dados ficam
 // guardados e o objetivo continua reativável).
@@ -653,41 +623,36 @@ function tipoInfo(tipo) {
 function ehFoco(tipo) { return tipo === 'residencia' || tipo === 'enamed' || tipo === 'objetivo'; }
 
 function bannerAtivoHTML() {
-  const id = semAtivo();
-  const p = id ? load().find(x => x.id === id) : null;
+  const TMC = window.TrackerMedContext;
+  const ativos = TMC.activePlanos();
+  const foco = TMC.focusId();
 
-  // Contexto ativo é um plano de foco (residência, ENAMED ou objetivo).
-  if (p && ehFoco(p.tipo)) {
-    const nDisc = nDiscVivas();
-    const temSemestre = !!semestreAbertoRecente();
-    const info = tipoInfo(p.tipo);
-    return `<div class="sem-banner foco" style="border-left-color:${info.cor}">
-      <div class="sb-info">
-        <div class="sb-lbl">${esc(info.label)} ativo</div>
-        <div class="sb-nome">${info.icon} <i>${esc(p.nome)}</i></div>
-        <div class="sb-meta">${nDisc} disciplina${nDisc!==1?'s':''} · as outras abas mostram só o conteúdo deste plano, separado do semestre</div>
-      </div>
-      <button class="sb-close" onclick="voltarAoSemestre()">${temSemestre ? 'Voltar ao semestre →' : 'Desativar →'}</button>
-    </div>`;
-  }
-
-  // Sem contexto ativo (ou ponteiro pendurado).
-  if (!p) {
-    const temSemestre = load().some(x => x.tipo === 'semestre' && x.status !== 'fechado');
+  // Nenhum plano ativo.
+  if (!ativos.length) {
+    const temPlano = load().length > 0;
     return `<div class="sem-banner none">
-      <div><b>Nenhum semestre ativo.</b> ${temSemestre ? 'Escolha um semestre aberto abaixo e clique em ★ pra ativá-lo.' : 'Cadastre um semestre pra organizar disciplinas e planejamento por período.'}</div>
+      <div><b>Nenhum plano ativo.</b> ${temPlano
+        ? 'Ative um plano abaixo (★) pra editar as disciplinas, o planejamento e as revisões dele. Você pode manter até ' + TMC.MAX + ' planos ativos ao mesmo tempo.'
+        : 'Cadastre um plano pra organizar disciplinas, planejamento e revisões.'}</div>
     </div>`;
   }
 
-  // Contexto ativo é um semestre.
-  const nDisc = nDiscVivas();
+  // Lista dos planos ativos (até 3), com o em foco destacado.
+  const chips = ativos.map(p => {
+    const info = tipoInfo(p.tipo);
+    const isFoco = p.id === foco;
+    return `<span style="display:inline-flex;align-items:center;border:1px solid var(--line);border-left:3px solid ${info.cor};border-radius:0 999px 999px 0;background:${isFoco ? 'var(--paper)' : 'transparent'}">
+      <button onclick="focarPlano('${p.id}')" title="${isFoco ? 'Plano em edição agora' : 'Editar este plano nas abas Disciplinas, Planejamento e Revisões'}" style="display:inline-flex;align-items:center;gap:5px;background:transparent;border:0;cursor:pointer;padding:5px 6px 5px 9px;font-family:inherit;font-size:13px;color:var(--ink);font-weight:${isFoco ? '700' : '500'}">${info.icon} ${esc(p.nome)}${isFoco ? ` <span style="color:${info.cor};font-weight:700">· em edição</span>` : ''}</button>
+      <button onclick="desativarPlano('${p.id}')" title="Desativar plano" aria-label="Desativar" style="background:transparent;border:0;cursor:pointer;color:var(--muted);font-size:16px;line-height:1;padding:4px 8px 4px 4px">×</button>
+    </span>`;
+  }).join('');
+
   return `<div class="sem-banner">
-    <div class="sb-info">
-      <div class="sb-lbl">Semestre ativo</div>
-      <div class="sb-nome">${esc(p.nome)}</div>
-      <div class="sb-meta">${nDisc} disciplina${nDisc!==1?'s':''} · disciplinas e planejamento que você cadastra pertencem a ele</div>
+    <div class="sb-info" style="width:100%">
+      <div class="sb-lbl">Planos ativos · ${ativos.length}/${TMC.MAX}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 2px">${chips}</div>
+      <div class="sb-meta">Disciplinas, Planejamento e Revisões mostram o plano <b>em edição</b> — clique num plano ativo pra trocar. No Planejamento geral e no Histórico, todos os planos aparecem juntos, com filtro por plano.</div>
     </div>
-    <button class="sb-close" onclick="fecharEAbrirNovo('${p.id}')">Fechar semestre e abrir novo →</button>
   </div>`;
 }
 
@@ -695,52 +660,78 @@ function bannerAtivoHTML() {
 function contextoControlHTML(p) {
   if (ehFoco(p.tipo)) return focoControlHTML(p);
   if (p.tipo !== 'semestre') return '';
+  const TMC = window.TrackerMedContext;
+  const isAtivo = TMC.isActive(p.id);
+  const isFoco = TMC.focusId() === p.id;
   if (p.status === 'fechado') {
     return `<div class="sem-ctrl fechado">
       <div><b>Semestre fechado · só-leitura.</b> Mostra o que estava cadastrado quando foi encerrado${p.fechadoEm ? ' em ' + fmtData(p.fechadoEm) : ''}.</div>
       <button onclick="reabrirSemestre('${p.id}')">Reabrir como ativo</button>
     </div>` + arquivoHTML(p.id);
   }
-  if (semAtivo() === p.id) {
+  if (isFoco) {
     return `<div class="sem-ctrl ativo">
-      <div><b>● Semestre ativo.</b> As disciplinas e o planejamento que você cadastra pertencem a este semestre.</div>
-      <button onclick="fecharEAbrirNovo('${p.id}')">Fechar e abrir novo →</button>
+      <div><b>● Semestre ativo · em edição.</b> As disciplinas e o planejamento que você cadastra pertencem a este semestre. Troque o plano em edição pelo indicador de planos ativos no canto inferior esquerdo.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="fecharEAbrirNovo('${p.id}')">Fechar e abrir novo →</button>
+        <button onclick="desativarPlano('${p.id}')" style="background:transparent;border:1px solid var(--line);color:var(--ink2)">Desativar</button>
+      </div>
+    </div>`;
+  }
+  if (isAtivo) {
+    return `<div class="sem-ctrl">
+      <div><b>● Semestre ativo.</b> Está guardado e aparece no Planejamento geral e no Histórico. Coloque-o em edição pra mexer nas disciplinas e no planejamento dele.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="focarPlano('${p.id}')">✎ Editar este semestre</button>
+        <button onclick="desativarPlano('${p.id}')" style="background:transparent;border:1px solid var(--line);color:var(--ink2)">Desativar</button>
+      </div>
     </div>`;
   }
   return `<div class="sem-ctrl">
-    <div>Este semestre está aberto, mas não é o ativo. Ative-o pra editar as disciplinas e o planejamento dele.</div>
-    <button onclick="trocarAtivo('${p.id}')">★ Tornar ativo</button>
+    <div>Este semestre não está ativo. Ative-o pra somar aos planos ativos (até ${TMC.MAX}) e editar as disciplinas e o planejamento dele.</div>
+    <button onclick="ativarPlano('${p.id}')">★ Ativar semestre</button>
   </div>`;
 }
 
-// Controle de um plano de foco (residência, ENAMED, objetivo): ativar/voltar +
-// concluir, e prévia das disciplinas dele.
+// Controle de um plano de foco (residência, ENAMED, objetivo): ativar / editar /
+// desativar / concluir, e prévia das disciplinas dele.
 function focoControlHTML(p) {
-  const ativo = semAtivo() === p.id;
-  const temSemestre = !!semestreAbertoRecente();
+  const TMC = window.TrackerMedContext;
+  const isAtivo = TMC.isActive(p.id);
+  const isFoco = TMC.focusId() === p.id;
   const info = tipoInfo(p.tipo);
   const rot = info.label.toLowerCase();
   const preview = discPreviewHTML(
     p.id, 'Disciplinas deste plano',
-    ativo ? 'Nenhuma disciplina neste plano ainda. Vá em <b>Disciplinas</b> pra montar o conteúdo dele.'
-          : 'Nenhuma disciplina neste plano ainda. Ative-o e vá em Disciplinas pra montar o conteúdo dele.'
+    isAtivo ? 'Nenhuma disciplina neste plano ainda. Vá em <b>Disciplinas</b> pra montar o conteúdo dele.'
+            : 'Nenhuma disciplina neste plano ainda. Ative-o e vá em Disciplinas pra montar o conteúdo dele.'
   );
   const concluirBtn = `<button onclick="toggleConcluido('${p.id}')" style="background:transparent;border:1px solid var(--line);color:var(--ink2)">${p.concluido ? '↺ Reabrir plano' : '✓ Marcar como concluído'}</button>`;
+  const desativarBtn = `<button onclick="desativarPlano('${p.id}')" style="background:transparent;border:1px solid var(--line);color:var(--ink2)">Desativar</button>`;
   let ctrl;
-  if (ativo) {
+  if (isFoco) {
     ctrl = `<div class="sem-ctrl foco" style="border-left-color:${info.cor}">
-      <div><b>${info.icon} ${esc(info.label)} ativo.</b> As abas Disciplinas, Planejamento e Revisões mostram só o conteúdo deste plano — sem misturar com o semestre. Ele aparece no <a href="plannerstudy.html">calendário geral</a>.</div>
+      <div><b>${info.icon} ${esc(info.label)} ativo · em edição.</b> As abas Disciplinas, Planejamento e Revisões mostram este plano. Troque o plano em edição pelo indicador no canto inferior esquerdo. Ele também aparece no <a href="plannerstudy.html">calendário geral</a> e no histórico.</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         ${concluirBtn}
-        <button onclick="voltarAoSemestre()">${temSemestre ? 'Voltar ao semestre →' : 'Desativar →'}</button>
+        ${desativarBtn}
+      </div>
+    </div>`;
+  } else if (isAtivo) {
+    ctrl = `<div class="sem-ctrl foco" style="border-left-color:${info.cor}">
+      <div><b>${info.icon} ${esc(info.label)} ativo.</b> Está guardado e aparece no calendário geral e no histórico. Coloque-o em edição pra montar as disciplinas, o planejamento e as revisões dele.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="focarPlano('${p.id}')">✎ Editar este ${esc(rot)}</button>
+        ${concluirBtn}
+        ${desativarBtn}
       </div>
     </div>`;
   } else {
     ctrl = `<div class="sem-ctrl foco" style="border-left-color:${info.cor}">
-      <div>${p.concluido ? '<b>Plano concluído.</b> ' : ''}Este ${esc(rot)} não está ativo. Ative-o pra montar e ver as disciplinas, o planejamento e as revisões dele nas outras abas.</div>
+      <div>${p.concluido ? '<b>Plano concluído.</b> ' : ''}Este ${esc(rot)} não está ativo. Ative-o pra somar aos planos ativos (até ${TMC.MAX}) e montar as disciplinas, o planejamento e as revisões dele.</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         ${concluirBtn}
-        <button onclick="trocarAtivo('${p.id}')">★ Ativar ${esc(rot)}</button>
+        <button onclick="ativarPlano('${p.id}')">★ Ativar ${esc(rot)}</button>
       </div>
     </div>`;
   }
@@ -819,18 +810,24 @@ function render() {
                     : p.tipo === 'enamed' ? '📋 ENAMED'
                     : p.tipo === 'objetivo' ? '📌 Objetivo'
                     : '🎓 Semestre';
-    const ativavel = true; // todos os tipos são contextos ativáveis
-    const isAtivo = semAtivo() === p.id;
+    const TMC = window.TrackerMedContext;
+    const isAtivo = TMC.isActive(p.id);
+    const isFoco = TMC.focusId() === p.id;
     const isFechado = p.tipo === 'semestre' && p.status === 'fechado';
     const isConcluido = ehFoco(p.tipo) && !!p.concluido && !isAtivo;
-    const badge = isAtivo
+    const badge = isFoco
+                    ? `<span class="sem-badge ${ehFoco(p.tipo) ? 'foco-ativo' : 'ativo'}">● Em edição</span>`
+                : isAtivo
                     ? `<span class="sem-badge ${ehFoco(p.tipo) ? 'foco-ativo' : 'ativo'}">● Ativo</span>`
                 : isFechado ? '<span class="sem-badge fechado">Fechado</span>'
                 : isConcluido ? '<span class="sem-badge concluido">✓ Concluído</span>' : '';
-    const ativarBtn = (!isAtivo && !isFechado)
-      ? `<button onclick="event.stopPropagation(); trocarAtivo('${p.id}')" title="Ativar plano">★</button>` : '';
+    // Estrela = ativar (soma aos ativos). Se já ativo, vira botão de desativar.
+    const ativarBtn = isFechado ? ''
+      : (!isAtivo
+          ? `<button onclick="event.stopPropagation(); ativarPlano('${p.id}')" title="Ativar plano">★</button>`
+          : `<button onclick="event.stopPropagation(); desativarPlano('${p.id}')" title="Desativar plano" aria-label="Desativar">⊘</button>`);
 
-    return `<div class="plano-card ${p.tipo}${isAtivo ? ' is-ativo' : ''}${isFechado ? ' is-fechado' : ''}" onclick="clicarCard(event, '${p.id}')">
+    return `<div class="plano-card ${p.tipo}${isFoco ? ' is-ativo' : ''}${isFechado ? ' is-fechado' : ''}" onclick="clicarCard(event, '${p.id}')">
       <div class="plano-actions">
         ${ativarBtn}
         <button onclick="event.stopPropagation(); abrirEdit('${p.id}')" title="Editar">✎</button>

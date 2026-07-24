@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js" defer></script>
+<script src="theme.js"></script>
 <style>
 .rev-list { display: flex; flex-direction: column; gap: 8px; }
 .rev-row { background: var(--card); border: 1px solid var(--line); padding: 18px 22px; display: grid; grid-template-columns: 1fr auto auto auto auto auto; gap: 20px; align-items: center; border-radius: 0 8px 8px 0; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); }
@@ -123,7 +123,8 @@
   </div>
   <button class="rev-add-btn" onclick="abrirNovaRevisao()">+ Nova revisão</button>
 </div>
-<div id="revRoot" style="margin-top:32px"></div>
+<div id="revBanner" style="margin-top:22px"></div>
+<div id="revRoot" style="margin-top:24px"></div>
 </main></div>
 
 <!-- Modal nova revisão -->
@@ -813,6 +814,8 @@ function ensureIds() {
 function render() {
   ensureIds();
   backfillRevLinks();
+  const banner = document.getElementById('revBanner');
+  if (banner) banner.innerHTML = window.TrackerMedContext.switcherHTML('Plano em foco');
   const itens = loadHist().filter(x => x && x.revisar === true);
   const root = document.getElementById('revRoot');
   const pill = document.getElementById('revPill');
