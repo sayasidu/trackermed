@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js" defer></script>
+<script src="theme.js"></script>
 <style>
 .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
 .stat-card { background: #fff; border: 1px solid #E0E0E0; padding: 18px 20px; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); }
@@ -2271,21 +2271,13 @@ function renderCalWeek(acts, marks) {
   return `<div class="cal-week">${cols}</div>`;
 }
 
+// Barra de troca por plano (planos ativos, até 3). O planejamento editável
+// abaixo é o do plano em edição; clicar em outro plano ativo troca aqui. (O
+// "Calendário geral" mais abaixo reúne TODOS os planos, com seu próprio filtro.)
 function renderSemBanner() {
-  const id = localStorage.getItem('trackermed.semestreAtivo.v1');
-  let planos = [];
-  try { planos = JSON.parse(localStorage.getItem('trackermed.planos.v1') || '[]'); } catch {}
-  const p = id ? planos.find(x => x.id === id) : null;
   const el = document.getElementById('semBanner');
   if (!el) return;
-  if (!p) {
-    el.innerHTML = `<div class="sem-context none">Nenhum contexto ativo — <a href="planos.html">crie ou ative um plano em Planos</a>. As disciplinas, a disponibilidade e o cronograma abaixo pertencem ao contexto ativo.</div>`;
-  } else if (p.tipo !== 'semestre') {
-    const fi = ({residencia:['🏥','Residência','var(--cobalt)'],enamed:['📋','ENAMED','var(--amber)'],objetivo:['📌','Objetivo','#7C5CFC']})[p.tipo] || ['📘','Plano','var(--muted)'];
-    el.innerHTML = `<div class="sem-context objetivo" style="border-left-color:${fi[2]}">${fi[0]} Planejamento · ${fi[1]}: <b style="color:${fi[2]}">${escH(p.nome)}</b> · edita este plano aqui · <a href="planos.html">trocar de contexto</a></div>`;
-  } else {
-    el.innerHTML = `<div class="sem-context">📅 Planejamento do semestre: <b>${escH(p.nome)}</b> · <a href="planos.html">trocar de contexto</a></div>`;
-  }
+  el.innerHTML = window.TrackerMedContext.switcherHTML('Editando o plano');
 }
 
 renderSemBanner();

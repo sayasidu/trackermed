@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js" defer></script>
+<script src="theme.js"></script>
 <style>
 .disc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; }
 .disc-card { background: var(--card); border: 1px solid var(--line); padding: 22px; display: flex; flex-direction: column; gap: 10px; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); position: relative; cursor: pointer; }
@@ -449,17 +449,10 @@ function horasDaAula(a) {
 function fmtData(d) { if(!d) return ''; const [y,m,dd]=d.split('-'); return `${dd}/${m}/${y.slice(2)}`; }
 function diasAte(d) { if(!d) return null; const t=new Date(d+'T12:00'); const n=new Date(); n.setHours(0,0,0,0); return Math.round((t-n)/86400000); }
 
+// Barra de troca por plano (planos ativos, até 3). As disciplinas mostradas são
+// as do plano em edição; clicar em outro plano ativo troca o conteúdo aqui.
 function semCtxHTML() {
-  const id = localStorage.getItem('trackermed.semestreAtivo.v1');
-  let planos = [];
-  try { planos = JSON.parse(localStorage.getItem('trackermed.planos.v1') || '[]'); } catch {}
-  const p = id ? planos.find(x => x.id === id) : null;
-  if (!p) return `<div class="sem-context none">Nenhum plano em foco — <a href="planos.html">crie ou selecione um plano em Planos</a> pra organizar as disciplinas dele. As disciplinas abaixo entram no plano que você colocar em foco.</div>`;
-  if (p.tipo !== 'semestre') {
-    const fi = ({residencia:['🏥','Residência','var(--cobalt)'],enamed:['📋','ENAMED','var(--amber)'],objetivo:['📌','Objetivo','#7C5CFC']})[p.tipo] || ['📘','Plano','var(--muted)'];
-    return `<div class="sem-context objetivo" style="border-left-color:${fi[2]}">${fi[0]} Disciplinas do plano ${fi[1]} em foco: <b style="color:${fi[2]}">${esc(p.nome)}</b> · cada plano tem as suas · <a href="planos.html">trocar de plano</a></div>`;
-  }
-  return `<div class="sem-context">📚 Disciplinas do semestre em foco: <b>${esc(p.nome)}</b> · cada plano tem as suas · <a href="planos.html">trocar de plano</a></div>`;
+  return window.TrackerMedContext.switcherHTML('Disciplinas do plano');
 }
 
 function render() {
