@@ -64,6 +64,22 @@
 .dyn-remove { background: transparent; border: none; color: var(--muted); font-size: 18px; cursor: pointer; }
 .dyn-remove:hover { color: var(--rose); }
 .dyn-add { background: transparent; border: 1px dashed var(--cobalt); color: var(--cobalt); padding: 7px 12px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 4px; font-family: inherit; letter-spacing: 0.05em; }
+.yn-toggle { display: flex; gap: 6px; margin-bottom: 10px; }
+.yn-btn { background: var(--card); border: 1px solid var(--line); color: var(--ink2); padding: 7px 18px; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; cursor: pointer; font-family: inherit; border-radius: 8px; transition: border-color .2s var(--ease), color .2s var(--ease); }
+.yn-btn:hover { border-color: var(--cobalt); color: var(--cobalt); }
+.yn-btn.active { background: var(--cobalt); border-color: var(--cobalt); color: #fff; }
+.conteudo-block { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+.conteudo-head { display: grid; grid-template-columns: 1fr 28px; gap: 6px; align-items: center; }
+.conteudo-head input { padding: 7px 9px; font-size: 13px; font-weight: 600; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); font-family: inherit; color: var(--ink); transition: border-color .2s var(--ease), box-shadow .2s var(--ease); }
+.conteudo-head input:focus { outline: none; border-color: var(--cobalt); box-shadow: var(--ring); }
+.topico-row { display: grid; grid-template-columns: 20px 1fr 28px; gap: 6px; align-items: center; margin-top: 6px; padding-left: 8px; }
+.topico-row .topico-mark { color: var(--muted); font-size: 13px; text-align: center; }
+.topico-row input { padding: 6px 9px; font-size: 13px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); font-family: inherit; color: var(--ink); transition: border-color .2s var(--ease), box-shadow .2s var(--ease); }
+.topico-row input:focus { outline: none; border-color: var(--cobalt); box-shadow: var(--ring); }
+.topico-add { margin-top: 8px; margin-left: 28px; padding: 5px 10px !important; font-size: 11px !important; }
+.disc-card .conteudos-box { border-top: 1px dashed var(--line); padding-top: 10px; font-size: 12px; }
+.disc-card .cont-line { display: flex; justify-content: space-between; padding: 3px 0; color: var(--ink2); }
+.disc-card .cont-line b { color: var(--cobalt); font-weight: 600; font-variant-numeric: tabular-nums; }
 .hr-box { display: flex; align-items: center; gap: 14px; background: var(--ink); color: var(--paper); padding: 14px 16px; margin-bottom: 16px; border-radius: 10px; box-shadow: var(--sh-1); }
 .hr-box label { color: var(--acid); margin: 0 !important; font-size: 11px !important; flex: 1; }
 .hr-box .sub-hint { font-size: 11px; color: rgba(244,241,234,0.6); margin-top: 2px; display: block; letter-spacing: 0; text-transform: none; font-weight: 400; }
@@ -144,7 +160,7 @@
   <div class="modal-box" style="width:440px">
     <button class="mbtn-close" onclick="fecharDel()">×</button>
     <h2>Apagar <i>disciplina</i>?</h2>
-    <div class="modal-sub">Esta ação não pode ser desfeita. As aulas, metas e provas desta disciplina serão removidas.</div>
+    <div class="modal-sub">Esta ação não pode ser desfeita. As aulas, metas, provas e conteúdos desta disciplina serão removidos.</div>
     <div class="section-group rose" style="margin-top:8px">
       <h4 id="delDiscNome">—</h4>
       <div class="sg-help" id="delDiscInfo"></div>
@@ -187,10 +203,25 @@
       </div>
 
       <div class="section-group">
-        <h4>📚 Horários das aulas</h4>
-        <div class="sg-help">Adiciona cada bloco fixo de aula semanal.</div>
-        <div id="aulasList"></div>
-        <button type="button" class="dyn-add" onclick="addAula()">+ adicionar horário</button>
+        <h4>📚 Horário de aula</h4>
+        <div class="sg-help">A disciplina possui horário fixo de aula?</div>
+        <div class="yn-toggle">
+          <button type="button" class="yn-btn" id="ynSim" onclick="setHorarioFixo(true)">Sim</button>
+          <button type="button" class="yn-btn" id="ynNao" onclick="setHorarioFixo(false)">Não</button>
+        </div>
+        <input type="hidden" id="dHorFixo" value="nao">
+        <div id="aulasArea" style="display:none">
+          <div class="sg-help">Adiciona cada bloco fixo de aula semanal — dia da semana e horário.</div>
+          <div id="aulasList"></div>
+          <button type="button" class="dyn-add" onclick="addAula()">+ adicionar horário</button>
+        </div>
+      </div>
+
+      <div class="section-group">
+        <h4>📖 Conteúdos e tópicos</h4>
+        <div class="sg-help">Organiza os conteúdos principais da disciplina e seus tópicos ou subconteúdos — eles serão usados no planejamento dos estudos.</div>
+        <div id="conteudosList"></div>
+        <button type="button" class="dyn-add" onclick="addConteudo()">+ adicionar conteúdo</button>
       </div>
 
       <div class="hr-dual">
@@ -265,7 +296,7 @@ function load() {
   } catch { return []; }
 }
 function save(list) { localStorage.setItem(KEY, JSON.stringify(list)); }
-function uid() { return 'd-' + Date.now() + '-' + Math.random().toString(36).slice(2,6); }
+function uid(p = 'd') { return p + '-' + Date.now() + '-' + Math.random().toString(36).slice(2,6); }
 function esc(s) { return String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 function addAula(pre = {}) {
@@ -277,6 +308,38 @@ function addAula(pre = {}) {
     <input type="time" class="aula-fim" value="${esc(pre.fim||'10:00')}">
     <button type="button" class="dyn-remove" onclick="this.parentElement.remove()">×</button>`;
   document.getElementById('aulasList').appendChild(div);
+}
+function setHorarioFixo(v) {
+  document.getElementById('dHorFixo').value = v ? 'sim' : 'nao';
+  document.getElementById('ynSim').classList.toggle('active', v);
+  document.getElementById('ynNao').classList.toggle('active', !v);
+  document.getElementById('aulasArea').style.display = v ? '' : 'none';
+  if (v && !document.querySelector('#aulasList .dyn-row')) addAula();
+}
+function addConteudo(pre = {}) {
+  const div = document.createElement('div');
+  div.className = 'conteudo-block';
+  if (pre.id) div.dataset.cid = pre.id;
+  div.innerHTML = `
+    <div class="conteudo-head">
+      <input type="text" class="conteudo-nome" placeholder="Ex: Cardiologia" value="${esc(pre.nome)}">
+      <button type="button" class="dyn-remove" title="Remover conteúdo" onclick="this.closest('.conteudo-block').remove()">×</button>
+    </div>
+    <div class="topicos-list"></div>
+    <button type="button" class="dyn-add topico-add" onclick="addTopico(this.closest('.conteudo-block'))">+ adicionar tópico</button>`;
+  document.getElementById('conteudosList').appendChild(div);
+  (pre.topicos || []).forEach(t => addTopico(div, t));
+  return div;
+}
+function addTopico(block, pre = {}) {
+  const div = document.createElement('div');
+  div.className = 'topico-row';
+  if (pre.id) div.dataset.tid = pre.id;
+  div.innerHTML = `
+    <span class="topico-mark">↳</span>
+    <input type="text" class="topico-nome" placeholder="Ex: Síndrome Coronariana Aguda" value="${esc(pre.nome)}">
+    <button type="button" class="dyn-remove" title="Remover tópico" onclick="this.parentElement.remove()">×</button>`;
+  block.querySelector('.topicos-list').appendChild(div);
 }
 function addProva(pre = {}) {
   const div = document.createElement('div');
@@ -333,10 +396,12 @@ function abrirNova() {
   document.getElementById('discForm').reset();
   document.getElementById('aulasList').innerHTML = '';
   document.getElementById('provasList').innerHTML = '';
+  document.getElementById('conteudosList').innerHTML = '';
   document.getElementById('dMetaHoras').value = 5;
   renderPrioChips('media');
   renderColorPicker(CORES[load().length % CORES.length]);
-  addAula();
+  setHorarioFixo(false);
+  addConteudo();
   addProva();
   document.getElementById('newDiscModal').classList.add('open');
 }
@@ -358,10 +423,13 @@ function abrirEdit(id) {
   renderColorPicker(d.cor || corPadrao(d.nome));
   document.getElementById('aulasList').innerHTML = '';
   document.getElementById('provasList').innerHTML = '';
+  document.getElementById('conteudosList').innerHTML = '';
   (d.aulas || []).forEach(a => addAula(a));
   (d.provas || []).forEach(p => addProva(p));
-  if (!d.aulas?.length) addAula();
+  (d.conteudos || []).forEach(c => addConteudo(c));
+  setHorarioFixo(d.horarioFixo !== undefined ? !!d.horarioFixo : (d.aulas || []).length > 0);
   if (!d.provas?.length) addProva();
+  if (!d.conteudos?.length) addConteudo();
   document.getElementById('newDiscModal').classList.add('open');
 }
 
@@ -374,9 +442,9 @@ function abrirDel(id) {
   if (!d) return;
   pendingDelId = id;
   document.getElementById('delDiscNome').textContent = d.nome || 'Sem nome';
-  const aulasN = (d.aulas || []).length, provasN = (d.provas || []).length;
+  const aulasN = (d.aulas || []).length, provasN = (d.provas || []).length, contN = (d.conteudos || []).length;
   document.getElementById('delDiscInfo').textContent =
-    `${aulasN} aula${aulasN!==1?'s':''} · ${provasN} prova${provasN!==1?'s':''} cadastrada${provasN!==1?'s':''}`;
+    `${aulasN} aula${aulasN!==1?'s':''} · ${provasN} prova${provasN!==1?'s':''} · ${contN} conteúdo${contN!==1?'s':''}`;
   document.getElementById('delDiscModal').classList.add('open');
 }
 document.getElementById('btnDelConfirm').addEventListener('click', () => {
@@ -387,11 +455,20 @@ document.getElementById('btnDelConfirm').addEventListener('click', () => {
 });
 
 function salvar() {
-  const aulas = [...document.querySelectorAll('#aulasList .dyn-row')].map(r => ({
+  const horarioFixo = document.getElementById('dHorFixo').value === 'sim';
+  const aulas = !horarioFixo ? [] : [...document.querySelectorAll('#aulasList .dyn-row')].map(r => ({
     dia: r.querySelector('.aula-dia').value,
     inicio: r.querySelector('.aula-inicio').value,
     fim: r.querySelector('.aula-fim').value
   })).filter(a => a.inicio && a.fim);
+  const conteudos = [...document.querySelectorAll('#conteudosList .conteudo-block')].map(b => ({
+    id: b.dataset.cid || uid('c'),
+    nome: b.querySelector('.conteudo-nome').value.trim(),
+    topicos: [...b.querySelectorAll('.topico-row')].map(t => ({
+      id: t.dataset.tid || uid('t'),
+      nome: t.querySelector('.topico-nome').value.trim()
+    })).filter(t => t.nome)
+  })).filter(c => c.nome);
   const provas = [...document.querySelectorAll('#provasList .dyn-row-prova')].map(r => ({
     nome: r.querySelector('.prova-nome').value.trim(),
     data: r.querySelector('.prova-data').value
@@ -407,7 +484,7 @@ function salvar() {
     prioridade: document.getElementById('dPrioridade').value || 'media',
     cor: document.getElementById('dCor').value || corPadrao(nome),
     metaHorasSemana: parseFloat(document.getElementById('dMetaHoras').value) || 0,
-    aulas, provas
+    horarioFixo, aulas, provas, conteudos
   };
   let list = load();
   if (editingId) list = list.map(x => x.id === editingId ? disc : x);
@@ -477,10 +554,16 @@ function render() {
   }
 
   cont.innerHTML = `<div class="disc-grid">${list.map(d => {
+    const semFixo = d.horarioFixo === false || !(d.aulas||[]).length;
     const aulas = (d.aulas||[]).map(a => {
       const dia = DIAS.find(([v])=>v===a.dia)?.[1] || a.dia;
       return `<div class="aula-line"><span><b>${esc(dia)}</b></span><span>${esc(a.inicio)}—${esc(a.fim)}</span></div>`;
-    }).join('') || `<div style="color:var(--muted);font-size:12px;font-style:italic">Sem aulas cadastradas</div>`;
+    }).join('') || `<div style="color:var(--muted);font-size:12px;font-style:italic">${semFixo?'Sem horário fixo de aula':'Sem aulas cadastradas'}</div>`;
+    const contList = d.conteudos || [];
+    const conteudos = contList.slice(0,3).map(c => {
+      const n = (c.topicos||[]).length;
+      return `<div class="cont-line"><span>${esc(c.nome)}</span><b>${n} tópico${n!==1?'s':''}</b></div>`;
+    }).join('') + (contList.length > 3 ? `<div class="cont-line" style="color:var(--muted)"><span>+${contList.length-3} conteúdo${contList.length-3!==1?'s':''}…</span></div>` : '');
     const provasOrdenadas = (d.provas||[]).slice().sort((a,b) => {
       const da = diasAte(a.data), db = diasAte(b.data);
       if (da==null && db==null) return 0;
@@ -515,6 +598,7 @@ function render() {
         </div>
       </div>
       <div class="aulas">${aulas}</div>
+      ${conteudos ? `<div class="conteudos-box">${conteudos}</div>` : ''}
       <div>
         <div class="meta-h">${(d.metaHorasSemana||0).toFixed(1)}h <span>meta semanal</span></div>
       </div>
