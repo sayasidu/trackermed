@@ -270,6 +270,8 @@ function weekKey(d) { return isoOf(startOfWeek(d)); }
 function addDays(d,n) { const x = new Date(d); x.setDate(x.getDate()+n); return x; }
 function isoOf(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function dOnly(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+// "Hoje" no fuso de Cuiabá (America/Cuiaba), ver theme.js.
+function nowCuiaba() { return (window.TrackerMedTime && window.TrackerMedTime.now()) || new Date(); }
 function parseISO(s) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s||''); return m ? new Date(+m[1], +m[2]-1, +m[3]) : null; }
 function parseBR(s) { const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s||''); return m ? new Date(+m[3], +m[2]-1, +m[1]) : null; }
 function esc(s) { return String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -343,7 +345,7 @@ function concludedContents() {
 
 /* ---------- period range ---------- */
 function periodRange(period) {
-  const today = dOnly(new Date());
+  const today = dOnly(nowCuiaba());
   if (period === 'dia') return { start: today, end: today };
   if (period === 'semana') { const s = startOfWeek(today); return { start: s, end: addDays(s, 6) }; }
   const s = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -353,7 +355,7 @@ function periodRange(period) {
 const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const MESES_LONG = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 function periodLabel(period) {
-  const today = new Date();
+  const today = nowCuiaba();
   if (period === 'dia') return today.toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'long' });
   if (period === 'semana') { const r = periodRange('semana'); return `${r.start.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})} – ${r.end.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})}`; }
   return `${MESES_LONG[today.getMonth()]} de ${today.getFullYear()}`;
@@ -361,7 +363,7 @@ function periodLabel(period) {
 
 /* ---------- evolution series ---------- */
 function buildSeries(ev, period) {
-  const today = dOnly(new Date());
+  const today = dOnly(nowCuiaba());
   const buckets = [];
   if (period === 'dia') {
     for (let i = 13; i >= 0; i--) { const d = addDays(today, -i); buckets.push({ key: isoOf(d), label: String(d.getDate()), full: d.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'}), studied:0, planned:0 }); }
@@ -542,7 +544,7 @@ function renderRevisoes(rev, realizadasP) {
 function heatLevel(min) { if (min <= 0) return ''; if (min < 30) return 'l1'; if (min < 60) return 'l2'; if (min < 120) return 'l3'; return 'l4'; }
 function renderHeat(ev) {
   const box = document.getElementById('heat');
-  const today = dOnly(new Date());
+  const today = dOnly(nowCuiaba());
   const perDay = {};
   ev.forEach(e => { if (e.studied > 0) perDay[e.iso] = (perDay[e.iso]||0) + e.studied; });
   const start = startOfWeek(addDays(today, -6*7)); // 7 weeks incl. current
@@ -679,7 +681,7 @@ function compute(period) {
   const disc = loadDisc();
   const discById = Object.fromEntries(disc.map(d => [d.id, d]));
   const range = periodRange(period);
-  const today = dOnly(new Date());
+  const today = dOnly(nowCuiaba());
   const inR = d => d && d.getTime() >= range.start.getTime() && d.getTime() <= range.end.getTime();
   const evP = ev.filter(e => inR(e.date));
 

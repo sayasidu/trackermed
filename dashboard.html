@@ -230,7 +230,11 @@ const ERR_KEY = 'trackermed.erros.v1';
 function loadJSON(k, d) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(d)); } catch { return d; } }
 function parseTime(t) { const [h,m]=t.split(':').map(Number); return h+m/60; }
 function startOfWeek(d) { const x=new Date(d); x.setHours(0,0,0,0); const w=(x.getDay()+6)%7; x.setDate(x.getDate()-w); return x; }
-function weekKey(d) { return startOfWeek(d).toISOString().slice(0,10); }
+// Datas/horários no fuso de Cuiabá (America/Cuiaba) e chaves por campos locais
+// (nunca via toISOString/UTC, que à noite no Brasil já aponta pro dia seguinte).
+function nowCuiaba() { return (window.TrackerMedTime && window.TrackerMedTime.now()) || new Date(); }
+function dateKey(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function weekKey(d) { return dateKey(startOfWeek(d)); }
 function addDays(d,n) { const x=new Date(d); x.setDate(x.getDate()+n); return x; }
 function fmtH(m) { const h=Math.floor(m/60), mm=m%60; return `${h}<span>h${String(mm).padStart(2,'0')}</span>`; }
 function fmtHrange(m) { const h=Math.floor(m/60), mm=m%60; return h>0 ? `${h}h${String(mm).padStart(2,'0')}` : `${mm}min`; }
@@ -318,7 +322,7 @@ function pickMeme(seed, lista) {
 }
 
 function saudacaoHora() {
-  const h = new Date().getHours();
+  const h = nowCuiaba().getHours();
   if (h < 6) return 'Boa madrugada';
   if (h < 12) return 'Bom dia';
   if (h < 18) return 'Boa tarde';
@@ -346,7 +350,7 @@ function render() {
   const disc = loadJSON(DISC_KEY, []);
   const plan = loadJSON(PLAN_KEY, {});
   const erros = loadJSON(ERR_KEY, []);
-  const hoje = new Date();
+  const hoje = nowCuiaba();
   const hojeDia = hoje.getDay();
   const wk = weekKey(hoje);
 
@@ -385,7 +389,7 @@ function render() {
   const kHojeMemeEl = document.getElementById('kHojeMeme');
   if (planMin > 0 && hojeMin >= planMin) {
     const lista = hojeMin > planMin ? MEMES_SUPER : MEMES_META;
-    kHojeMemeEl.textContent = '" ' + pickMeme(hoje.toISOString().slice(0,10) + (hojeMin>planMin?'-over':'-meta'), lista) + ' "';
+    kHojeMemeEl.textContent = '" ' + pickMeme(dateKey(hoje) + (hojeMin>planMin?'-over':'-meta'), lista) + ' "';
     kHojeMemeEl.classList.add('show');
   } else {
     kHojeMemeEl.classList.remove('show');
@@ -396,7 +400,7 @@ function render() {
   const banner = document.getElementById('metaBanner');
   if (planMin > 0 && hojeMin >= planMin) {
     const superou = hojeMin > planMin;
-    const memeBig = pickMeme(hoje.toISOString().slice(0,10) + '-banner-' + (superou?'over':'meta'), superou ? MEMES_SUPER : MEMES_META);
+    const memeBig = pickMeme(dateKey(hoje) + '-banner-' + (superou?'over':'meta'), superou ? MEMES_SUPER : MEMES_META);
     const detalhe = superou
       ? `<b>Meta superada</b> em ${fmtHrange(hojeMin - planMin)} — ${memeBig}`
       : `<b>Meta batida</b> — ${memeBig}`;
@@ -432,13 +436,13 @@ function render() {
     const inicioSem = new Date(wkS+'T00:00');
     blocos.filter(b => b.feito || getStudiedMin(b) > 0).forEach(b => {
       const d = addDays(inicioSem, (b.dia + 6) % 7);
-      diasEstudo.add(d.toISOString().slice(0,10));
+      diasEstudo.add(dateKey(d));
     });
   });
   let streak = 0;
   for (let i = 0; i < 365; i++) {
     const d = addDays(hoje, -i);
-    const key = d.toISOString().slice(0,10);
+    const key = dateKey(d);
     if (diasEstudo.has(key)) streak++;
     else if (i > 0) break;
   }
@@ -521,7 +525,7 @@ renderFrase();
 
 function renderFrase() {
   const plan = loadJSON(PLAN_KEY, {});
-  const hoje = new Date();
+  const hoje = nowCuiaba();
   const hojeDia = hoje.getDay();
   const wk = weekKey(hoje);
   const blocosHoje = (plan[wk]||[]).filter(b => b.dia === hojeDia);

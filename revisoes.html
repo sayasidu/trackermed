@@ -297,7 +297,10 @@ function loadPlan() {
 }
 function savePlan(p) { localStorage.setItem(PLAN_KEY, JSON.stringify(p)); }
 function startOfWeek(d) { const x=new Date(d); x.setHours(0,0,0,0); const w=(x.getDay()+6)%7; x.setDate(x.getDate()-w); return x; }
-function weekKey(d) { return startOfWeek(d).toISOString().slice(0,10); }
+// "Agora"/"hoje" no fuso de Cuiabá (America/Cuiaba); chave da semana por campos
+// locais (sem UTC), casando com o restante do site.
+function nowCuiaba() { return (window.TrackerMedTime && window.TrackerMedTime.now()) || new Date(); }
+function weekKey(d) { return isoOfDate(startOfWeek(d)); }
 function addDays(d,n) { const x=new Date(d); x.setDate(x.getDate()+n); return x; }
 function isoOfDate(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function dateFromISO(iso) {
@@ -321,7 +324,7 @@ function brToISO(br) {
   return m ? `${m[3]}-${m[2]}-${m[1]}` : '';
 }
 function todayISO() {
-  const d = new Date();
+  const d = nowCuiaba();
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 function escapeHtml(s) {
@@ -359,7 +362,7 @@ function onMetodologiaChange() {
   const info = document.getElementById('metInfo');
   if (!met.offsets.length) { info.classList.remove('show'); info.innerHTML = ''; return; }
   const baseIso = document.getElementById('rData').value || todayISO();
-  const base = dateFromISO(baseIso) || new Date();
+  const base = dateFromISO(baseIso) || nowCuiaba();
   const previews = met.offsets.map((d, i) => {
     const dt = addDays(base, d);
     return `<b>${met.labels[i]}</b> · ${dt.toLocaleDateString('pt-BR')}`;
@@ -407,7 +410,7 @@ function salvarNovaRevisao() {
   });
 
   // Gera revisões agendadas (entradas no histórico + blocos no planner)
-  const baseDate = dateFromISO(dataIso) || new Date();
+  const baseDate = dateFromISO(dataIso) || nowCuiaba();
   const plan = loadPlan();
   pushFilhosRevisao(arr, plan, parentId, { materia, conteudo, discId, metodologiaKey }, metodologia.offsets, baseDate);
 
@@ -502,7 +505,7 @@ function aplicarMetodologia(parentId, offsets, baseIso) {
   // Limpa os blocos antigos do planner e gera os novos.
   const plan = loadPlan();
   Object.keys(plan).forEach(wk => { plan[wk] = (plan[wk] || []).filter(b => !(b && blocoIds.has(b.id))); });
-  const baseDate = dateFromISO(baseIso) || new Date();
+  const baseDate = dateFromISO(baseIso) || nowCuiaba();
   const meta = { materia: parent.materia, conteudo: parent.conteudo || '', discId: parent.discId || null, metodologiaKey };
   pushFilhosRevisao(novo, plan, parentId, meta, offsets, baseDate);
 
@@ -696,7 +699,7 @@ function renderEditPreview() {
     return;
   }
   const baseIso = document.getElementById('edData').value || todayISO();
-  const base = dateFromISO(baseIso) || new Date();
+  const base = dateFromISO(baseIso) || nowCuiaba();
   const previews = offs.map(d => {
     const dt = addDays(base, d);
     return `<b>${offsetLabel(d)}</b> · ${dt.toLocaleDateString('pt-BR')}`;
@@ -858,7 +861,7 @@ function render() {
           // Meta extra: datas calculadas (base configurada) ou aviso de configuração pendente.
           let revDatesHtml = '';
           if (isParentNow) {
-            const base = dateFromISO(brToISO(r.data)) || new Date();
+            const base = dateFromISO(brToISO(r.data)) || nowCuiaba();
             const ds = pOffsets.map(d => addDays(base, d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
             revDatesHtml = `<div class="rev-meta"><span>↻ ${pOffsets.length} ${plural(pOffsets.length, 'revisão', 'revisões')}: ${ds.join(' · ')}</span></div>`;
           } else if (awaiting) {
