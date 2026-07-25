@@ -328,6 +328,271 @@
     parts: tzParts       // {year,month,day,hour,minute,second} em Cuiabá
   };
 
+  // ---- Materiais de estudo: progresso gradual --------------------------
+  // Materiais que não são concluídos numa sessão só (capítulo de livro,
+  // artigo, videoaula, podcast…). Chave GLOBAL — não entra em LIVE_KEYS de
+  // propósito: o progresso de leitura pertence ao aluno, não a um plano, e
+  // assim ele não some ao trocar o plano em foco. Cada material guarda o
+  // vínculo com a disciplina/conteúdo por id + nome desnormalizado.
+  //
+  // Shape de um material:
+  // { id:'m-…', nome, tipo:'livro'|'artigo'|'resumo'|'video'|'audio'|'outro',
+  //   unidade:'paginas'|'minutos'|'capitulos'|'aulas'|'percentual'|'questoes',
+  //   total:221, discId, discNome, conteudoId, conteudoNome,
+  //   prazo:'YYYY-MM-DD'|null, criadoEm:'YYYY-MM-DD',
+  //   concluido:false, concluidoEm:null,
+  //   log:[ { data:'YYYY-MM-DD', qtd:10, ts:1690000000000 } ] }
+  var MAT_KEY = 'trackermed.materiais.v1';
+
+  var MAT_TIPOS = {
+    livro:  { label: 'Capítulo de livro', icon: '📖' },
+    artigo: { label: 'Artigo',            icon: '📄' },
+    resumo: { label: 'Resumo',            icon: '📝' },
+    video:  { label: 'Videoaula',         icon: '🎬' },
+    audio:  { label: 'Áudio / Podcast',   icon: '🎧' },
+    outro:  { label: 'Outro material',    icon: '📚' }
+  };
+  var MAT_UNIDADES = {
+    paginas:    { sing: 'página',  plural: 'páginas',  abbr: 'págs',    verbo: 'lidas' },
+    minutos:    { sing: 'minuto',  plural: 'minutos',  abbr: 'min',     verbo: 'assistidos' },
+    capitulos:  { sing: 'capítulo', plural: 'capítulos', abbr: 'caps',  verbo: 'concluídos' },
+    aulas:      { sing: 'aula',    plural: 'aulas',    abbr: 'aulas',   verbo: 'concluídas' },
+    questoes:   { sing: 'questão', plural: 'questões', abbr: 'questões', verbo: 'feitas' },
+    percentual: { sing: '%',       plural: '%',        abbr: '%',       verbo: 'concluído' }
+  };
+
+  function matLoad() {
+    var v = jparse(lsGet(MAT_KEY), []);
+    return Array.isArray(v) ? v : [];
+  }
+  function matSave(list) { lsSet(MAT_KEY, JSON.stringify(list)); }
+  function matUid() { return 'm-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6); }
+  function matGet(id) {
+    var l = matLoad();
+    for (var i = 0; i < l.length; i++) { if (l[i] && l[i].id === id) return l[i]; }
+    return null;
+  }
+  function matUpsert(m) {
+    var l = matLoad(), found = false;
+    for (var i = 0; i < l.length; i++) { if (l[i] && l[i].id === m.id) { l[i] = m; found = true; break; } }
+    if (!found) l.push(m);
+    matSave(l);
+    return m;
+  }
+  function matRemove(id) { matSave(matLoad().filter(function (m) { return m && m.id !== id; })); }
+
+  function matNum(n) { var v = parseFloat(n); return isFinite(v) ? v : 0; }
+  // Quantidade formatada: inteiro seco, fração com 1 casa (vírgula pt-BR).
+  function matFmtQtd(n) {
+    var v = Math.round(matNum(n) * 10) / 10;
+    return (v % 1 === 0) ? String(v) : String(v).replace('.', ',');
+  }
+  function matUnidLabel(unidade, n) {
+    var u = MAT_UNIDADES[unidade] || MAT_UNIDADES.paginas;
+    if (unidade === 'percentual') return '%';
+    return matNum(n) === 1 ? u.sing : u.plural;
+  }
+  // "10 páginas", "1h20" para minutos grandes, "18%"…
+  function matFmtUnid(qtd, unidade) {
+    var v = matNum(qtd);
+    if (unidade === 'percentual') return matFmtQtd(v) + '%';
+    if (unidade === 'minutos' && v >= 60) {
+      var h = Math.floor(v / 60), m = Math.round(v % 60);
+      return m > 0 ? (h + 'h' + (m < 10 ? '0' : '') + m) : (h + 'h');
+    }
+    return matFmtQtd(v) + ' ' + matUnidLabel(unidade, v);
+  }
+  // Forma curta pra pares "X de Y páginas": número seco, exceto minutos (10min/1h20) e %.
+  function matFmtCurto(qtd, unidade) {
+    if (unidade === 'minutos') return matFmtUnid(qtd, 'minutos');
+    if (unidade === 'percentual') return matFmtQtd(qtd) + '%';
+    return matFmtQtd(qtd);
+  }
+  function matTipoIcon(t) { return (MAT_TIPOS[t] || MAT_TIPOS.outro).icon; }
+  function matTipoLabel(t) { return (MAT_TIPOS[t] || MAT_TIPOS.outro).label; }
+
+  // Date 00:00 (campos locais Cuiabá) a partir de 'YYYY-MM-DD'.
+  function matParseKey(k) {
+    if (!k || typeof k !== 'string') return null;
+    var p = k.split('-');
+    if (p.length !== 3) return null;
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  var MAT_DAY_MS = 24 * 60 * 60 * 1000;
+  function matDiffDias(a, b) { return Math.round((b - a) / MAT_DAY_MS); }
+
+  // Registra um avanço (qtd > 0) na data dada (default: hoje em Cuiabá).
+  // Soma ao progresso; marca concluído automaticamente ao atingir o total.
+  function matAddAvanco(id, qtd, dataKey) {
+    var m = matGet(id);
+    var v = matNum(qtd);
+    if (!m || v <= 0) return null;
+    if (!Array.isArray(m.log)) m.log = [];
+    m.log.push({ data: dataKey || tzTodayKey(), qtd: v, ts: Date.now() });
+    var st = matStats(m);
+    if (st.restante <= 0 && !m.concluido) {
+      m.concluido = true;
+      m.concluidoEm = tzTodayKey();
+    }
+    matUpsert(m);
+    return m;
+  }
+  function matConcluir(id) {
+    var m = matGet(id);
+    if (!m) return null;
+    var st = matStats(m);
+    // Completa o que falta com um lançamento final, pra soma bater com o total.
+    if (st.restante > 0) m.log.push({ data: tzTodayKey(), qtd: st.restante, ts: Date.now() });
+    m.concluido = true;
+    m.concluidoEm = tzTodayKey();
+    matUpsert(m);
+    return m;
+  }
+  function matReabrir(id) {
+    var m = matGet(id);
+    if (!m) return null;
+    m.concluido = false;
+    m.concluidoEm = null;
+    matUpsert(m);
+    return m;
+  }
+
+  // Estatísticas derivadas + estimativa DINÂMICA:
+  // o ritmo usa a janela dos últimos 7 dias corridos (ou desde o 1º avanço,
+  // se mais recente) — acelerou, a previsão cai; desacelerou, ela sobe.
+  function matStats(m) {
+    var total = matNum(m.total);
+    var log = Array.isArray(m.log) ? m.log : [];
+    var feito = 0, hoje = 0, first = null;
+    var hojeKey = tzTodayKey();
+    var hojeDate = tzToday();
+    var diasSet = {};
+    var recente = 0;
+    var iniJanela = new Date(hojeDate.getTime() - 6 * MAT_DAY_MS);
+    for (var i = 0; i < log.length; i++) {
+      var e = log[i]; if (!e) continue;
+      var q = matNum(e.qtd);
+      feito += q;
+      if (e.data === hojeKey) hoje += q;
+      diasSet[e.data] = (diasSet[e.data] || 0) + q;
+      var d = matParseKey(e.data);
+      if (d) {
+        if (!first || d < first) first = d;
+        if (d >= iniJanela && d <= hojeDate) recente += q;
+      }
+    }
+    var restante = Math.max(0, total - feito);
+    var pct = total > 0 ? Math.min(100, Math.round((feito / total) * 100)) : 0;
+    var diasComAvanco = Object.keys(diasSet).length;
+    var mediaDia = diasComAvanco > 0 ? feito / diasComAvanco : 0;
+    // Ritmo por dia corrido na janela recente; fallback: média desde o início.
+    var ritmo = 0;
+    if (first) {
+      var diasDesde = Math.max(1, matDiffDias(first, hojeDate) + 1);
+      var janela = Math.min(7, diasDesde);
+      ritmo = janela > 0 ? recente / janela : 0;
+      if (ritmo <= 0) ritmo = feito / diasDesde;
+    }
+    var estimativaDias = (!m.concluido && restante > 0 && ritmo > 0) ? Math.ceil(restante / ritmo) : null;
+    var dataEstimada = null;
+    if (estimativaDias != null) dataEstimada = tzKeyOf(new Date(hojeDate.getTime() + estimativaDias * MAT_DAY_MS));
+    // Prazo definido pelo aluno → quanto estudar por dia pra cumprir.
+    var diasAtePrazo = null, sugestaoDiaria = null, atrasado = false;
+    var prazoD = matParseKey(m.prazo);
+    if (prazoD && !m.concluido && restante > 0) {
+      diasAtePrazo = matDiffDias(hojeDate, prazoD);
+      if (diasAtePrazo < 0) { atrasado = true; }
+      var diasUteis = Math.max(1, diasAtePrazo + 1); // inclui hoje
+      sugestaoDiaria = restante / diasUteis;
+    }
+    return {
+      total: total, feito: Math.min(feito, total), feitoBruto: feito,
+      restante: restante, pct: pct, hoje: hoje,
+      diasComAvanco: diasComAvanco, mediaDia: mediaDia, ritmo: ritmo,
+      estimativaDias: estimativaDias, dataEstimada: dataEstimada,
+      diasAtePrazo: diasAtePrazo, sugestaoDiaria: sugestaoDiaria, atrasado: atrasado
+    };
+  }
+
+  // Mensagens dinâmicas prontas pra UI ("Mantendo esse ritmo…").
+  function matMensagens(m) {
+    var st = matStats(m);
+    var msgs = [];
+    var u = function (n) { return matFmtUnid(n, m.unidade); };
+    if (m.concluido) { msgs.push('Material concluído. 🎉'); return msgs; }
+    if (st.hoje > 0 && st.diasComAvanco > 1 && st.hoje > st.mediaDia) {
+      msgs.push('Hoje você avançou acima da sua média (' + u(st.hoje) + ' vs ' + u(Math.round(st.mediaDia * 10) / 10) + '/dia). 💪');
+    }
+    if (st.estimativaDias != null) {
+      msgs.push('Mantendo esse ritmo (' + u(Math.round(st.ritmo * 10) / 10) + '/dia), você concluirá em aproximadamente ' + st.estimativaDias + (st.estimativaDias === 1 ? ' dia.' : ' dias.'));
+    } else if (st.restante > 0 && st.diasComAvanco === 0) {
+      msgs.push('Registre seu primeiro avanço pra ver a previsão de conclusão.');
+    }
+    if (st.sugestaoDiaria != null) {
+      if (st.atrasado) {
+        msgs.push('O prazo (' + matFmtDataBR(m.prazo) + ') já passou — faltam ' + u(st.restante) + '.');
+      } else {
+        msgs.push('Para concluir até ' + matFmtDataBR(m.prazo) + ', estude cerca de ' + u(Math.ceil(st.sugestaoDiaria)) + ' por dia.');
+      }
+    }
+    return msgs;
+  }
+  function matFmtDataBR(k) {
+    var d = matParseKey(k);
+    if (!d) return '';
+    return pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1) + '/' + d.getFullYear();
+  }
+
+  // Consultas usadas pelas páginas.
+  function matPorDisciplina(discId) {
+    return matLoad().filter(function (m) { return m && m.discId === discId; });
+  }
+  function matEmAndamento(discId) {
+    return matLoad().filter(function (m) {
+      if (!m || m.concluido) return false;
+      return discId == null || m.discId === discId;
+    });
+  }
+  // Avanços de um dia ('YYYY-MM-DD') → [{material, qtd}] pro Histórico.
+  function matAvancosDoDia(dataKey) {
+    var out = [];
+    matLoad().forEach(function (m) {
+      if (!m || !Array.isArray(m.log)) return;
+      var q = 0;
+      m.log.forEach(function (e) { if (e && e.data === dataKey) q += matNum(e.qtd); });
+      if (q > 0) out.push({ material: m, qtd: q });
+    });
+    return out;
+  }
+
+  window.TrackerMedMateriais = {
+    KEY: MAT_KEY,
+    TIPOS: MAT_TIPOS,
+    UNIDADES: MAT_UNIDADES,
+    load: matLoad,
+    save: matSave,
+    uid: matUid,
+    get: matGet,
+    upsert: matUpsert,
+    remove: matRemove,
+    addAvanco: matAddAvanco,
+    concluir: matConcluir,
+    reabrir: matReabrir,
+    stats: matStats,
+    mensagens: matMensagens,
+    porDisciplina: matPorDisciplina,
+    emAndamento: matEmAndamento,
+    avancosDoDia: matAvancosDoDia,
+    fmtQtd: matFmtQtd,
+    fmtUnid: matFmtUnid,
+    fmtCurto: matFmtCurto,
+    fmtDataBR: matFmtDataBR,
+    unidadeLabel: matUnidLabel,
+    tipoIcon: matTipoIcon,
+    tipoLabel: matTipoLabel
+  };
+
   window.TrackerMedTheme = { toggle, apply, current };
   window.TrackerMedContext = {
     MAX: MAX_ATIVOS,

@@ -80,6 +80,34 @@
 .disc-card .conteudos-box { border-top: 1px dashed var(--line); padding-top: 10px; font-size: 12px; }
 .disc-card .cont-line { display: flex; justify-content: space-between; padding: 3px 0; color: var(--ink2); }
 .disc-card .cont-line b { color: var(--cobalt); font-weight: 600; font-variant-numeric: tabular-nums; }
+/* Progresso do conteúdo (materiais de estudo) no card */
+.disc-card .mat-box { border-top: 1px dashed var(--line); padding-top: 10px; font-size: 12px; }
+.disc-card .mat-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.disc-card .mat-head span { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; color: var(--muted); }
+.disc-card .mat-add-btn { background: transparent; border: 1px dashed var(--cobalt); color: var(--cobalt); padding: 3px 9px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; border-radius: 6px; }
+.disc-card .mat-add-btn:hover { background: var(--cobalt); color: #fff; }
+.disc-card .mat-row { padding: 5px 6px; margin: 0 -6px; border-radius: 8px; cursor: pointer; transition: background .15s var(--ease); }
+.disc-card .mat-row:hover { background: var(--paper); }
+.disc-card .mat-row .mat-line1 { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.disc-card .mat-row .mat-nome { color: var(--ink); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.disc-card .mat-row .mat-num { color: var(--cobalt); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.disc-card .mat-row.done .mat-num { color: var(--mint, #1FC28A); }
+.disc-card .mat-bar { height: 5px; background: var(--line); border-radius: 99px; margin-top: 4px; overflow: hidden; }
+.disc-card .mat-bar i { display: block; height: 100%; background-image: var(--grad-brand); border-radius: 99px; }
+.disc-card .mat-row.done .mat-bar i { background: var(--mint, #1FC28A); }
+.disc-card .mat-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+/* Modal de material */
+.mat-resumo { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; font-size: 13px; }
+.mat-resumo .mr-lbl { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; }
+.mat-resumo .mr-val { font-family: 'Fraunces', serif; font-size: 17px; color: var(--ink); }
+.mat-msgs { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.mat-msg { background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--cobalt); border-radius: 0 8px 8px 0; padding: 8px 11px; font-size: 12px; color: var(--ink2); }
+.mat-avanco-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; margin-top: 10px; }
+.mat-avanco-row input { padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); font-size: 14px; font-family: inherit; color: var(--ink); }
+.mat-avanco-row .unid { font-size: 12px; color: var(--muted); font-weight: 600; }
+.mat-avanco-row button { background-image: var(--grad-brand); color: #fff; border: none; border-radius: 8px; padding: 9px 16px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.mat-modal-bar { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; margin: 8px 0 4px; }
+.mat-modal-bar i { display: block; height: 100%; background-image: var(--grad-brand); border-radius: 99px; }
 .hr-box { display: flex; align-items: center; gap: 14px; background: var(--ink); color: var(--paper); padding: 14px 16px; margin-bottom: 16px; border-radius: 10px; box-shadow: var(--sh-1); }
 .hr-box label { color: var(--acid); margin: 0 !important; font-size: 11px !important; flex: 1; }
 .hr-box .sub-hint { font-size: 11px; color: rgba(244,241,234,0.6); margin-top: 2px; display: block; letter-spacing: 0; text-transform: none; font-weight: 400; }
@@ -256,6 +284,74 @@
         </div>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Modal de material de estudo (progresso do conteúdo) -->
+<div class="modal-backdrop" id="materialModal" onclick="if(event.target===this) fecharMaterial()">
+  <div class="modal-box" style="width:520px">
+    <button class="mbtn-close" onclick="fecharMaterial()">×</button>
+    <h2 id="matModalTitle">Novo <i>material</i></h2>
+    <div class="modal-sub">Materiais que você conclui aos poucos — capítulos, artigos, videoaulas, podcasts. Registre o avanço a cada sessão de estudo.</div>
+
+    <input type="hidden" id="mId">
+    <input type="hidden" id="mDiscId">
+
+    <div class="mfield row2">
+      <div><label>Tipo de material</label><select id="mTipo">
+        <option value="livro">📖 Capítulo de livro</option>
+        <option value="artigo">📄 Artigo</option>
+        <option value="resumo">📝 Resumo</option>
+        <option value="video">🎬 Videoaula</option>
+        <option value="audio">🎧 Áudio / Podcast</option>
+        <option value="outro">📚 Outro material</option>
+      </select></div>
+      <div><label>Vincular a conteúdo (opcional)</label><select id="mConteudo"><option value="">— nenhum —</option></select></div>
+    </div>
+    <div class="mfield">
+      <label>Nome do material</label>
+      <input type="text" id="mNome" placeholder="Ex: Capítulo de Síndrome Coronariana Aguda">
+    </div>
+    <div class="mfield row2">
+      <div><label>Unidade de acompanhamento</label><select id="mUnidade" onchange="matAplicaUnidade()">
+        <option value="paginas">Páginas</option>
+        <option value="minutos">Minutos</option>
+        <option value="capitulos">Capítulos</option>
+        <option value="aulas">Aulas</option>
+        <option value="questoes">Questões</option>
+        <option value="percentual">Percentual (%)</option>
+      </select></div>
+      <div><label id="mTotalLbl">Quantidade total</label><input type="number" id="mTotal" min="0" step="any" placeholder="Ex: 221"></div>
+    </div>
+    <div class="mfield">
+      <label>Meta / prazo pra concluir (opcional)</label>
+      <input type="date" id="mPrazo">
+      <div class="sg-help" style="margin-top:6px">Com um prazo definido, o sistema sugere quanto estudar por dia pra cumprir a meta.</div>
+    </div>
+
+    <div class="section-group" id="matProgSec" style="display:none">
+      <h4>📊 Progresso do conteúdo</h4>
+      <div class="mat-modal-bar"><i id="matModalFill" style="width:0%"></i></div>
+      <div class="mat-resumo" id="matResumo"></div>
+      <div class="mat-avanco-row">
+        <input type="number" id="mAvanco" min="0" step="any" placeholder="Quanto você avançou agora?">
+        <span class="unid" id="mAvancoUnid">págs</span>
+        <button type="button" onclick="registrarAvancoDisc()">+ Registrar avanço</button>
+      </div>
+      <div class="mat-msgs" id="matMsgs"></div>
+    </div>
+
+    <div class="mactions">
+      <div style="display:flex;gap:4px;flex-direction:column;align-items:flex-start">
+        <button type="button" class="mbtn-delete" id="btnMatDel" onclick="excluirMaterialDisc()" style="display:none">Excluir material</button>
+        <button type="button" class="mbtn-delete" id="btnMatConcluir" onclick="concluirMaterialDisc()" style="display:none;color:var(--mint,#1FC28A)">✓ Concluir material</button>
+        <button type="button" class="mbtn-delete" id="btnMatReabrir" onclick="reabrirMaterialDisc()" style="display:none;color:var(--cobalt)">↺ Reabrir material</button>
+      </div>
+      <div style="display:flex;gap:10px;margin-left:auto">
+        <button type="button" class="mbtn-cancel" onclick="fecharMaterial()">Cancelar</button>
+        <button type="button" class="mbtn-save" id="btnMatSave" onclick="salvarMaterial()">Adicionar material</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -580,6 +676,7 @@ function render() {
     }).join('') || `<div style="color:var(--muted);font-size:12px;font-style:italic">Sem provas</div>`;
 
     const cor = d.cor || corPadrao(d.nome);
+    const matBox = matBoxHTML(d);
     return `<div class="disc-card" data-id="${esc(d.id)}" data-action="edit">
       <div class="cor-bar" style="background:${esc(cor)}"></div>
       <div class="actions">
@@ -599,6 +696,7 @@ function render() {
       </div>
       <div class="aulas">${aulas}</div>
       ${conteudos ? `<div class="conteudos-box">${conteudos}</div>` : ''}
+      ${matBox}
       <div>
         <div class="meta-h">${(d.metaHorasSemana||0).toFixed(1)}h <span>meta semanal</span></div>
       </div>
@@ -610,11 +708,208 @@ function render() {
 document.getElementById('listaContainer').addEventListener('click', (e) => {
   const btn = e.target.closest('[data-action]');
   if (!btn) return;
+  const action = btn.dataset.action;
+  if (action === 'mat-add') { e.stopPropagation(); abrirMaterialNovo(btn.dataset.id); return; }
+  if (action === 'mat-open') { e.stopPropagation(); abrirMaterialEdit(btn.dataset.mid); return; }
   const id = btn.dataset.id;
   if (!id) return;
-  const action = btn.dataset.action;
   if (action === 'del') { e.stopPropagation(); abrirDel(id); return; }
   if (action === 'edit') { abrirEdit(id); }
+});
+
+// ---- Materiais de estudo (progresso do conteúdo) --------------------------
+// Dados no motor compartilhado theme.js (window.TrackerMedMateriais), chave
+// global trackermed.materiais.v1 — sobrevive à troca de plano em foco e à
+// reescrita da disciplina no salvar() acima.
+const MAT = window.TrackerMedMateriais;
+
+function matBoxHTML(d) {
+  if (!MAT) return '';
+  const mats = MAT.porDisciplina(d.id);
+  const andamento = mats.filter(m => !m.concluido);
+  const feitos = mats.filter(m => m.concluido);
+  const rows = andamento.slice(0, 4).map(m => {
+    const st = MAT.stats(m);
+    const prev = st.estimativaDias != null ? ` · ~${st.estimativaDias}d` : '';
+    return `<div class="mat-row" data-action="mat-open" data-mid="${esc(m.id)}" title="Ver progresso e registrar avanço">
+      <div class="mat-line1">
+        <span class="mat-nome">${MAT.tipoIcon(m.tipo)} ${esc(m.nome)}</span>
+        <span class="mat-num">${st.pct}%</span>
+      </div>
+      <div class="mat-bar"><i style="width:${st.pct}%"></i></div>
+      <div class="mat-sub">${esc(MAT.fmtCurto(st.feito, m.unidade))} de ${esc(MAT.fmtUnid(st.total, m.unidade))} · faltam ${esc(MAT.fmtUnid(st.restante, m.unidade))}${prev}</div>
+    </div>`;
+  }).join('');
+  const extras = [];
+  if (andamento.length > 4) extras.push(`+${andamento.length - 4} em andamento…`);
+  if (feitos.length) extras.push(`${feitos.length} concluído${feitos.length !== 1 ? 's' : ''} ✓`);
+  const extraLine = extras.length ? `<div class="mat-sub" style="padding:3px 0">${extras.join(' · ')}</div>` : '';
+  const empty = !mats.length ? `<div class="mat-sub" style="font-style:italic;padding:2px 0">Nenhum material — registre capítulos, artigos ou aulas pra acompanhar aos poucos.</div>` : '';
+  return `<div class="mat-box">
+    <div class="mat-head"><span>Progresso do conteúdo</span><button type="button" class="mat-add-btn" data-action="mat-add" data-id="${esc(d.id)}">+ material</button></div>
+    ${rows}${extraLine}${empty}
+  </div>`;
+}
+
+let matEditingId = null;
+function matPreencheConteudos(discId, selecionado) {
+  const d = load().find(x => x.id === discId);
+  const sel = document.getElementById('mConteudo');
+  sel.innerHTML = '<option value="">— nenhum —</option>' +
+    ((d && d.conteudos) || []).map(c => `<option value="${esc(c.id)}"${c.id === selecionado ? ' selected' : ''}>${esc(c.nome)}</option>`).join('');
+}
+function matAplicaUnidade() {
+  const unid = document.getElementById('mUnidade').value;
+  const tot = document.getElementById('mTotal');
+  if (unid === 'percentual') { tot.value = 100; tot.disabled = true; }
+  else { tot.disabled = false; }
+  const lbl = { paginas: 'Total de páginas', minutos: 'Duração total (min)', capitulos: 'Total de capítulos', aulas: 'Total de aulas', questoes: 'Total de questões', percentual: 'Total (%)' };
+  document.getElementById('mTotalLbl').textContent = lbl[unid] || 'Quantidade total';
+  document.getElementById('mAvancoUnid').textContent = MAT ? (unid === 'percentual' ? '%' : MAT.UNIDADES[unid]?.abbr || '') : '';
+}
+
+function abrirMaterialNovo(discId) {
+  if (!MAT) return;
+  matEditingId = null;
+  document.getElementById('matModalTitle').innerHTML = 'Novo <i>material</i>';
+  document.getElementById('btnMatSave').textContent = 'Adicionar material';
+  document.getElementById('mId').value = '';
+  document.getElementById('mDiscId').value = discId;
+  document.getElementById('mTipo').value = 'livro';
+  document.getElementById('mNome').value = '';
+  document.getElementById('mUnidade').value = 'paginas';
+  document.getElementById('mTotal').value = '';
+  document.getElementById('mPrazo').value = '';
+  matPreencheConteudos(discId, null);
+  matAplicaUnidade();
+  document.getElementById('matProgSec').style.display = 'none';
+  document.getElementById('btnMatDel').style.display = 'none';
+  document.getElementById('btnMatConcluir').style.display = 'none';
+  document.getElementById('btnMatReabrir').style.display = 'none';
+  document.getElementById('materialModal').classList.add('open');
+}
+
+function abrirMaterialEdit(matId) {
+  if (!MAT) return;
+  const m = MAT.get(matId);
+  if (!m) return;
+  matEditingId = matId;
+  document.getElementById('matModalTitle').innerHTML = 'Progresso do <i>material</i>';
+  document.getElementById('btnMatSave').textContent = 'Salvar alterações';
+  document.getElementById('mId').value = m.id;
+  document.getElementById('mDiscId').value = m.discId || '';
+  document.getElementById('mTipo').value = m.tipo || 'outro';
+  document.getElementById('mNome').value = m.nome || '';
+  document.getElementById('mUnidade').value = m.unidade || 'paginas';
+  document.getElementById('mTotal').value = m.total || '';
+  document.getElementById('mPrazo').value = m.prazo || '';
+  matPreencheConteudos(m.discId, m.conteudoId);
+  matAplicaUnidade();
+  document.getElementById('mAvanco').value = '';
+  document.getElementById('matProgSec').style.display = '';
+  document.getElementById('btnMatDel').style.display = '';
+  document.getElementById('btnMatDel').textContent = 'Excluir material';
+  document.getElementById('btnMatConcluir').style.display = m.concluido ? 'none' : '';
+  document.getElementById('btnMatReabrir').style.display = m.concluido ? '' : 'none';
+  matRenderProgresso(m);
+  document.getElementById('materialModal').classList.add('open');
+}
+
+function matRenderProgresso(m) {
+  const st = MAT.stats(m);
+  document.getElementById('matModalFill').style.width = st.pct + '%';
+  const u = q => MAT.fmtUnid(q, m.unidade);
+  const linhas = [
+    ['Concluído', `${u(st.feito)} · ${st.pct}%`],
+    ['Restante', u(st.restante)],
+    ['Hoje', st.hoje > 0 ? u(st.hoje) : '—'],
+    ['Média por dia de estudo', st.mediaDia > 0 ? u(Math.round(st.mediaDia * 10) / 10) : '—'],
+    ['Previsão de conclusão', m.concluido ? 'Concluído ✓' : (st.estimativaDias != null ? `~${st.estimativaDias} dia${st.estimativaDias !== 1 ? 's' : ''} (${MAT.fmtDataBR(st.dataEstimada)})` : '—')],
+    ['Prazo definido', m.prazo ? MAT.fmtDataBR(m.prazo) + (st.diasAtePrazo != null ? ` (${st.diasAtePrazo >= 0 ? 'em ' + st.diasAtePrazo + 'd' : 'passou'})` : '') : '—']
+  ];
+  document.getElementById('matResumo').innerHTML = linhas.map(([l, v]) =>
+    `<div><div class="mr-lbl">${l}</div><div class="mr-val">${esc(v)}</div></div>`).join('');
+  document.getElementById('matMsgs').innerHTML = MAT.mensagens(m).map(msg => `<div class="mat-msg">${esc(msg)}</div>`).join('');
+}
+
+function fecharMaterial() { document.getElementById('materialModal').classList.remove('open'); matEditingId = null; }
+
+function salvarMaterial() {
+  if (!MAT) return;
+  const nome = document.getElementById('mNome').value.trim();
+  if (!nome) { document.getElementById('mNome').focus(); return; }
+  const unidade = document.getElementById('mUnidade').value;
+  const total = unidade === 'percentual' ? 100 : parseFloat(document.getElementById('mTotal').value);
+  if (!(total > 0)) { document.getElementById('mTotal').focus(); return; }
+  const discId = document.getElementById('mDiscId').value || null;
+  const d = discId ? load().find(x => x.id === discId) : null;
+  const conteudoId = document.getElementById('mConteudo').value || null;
+  const cont = d && conteudoId ? (d.conteudos || []).find(c => c.id === conteudoId) : null;
+  const anterior = matEditingId ? MAT.get(matEditingId) : null;
+  const m = {
+    id: matEditingId || MAT.uid(),
+    nome,
+    tipo: document.getElementById('mTipo').value,
+    unidade,
+    total,
+    discId,
+    discNome: d ? d.nome : (anterior ? anterior.discNome : ''),
+    conteudoId,
+    conteudoNome: cont ? cont.nome : '',
+    prazo: document.getElementById('mPrazo').value || null,
+    criadoEm: anterior ? anterior.criadoEm : (window.TrackerMedTime ? TrackerMedTime.todayKey() : ''),
+    concluido: anterior ? anterior.concluido : false,
+    concluidoEm: anterior ? anterior.concluidoEm : null,
+    log: anterior ? (anterior.log || []) : []
+  };
+  MAT.upsert(m);
+  fecharMaterial();
+  render();
+}
+
+function registrarAvancoDisc() {
+  if (!matEditingId) return;
+  const v = parseFloat(document.getElementById('mAvanco').value);
+  if (!(v > 0)) { document.getElementById('mAvanco').focus(); return; }
+  MAT.addAvanco(matEditingId, v);
+  document.getElementById('mAvanco').value = '';
+  const m = MAT.get(matEditingId);
+  matRenderProgresso(m);
+  document.getElementById('btnMatConcluir').style.display = m.concluido ? 'none' : '';
+  document.getElementById('btnMatReabrir').style.display = m.concluido ? '' : 'none';
+  render();
+}
+
+function concluirMaterialDisc() {
+  if (!matEditingId) return;
+  MAT.concluir(matEditingId);
+  matRenderProgresso(MAT.get(matEditingId));
+  document.getElementById('btnMatConcluir').style.display = 'none';
+  document.getElementById('btnMatReabrir').style.display = '';
+  render();
+}
+function reabrirMaterialDisc() {
+  if (!matEditingId) return;
+  MAT.reabrir(matEditingId);
+  matRenderProgresso(MAT.get(matEditingId));
+  document.getElementById('btnMatConcluir').style.display = '';
+  document.getElementById('btnMatReabrir').style.display = 'none';
+  render();
+}
+let matDelArmado = false;
+function excluirMaterialDisc() {
+  if (!matEditingId) return;
+  const btn = document.getElementById('btnMatDel');
+  if (!matDelArmado) { matDelArmado = true; btn.textContent = 'Clique de novo pra confirmar'; setTimeout(() => { matDelArmado = false; btn.textContent = 'Excluir material'; }, 3000); return; }
+  matDelArmado = false;
+  MAT.remove(matEditingId);
+  fecharMaterial();
+  render();
+}
+
+// Reflete avanços registrados em outras abas (Histórico/Hoje).
+window.addEventListener('storage', (e) => {
+  if (e && e.key && MAT && e.key === MAT.KEY) render();
 });
 
 render();

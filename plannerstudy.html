@@ -197,6 +197,18 @@
 .prio-breakdown .pb-acts button { background: transparent; border: 1px solid var(--line); width: 26px; height: 26px; font-size: 13px; cursor: pointer; font-family: inherit; color: var(--muted); display: flex; align-items: center; justify-content: center; padding: 0; line-height: 1; }
 .prio-breakdown .pb-acts button:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .prio-breakdown .pb-acts .pb-rm:hover { background: var(--rose); border-color: var(--rose); color: #fff; }
+/* Materiais de estudo em andamento — o que falta + meta diária sugerida */
+.matp-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 14px; padding: 10px 12px; background: var(--paper); border-left: 3px solid var(--cobalt); font-size: 13px; border-radius: 0 8px 8px 0; margin-bottom: 6px; }
+.matp-row.atrasado { border-left-color: var(--rose); }
+.matp-nome { font-weight: 600; }
+.matp-nome .matp-disc { font-size: 11px; color: var(--muted); font-weight: 500; margin-left: 6px; }
+.matp-pct { font-family: 'Fraunces', serif; font-size: 16px; font-variant-numeric: tabular-nums; font-weight: 500; color: var(--cobalt); text-align: right; }
+.matp-bar { grid-column: 1 / -1; height: 5px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.matp-bar i { display: block; height: 100%; background-image: var(--grad-brand); border-radius: 99px; }
+.matp-sub { grid-column: 1 / -1; font-size: 11.5px; color: var(--muted); }
+.matp-sub b { color: var(--text); font-weight: 600; }
+.matp-meta { grid-column: 1 / -1; font-size: 11.5px; color: var(--cobalt); font-weight: 600; }
+.matp-meta.atrasado { color: var(--rose); }
 .prio-excluidas { margin-top: 10px; font-size: 11px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .prio-excluidas .pe-lbl { font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 4px; }
 .prio-excluidas .pe-tag { background: #F5F5F5; padding: 4px 8px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; border-left: 3px solid var(--line); border-radius: 0 6px 6px 0; box-shadow: 0 1px 2px rgba(10,19,48,.08); }
@@ -445,6 +457,12 @@
   <h3>Sua <i>rotina</i> fixa</h3>
   <div class="help">Informe os horários que você reserva pra <b>almoço</b>, <b>jantar</b> e <b>academia</b> em cada dia da semana. Esses horários ficam bloqueados e o gerador de sugestão encaixa os estudos ao redor deles, deixando o cronograma compatível com a sua rotina. Deixe o horário em branco pra ignorar uma atividade.</div>
   <div class="rotina-grid" id="rotinaGrid"></div>
+</div>
+
+<div class="disp-setup" id="materiaisPanel" style="display:none">
+  <h3>Materiais <i>em andamento</i></h3>
+  <div class="help">O que ainda falta em cada material de estudo (capítulos, artigos, videoaulas, áudios), com a <b>previsão dinâmica</b> de conclusão — ela se ajusta ao seu ritmo real — e a <b>meta diária sugerida</b> pra cumprir o prazo. Registre o avanço ao encerrar cada sessão no <a href="historico.html" style="color:var(--cobalt);font-weight:600">Histórico</a>; o cadastro fica em <a href="disciplinas.html" style="color:var(--cobalt);font-weight:600">Disciplinas</a>.</div>
+  <div id="materiaisList" style="margin-top:12px"></div>
 </div>
 
 <div id="sugContainer"></div>
@@ -2284,11 +2302,52 @@ function renderSemBanner() {
   el.innerHTML = window.TrackerMedContext.switcherHTML('Editando o plano');
 }
 
+// ---- Materiais de estudo em andamento (motor em theme.js) -----------------
+// Painel informativo: quanto falta em cada material, previsão dinâmica pelo
+// ritmo real e meta diária sugerida quando há prazo definido.
+function renderMateriaisPanel() {
+  const panel = document.getElementById('materiaisPanel');
+  const listEl = document.getElementById('materiaisList');
+  const M = window.TrackerMedMateriais;
+  if (!panel || !listEl || !M) return;
+  const mats = M.emAndamento();
+  if (!mats.length) { panel.style.display = 'none'; return; }
+  panel.style.display = '';
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  listEl.innerHTML = mats.map(m => {
+    const st = M.stats(m);
+    const u = q => esc(M.fmtUnid(q, m.unidade));
+    const disc = m.discNome ? `<span class="matp-disc">${esc(m.discNome)}${m.conteudoNome ? ' — ' + esc(m.conteudoNome) : ''}</span>` : '';
+    const ritmo = st.ritmo > 0 ? ` · ritmo atual: <b>${u(Math.round(st.ritmo * 10) / 10)}/dia</b>` : '';
+    const prev = st.estimativaDias != null
+      ? ` · previsão: <b>${st.estimativaDias} dia${st.estimativaDias !== 1 ? 's' : ''}</b> (${esc(M.fmtDataBR(st.dataEstimada))})`
+      : (st.diasComAvanco === 0 ? ' · sem avanços registrados ainda' : '');
+    let meta = '';
+    if (m.prazo && st.sugestaoDiaria != null) {
+      meta = st.atrasado
+        ? `<div class="matp-meta atrasado">⚠ Prazo (${esc(M.fmtDataBR(m.prazo))}) vencido — faltam ${u(st.restante)}.</div>`
+        : `<div class="matp-meta">🎯 Pra concluir até ${esc(M.fmtDataBR(m.prazo))}: cerca de <b>${u(Math.ceil(st.sugestaoDiaria))}/dia</b>.</div>`;
+    }
+    return `<div class="matp-row${st.atrasado ? ' atrasado' : ''}">
+      <div class="matp-nome">${M.tipoIcon(m.tipo)} ${esc(m.nome)} ${disc}</div>
+      <div class="matp-pct">${st.pct}%</div>
+      <div class="matp-bar"><i style="width:${st.pct}%"></i></div>
+      <div class="matp-sub"><b>${esc(M.fmtCurto(st.feito, m.unidade))}</b> de ${u(st.total)} · restam <b>${u(st.restante)}</b>${ritmo}${prev}</div>
+      ${meta}
+    </div>`;
+  }).join('');
+}
+window.addEventListener('storage', e => {
+  const M = window.TrackerMedMateriais;
+  if (e && e.key && M && e.key === M.KEY) renderMateriaisPanel();
+});
+
 renderSemBanner();
 renderDisp();
 renderRotina();
 bindPeriodoInputs();
 render();
+renderMateriaisPanel();
 checkAndOpenTransferModal();
 </script>
 </body></html>

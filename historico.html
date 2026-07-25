@@ -205,6 +205,25 @@ html[data-theme="dark"] .plano-tag { background: var(--surface-soft); border-col
 .cont-extra-bar { flex: 1; height: 10px; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
 .cont-extra-fill { height: 100%; width: 0; background: var(--cobalt); border-radius: 999px; transition: width .35s ease; }
 .cont-extra-pct { font-family: 'Fraunces', serif; font-size: 20px; font-style: italic; color: var(--cobalt); min-width: 48px; text-align: right; }
+/* Materiais de estudo em andamento (progresso gradual) */
+.mat-item { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+.mat-item .mi-top { display: flex; align-items: baseline; gap: 10px; }
+.mat-item .mi-nome { flex: 1; min-width: 0; font-weight: 600; font-size: 14px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mat-item .mi-nome .mi-disc { color: #70757A; font-weight: 500; font-size: 12px; }
+.mat-item .mi-num { font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 600; color: var(--cobalt); white-space: nowrap; }
+.mat-item .mi-btn { background: transparent; border: 1px dashed var(--cobalt); color: var(--cobalt); border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.mat-item .mi-btn:hover { background: var(--cobalt); color: #fff; }
+.mat-item .mi-bar { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; margin-top: 8px; }
+.mat-item .mi-bar i { display: block; height: 100%; background-image: var(--grad-brand); border-radius: 99px; }
+.mat-item.done .mi-bar i { background: var(--mint); }
+.mat-item .mi-sub { font-size: 12px; color: #70757A; margin-top: 6px; }
+.mat-item .mi-sub b { color: var(--ink); font-weight: 600; }
+.mat-item .mi-msg { font-size: 12px; color: var(--text, #444); background: var(--card, #fff); border: 1px solid var(--line); border-left: 3px solid var(--cobalt); border-radius: 0 8px 8px 0; padding: 6px 10px; margin-top: 8px; }
+/* Modal: registrar avanço em material */
+.ma-qtd-row { display: flex; align-items: center; gap: 10px; }
+.ma-qtd-row input { flex: 1; }
+.ma-unid { font-size: 12px; color: #70757A; font-weight: 600; white-space: nowrap; }
+.ma-progtxt { font-size: 12px; color: #70757A; margin-top: 6px; }
 </style></head><body>
 <div class="app">
 <aside class="sidebar">
@@ -252,6 +271,17 @@ html[data-theme="dark"] .plano-tag { background: var(--surface-soft); border-col
     <button class="extra-btn" onclick="abrirExtra()">+ Estudo extra</button>
   </div>
   <div id="planList" class="blk-list" style="margin-top:14px"></div>
+</div>
+
+<div class="section-box" id="matHojeBox" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+    <div>
+      <h2>Materiais <i>em andamento</i></h2>
+      <div class="help">Capítulos, artigos, videoaulas e áudios que você conclui aos poucos. Registre quanto avançou em cada sessão — a previsão de conclusão se ajusta ao seu ritmo.</div>
+    </div>
+    <a href="disciplinas.html" style="font-size:12px;color:var(--cobalt);font-weight:600;text-decoration:none">gerenciar materiais ›</a>
+  </div>
+  <div id="matHojeList" style="margin-top:14px"></div>
 </div>
 
 <div class="section-box">
@@ -485,6 +515,33 @@ html[data-theme="dark"] .plano-tag { background: var(--surface-soft); border-col
     <div class="mactions" style="justify-content:space-between">
       <button type="button" class="mbtn-cancel conc-btn" onclick="encerrarExtra()">Encerrar estudo</button>
       <button type="button" class="mbtn-save conc-btn" id="contExtraContinuarBtn" onclick="continuarExtra()">Iniciar outra sessão</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: registrar avanço em material de estudo (após encerrar a sessão) -->
+<div class="modal-backdrop" id="matAvancoModal" onclick="if(event.target===this) fecharMatAvanco()">
+  <div class="modal-box" style="width:480px">
+    <button class="mbtn-close" onclick="fecharMatAvanco()">×</button>
+    <h2>Avanço no <i>material</i></h2>
+    <div class="modal-sub" id="maSub">Encerrar a sessão não conclui o material — registre quanto você avançou e siga de onde parou na próxima.</div>
+    <div class="mfield"><label>Material de estudo</label><select id="maMaterial" onchange="maOnChange()"></select></div>
+    <div class="cont-extra-bar" style="margin:2px 0 0"><div class="cont-extra-fill" id="maFill"></div></div>
+    <div class="ma-progtxt" id="maProgTxt">—</div>
+    <div class="mfield" style="margin-top:14px">
+      <label id="maPergunta">Quantas páginas você leu?</label>
+      <div class="ma-qtd-row">
+        <input type="number" id="maQtd" min="0" step="any" placeholder="ex: 10" oninput="maPreview()">
+        <span class="ma-unid" id="maUnid">págs</span>
+      </div>
+    </div>
+    <div class="live-preview" id="maPreviewBox">Informe quanto você avançou nesta sessão.</div>
+    <div class="mactions" style="justify-content:space-between">
+      <button type="button" class="mbtn-cancel" onclick="fecharMatAvanco()">Pular</button>
+      <div style="display:flex;gap:10px">
+        <button type="button" class="mbtn-timer" onclick="concluirMatAvanco()" title="Marca o material inteiro como finalizado">✓ Concluí o material</button>
+        <button type="button" class="mbtn-save" onclick="salvarMatAvanco()">Salvar avanço</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1002,6 +1059,7 @@ function timerFinish(auto) {
   const sessaoRevHistId = timerState.revHistId;
   const sessaoMateria = timerState.discNome;
   const sessaoConteudo = timerState.conteudo || '';
+  const sessaoDiscId = timerState.discId;
 
   let novoRevBlocoId = null;
   // Bloco de estudo afetado por esta sessão (planejado ou avulso). Guardado pra
@@ -1122,7 +1180,8 @@ function timerFinish(auto) {
     materia: sessaoMateria || 'Estudo',
     conteudo: sessaoConteudo,
     minutos: studied,
-    bloco: estudoBlocoRef
+    bloco: estudoBlocoRef,
+    discId: sessaoDiscId
   };
   timerClose();
   render();
@@ -1245,6 +1304,9 @@ function responderConclusaoConteudo(concluiu) {
     auto: true
   });
   render();
+  // Depois de encerrar a sessão, pergunta quanto o aluno avançou no material
+  // de estudo (páginas lidas, minutos assistidos…) — sem precisar concluí-lo.
+  abrirMatAvancoAposSessao(ctx.discId || null);
 }
 
 // ===== Modal de método de revisão =====
@@ -1516,6 +1578,7 @@ function salvarExtraManual() {
 
   fecharExtra();
   render();
+  abrirMatAvancoAposSessao(mat.discId || null);
 }
 function salvarExtraTimer() {
   const mat = getMateriaExtra();
@@ -1814,7 +1877,15 @@ function render() {
     const segs = ordem.map(c => `<div class="seg" style="width:${Math.min(100,(byCor[c]/maxMins)*100)}%;background:${c}"></div>`).join('');
     const dots = plansCount > 1 ? ordem.map(c => `<span class="d" style="background:${c}"></span>`).join('') : '';
     const label = i===0 ? 'Hoje' : i===1 ? 'Ontem' : DIAS_LBL[dDia]+', '+d.getDate()+'/'+(d.getMonth()+1);
-    const detail = blocos.length > 0 ? dots+blocos.length+' '+plural(blocos.length, 'sessão', 'sessões') : 'nada';
+    // Avanços em materiais de estudo registrados nesse dia (páginas, minutos…).
+    const avancosDia = MAT ? MAT.avancosDoDia(key) : [];
+    let matDetail = '';
+    if (avancosDia.length) {
+      const parts = avancosDia.slice(0, 2).map(a => `${MAT.tipoIcon(a.material.tipo)} ${escHtml(MAT.fmtUnid(a.qtd, a.material.unidade))}`);
+      if (avancosDia.length > 2) parts.push(`+${avancosDia.length - 2}`);
+      matDetail = (blocos.length > 0 ? ' · ' : '') + parts.join(' · ');
+    }
+    const detail = (blocos.length > 0 ? dots+blocos.length+' '+plural(blocos.length, 'sessão', 'sessões') : (avancosDia.length ? '' : 'nada')) + matDetail;
     linhas.push(`<div class="hist-row">
       <div class="data">${label}<b>${detail}</b></div>
       <div class="bar">${segs}</div>
@@ -1822,7 +1893,143 @@ function render() {
     </div>`);
   }
   histEl.innerHTML = linhas.join('');
+
+  renderMateriaisHoje();
 }
+
+// ===== Materiais de estudo: progresso gradual (motor em theme.js) =========
+// Materiais (capítulos, artigos, videoaulas, áudios) são concluídos aos
+// poucos. Aqui: (1) a seção "Materiais em andamento" com progresso, ritmo e
+// previsão dinâmica; (2) o modal que pergunta o avanço ao encerrar a sessão.
+const MAT = window.TrackerMedMateriais;
+
+const MA_PERGUNTAS = {
+  paginas: 'Quantas páginas você leu?',
+  minutos: 'Quantos minutos você assistiu/ouviu?',
+  capitulos: 'Quantos capítulos você concluiu?',
+  aulas: 'Quantas aulas você concluiu?',
+  questoes: 'Quantas questões você fez?',
+  percentual: 'Qual percentual do material você concluiu nesta sessão?'
+};
+
+function renderMateriaisHoje() {
+  const box = document.getElementById('matHojeBox');
+  if (!box || !MAT) return;
+  const emAndamento = MAT.emAndamento();
+  const hojeK = todayKey();
+  const concluidosHoje = MAT.load().filter(m => m && m.concluido && m.concluidoEm === hojeK);
+  if (!emAndamento.length && !concluidosHoje.length) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  const midAttr = id => JSON.stringify(id).replace(/"/g, '&quot;');
+  const rows = emAndamento.map(m => {
+    const st = MAT.stats(m);
+    const u = q => escHtml(MAT.fmtUnid(q, m.unidade));
+    const disc = m.discNome ? `<span class="mi-disc">· ${escHtml(m.discNome)}${m.conteudoNome ? ' — ' + escHtml(m.conteudoNome) : ''}</span>` : '';
+    const hojeTxt = st.hoje > 0 ? `Hoje: <b>${u(st.hoje)}</b> · ` : '';
+    const prev = st.estimativaDias != null ? ` · previsão: <b>${st.estimativaDias} dia${st.estimativaDias !== 1 ? 's' : ''}</b>` : '';
+    const msgs = MAT.mensagens(m).slice(0, 2).map(x => `<div class="mi-msg">${escHtml(x)}</div>`).join('');
+    return `<div class="mat-item">
+      <div class="mi-top">
+        <span class="mi-nome">${MAT.tipoIcon(m.tipo)} ${escHtml(m.nome)} ${disc}</span>
+        <span class="mi-num">${st.pct}%</span>
+        <button type="button" class="mi-btn" onclick="abrirMatAvanco({materialId:${midAttr(m.id)}})">+ avanço</button>
+      </div>
+      <div class="mi-bar"><i style="width:${st.pct}%"></i></div>
+      <div class="mi-sub">${hojeTxt}<b>${escHtml(MAT.fmtCurto(st.feito, m.unidade))}</b> de ${u(st.total)} · restam <b>${u(st.restante)}</b>${prev}</div>
+      ${msgs}
+    </div>`;
+  });
+  const feitos = concluidosHoje.map(m => `<div class="mat-item done">
+      <div class="mi-top">
+        <span class="mi-nome">${MAT.tipoIcon(m.tipo)} ${escHtml(m.nome)}</span>
+        <span class="mi-num" style="color:var(--mint,#1FC28A)">100% ✓</span>
+      </div>
+      <div class="mi-bar"><i style="width:100%"></i></div>
+      <div class="mi-sub">Material concluído hoje. 🎉</div>
+    </div>`);
+  document.getElementById('matHojeList').innerHTML = rows.concat(feitos).join('');
+}
+
+// Após encerrar uma sessão de estudo: se houver materiais em andamento,
+// pergunta quanto o aluno avançou (priorizando os da disciplina estudada).
+function abrirMatAvancoAposSessao(discId) {
+  if (!MAT || !MAT.emAndamento().length) return;
+  abrirMatAvanco({ discId });
+}
+
+function abrirMatAvanco(opts) {
+  opts = opts || {};
+  if (!MAT) return;
+  const mats = MAT.emAndamento();
+  if (!mats.length) return;
+  // Materiais da disciplina da sessão primeiro; demais em seguida.
+  const ordenados = mats.slice().sort((a, b) => {
+    const pa = a.discId === opts.discId ? 0 : 1;
+    const pb = b.discId === opts.discId ? 0 : 1;
+    return pa - pb;
+  });
+  const selId = opts.materialId || ordenados[0].id;
+  document.getElementById('maMaterial').innerHTML = ordenados.map(m => {
+    const extra = m.discNome ? ` — ${m.discNome}` : '';
+    return `<option value="${escHtml(m.id)}"${m.id === selId ? ' selected' : ''}>${MAT.tipoIcon(m.tipo)} ${escHtml(m.nome + extra)}</option>`;
+  }).join('');
+  document.getElementById('maQtd').value = '';
+  maOnChange();
+  document.getElementById('matAvancoModal').classList.add('open');
+}
+
+function maSelecionado() {
+  const sel = document.getElementById('maMaterial');
+  return sel && sel.value ? MAT.get(sel.value) : null;
+}
+function maOnChange() {
+  const m = maSelecionado();
+  if (!m) return;
+  const st = MAT.stats(m);
+  document.getElementById('maFill').style.width = st.pct + '%';
+  document.getElementById('maProgTxt').textContent =
+    `${MAT.fmtCurto(st.feito, m.unidade)} de ${MAT.fmtUnid(st.total, m.unidade)} · ${st.pct}% · restam ${MAT.fmtUnid(st.restante, m.unidade)}`;
+  document.getElementById('maPergunta').textContent = MA_PERGUNTAS[m.unidade] || 'Quanto você avançou?';
+  document.getElementById('maUnid').textContent = m.unidade === 'percentual' ? '%' : (MAT.UNIDADES[m.unidade]?.abbr || '');
+  document.getElementById('maQtd').value = '';
+  maPreview();
+}
+function maPreview() {
+  const box = document.getElementById('maPreviewBox');
+  const m = maSelecionado();
+  const v = parseFloat(document.getElementById('maQtd').value);
+  if (!m || !(v > 0)) {
+    box.classList.remove('on');
+    box.textContent = 'Informe quanto você avançou nesta sessão.';
+    return;
+  }
+  const st = MAT.stats(m);
+  const novoFeito = Math.min(st.total, st.feito + v);
+  const novoPct = st.total > 0 ? Math.min(100, Math.round((novoFeito / st.total) * 100)) : 0;
+  const novoRest = Math.max(0, st.total - novoFeito);
+  box.classList.add('on');
+  box.innerHTML = `Novo progresso: <b>${escHtml(MAT.fmtCurto(novoFeito, m.unidade))}</b> de ${escHtml(MAT.fmtUnid(st.total, m.unidade))} · ${novoPct}% · restam ${escHtml(MAT.fmtUnid(novoRest, m.unidade))}`
+    + (v >= st.restante ? ' · <b>material será concluído ✓</b>' : '');
+}
+function salvarMatAvanco() {
+  const m = maSelecionado();
+  const v = parseFloat(document.getElementById('maQtd').value);
+  if (!m) { fecharMatAvanco(); return; }
+  if (!(v > 0)) { document.getElementById('maQtd').focus(); return; }
+  MAT.addAvanco(m.id, v);
+  fecharMatAvanco();
+  render();
+}
+function concluirMatAvanco() {
+  const m = maSelecionado();
+  if (!m) { fecharMatAvanco(); return; }
+  const v = parseFloat(document.getElementById('maQtd').value);
+  if (v > 0) MAT.addAvanco(m.id, v);
+  MAT.concluir(m.id);
+  fecharMatAvanco();
+  render();
+}
+function fecharMatAvanco() { document.getElementById('matAvancoModal').classList.remove('open'); }
 
 render();
 setInterval(() => { if (!timerState.running) render(); }, 60000);
@@ -1832,7 +2039,8 @@ setInterval(() => { if (!timerState.running) render(); }, 60000);
 window.addEventListener('storage', e => {
   if (!e.key) return;
   if (e.key === PLAN_KEY || e.key === HIST_KEY || e.key === PLANOS_KEY ||
-      e.key === SNAP_KEY || e.key === FOCO_KEY || e.key === HFILTER_KEY) {
+      e.key === SNAP_KEY || e.key === FOCO_KEY || e.key === HFILTER_KEY ||
+      (MAT && e.key === MAT.KEY)) {
     if (!timerState.running) render();
   }
 });
