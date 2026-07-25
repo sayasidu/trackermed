@@ -63,6 +63,16 @@ html[data-theme="dark"] .blk-item.done.revisao .mins { color: #7BD389; }
 .blk-item .edit-btn { background: transparent; border: none; color: #b5b5b5; font-size: 13px; cursor: pointer; padding: 2px 4px; line-height: 1; }
 .blk-item .edit-btn:hover { color: var(--cobalt); }
 .blk-item.done .edit-btn { display: none; }
+/* Barra de progresso: quanto do tempo planejado já foi cumprido */
+.blk-item .blk-prog { grid-column: 1 / -1; margin-top: 8px; }
+.blk-item .blk-prog .bar { height: 7px; background: rgba(10,19,48,0.10); border-radius: 999px; overflow: hidden; }
+.blk-item .blk-prog .fill { height: 100%; background-image: var(--grad-brand); border-radius: 999px; transition: width .35s var(--ease); }
+.blk-item .blk-prog.done .fill { background: #43A047; }
+.blk-item .blk-prog.over .fill { background: #FB8C00; }
+.blk-item .blk-prog .lbl { display: flex; justify-content: space-between; gap: 10px; font-size: 10.5px; color: #70757A; margin-top: 4px; letter-spacing: 0.01em; }
+.blk-item .blk-prog .lbl .sep { color: #B0B4BB; }
+html[data-theme="dark"] .blk-item .blk-prog .bar { background: rgba(244,241,234,0.14); }
+html[data-theme="dark"] .blk-item .blk-prog .lbl { color: #9AA0AA; }
 
 .dur-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
 .dur-btn { background: var(--paper); border: 1px solid #E0E0E0; padding: 16px 8px; font-family: 'Fraunces', serif; font-size: 22px; cursor: pointer; font-style: italic; color: var(--cobalt); font-variant-numeric: tabular-nums; transition: all 0.12s; border-radius: 8px; }
@@ -448,7 +458,7 @@ html[data-theme="dark"] .plano-tag { background: var(--surface-soft); border-col
       <div class="conc-linha" id="concConteudoWrap"><span class="conc-lbl">Conteúdo estudado</span><span class="conc-val" id="concConteudo">—</span></div>
     </div>
     <div class="conc-pergunta">Você concluiu este conteúdo?</div>
-    <div class="conc-help" id="concHelp">Só entra nas <b>revisões</b> se você marcar “Sim”.</div>
+    <div class="conc-help" id="concHelp">“Sim” marca a tarefa como <b>concluída</b> e a envia para as <b>revisões</b>. “Não” mantém o <b>progresso parcial</b> registrado.</div>
     <div class="mactions" style="justify-content:space-between">
       <button type="button" class="mbtn-cancel conc-btn" onclick="responderConclusaoConteudo(false)">Não</button>
       <button type="button" class="mbtn-save conc-btn" onclick="responderConclusaoConteudo(true)">Sim, concluí</button>
@@ -565,14 +575,19 @@ function backfillRevLinks() {
   if (planChanged) savePlan(plan);
 }
 function parseTime(t) { const [h,m]=t.split(':').map(Number); return h+m/60; }
+// "Agora" e "hoje" sempre no fuso de Cuiabá (America/Cuiaba), independente do
+// fuso do navegador — ver window.TrackerMedTime em theme.js.
+function nowCuiaba() { return (window.TrackerMedTime && window.TrackerMedTime.now()) || new Date(); }
 function startOfWeek(d) { const x=new Date(d); x.setHours(0,0,0,0); const w=(x.getDay()+6)%7; x.setDate(x.getDate()-w); return x; }
-function weekKey(d) { return startOfWeek(d).toISOString().slice(0,10); }
+// Chave da semana pelos campos locais (segunda-feira), sem passar por UTC —
+// assim independe do fuso do navegador e casa com plannerstudy.html.
+function weekKey(d) { return dateKey(startOfWeek(d)); }
 function addDays(d,n) { const x=new Date(d); x.setDate(x.getDate()+n); return x; }
 function toHHMM(x) { const h=Math.max(0,Math.floor(x)), m=Math.max(0,Math.round((x-h)*60)); return String(h).padStart(2,'0')+':'+String(Math.min(59,m)).padStart(2,'0'); }
 function fmtH(h) { const H=Math.floor(h), M=Math.round((h-H)*60); return `${H}<span style="font-size:16px;color:#70757A">h${String(M).padStart(2,'0')}</span>`; }
 function fmtHrange(m) { const h=Math.floor(m/60), mm=m%60; return h>0 ? `${h}h${String(mm).padStart(2,'0')}` : `${mm}min`; }
 function dateKey(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-function todayKey() { return dateKey(new Date()); }
+function todayKey() { return (window.TrackerMedTime && window.TrackerMedTime.todayKey()) || dateKey(new Date()); }
 function blocoDate(wk, b) {
   if (b && b.data) return b.data;
   if (!wk || !b || b.dia == null) return null;
@@ -695,6 +710,21 @@ function renderTodayItem(it, plansCount) {
   else minsLabel = fmtHrange(b.feito ? studiedMin : mins);
   const cls = `${b.feito?'done':''} ${isRev?'revisao':''} ${excedeu?'exceeded':''} ${interactive?'':'readonly'}`.trim();
   const prefix = isRev ? `<span class="rev-pill">↻ rev</span>` : (b.extra ? '✦ ' : '');
+  // Barra de progresso do tempo planejado x estudado (só p/ estudos com meta de
+  // tempo; revisões são pontuais). Mostra o quanto já foi cumprido e o que falta.
+  let progHTML = '';
+  if (!isRev && mins > 0) {
+    const pct = Math.min(100, Math.round((studiedMin / mins) * 100));
+    const restante = Math.max(0, mins - studiedMin);
+    const dir = b.feito
+      ? (excedeu ? `100% · <b>+${fmtHrange(studiedMin - mins)}</b> além do planejado` : '100% · concluído')
+      : (studiedMin > 0 ? `${pct}% · faltam ${fmtHrange(restante)}` : `${pct}% · ${fmtHrange(mins)} planejados`);
+    const progCls = b.feito ? (excedeu ? 'over' : 'done') : '';
+    progHTML = `<div class="blk-prog ${progCls}">
+      <div class="bar"><div class="fill" style="width:${b.feito ? 100 : pct}%"></div></div>
+      <div class="lbl"><span>${fmtHrange(studiedMin)} <span class="sep">de</span> ${fmtHrange(mins)}</span><span>${dir}</span></div>
+    </div>`;
+  }
   if (interactive) {
     const editBtn = (b.feito || isRev) ? '' : `<button class="edit-btn" onclick="abrirEditarDuracao('${wk}','${b.id}', ${discNomeAttr}, ${mins})" title="Editar duração">✎</button>`;
     const playBtn = (!isRev && b.discId)
@@ -706,6 +736,7 @@ function renderTodayItem(it, plansCount) {
       <div class="mins"><span class="mins-wrap">${minsLabel}${editBtn}</span></div>
       ${playBtn}
       <button class="check-btn" onclick="toggleFeito('${wk}', '${b.id}')" title="${isRev?'Marcar revisão como feita':'Alternar concluído'}">${b.feito?'✓':'○'}</button>
+      ${progHTML}
     </div>`;
   }
   return `<div class="blk-item ${cls}">
@@ -713,6 +744,7 @@ function renderTodayItem(it, plansCount) {
     <div><div class="nome">${prefix}${escHtml(discNome)}${tag}</div><div class="motivo">${motivoBase}${conteudoLine} · <a href="planos.html" title="Trocar o plano em foco pra editar" style="color:var(--cobalt);font-weight:600">focar pra editar</a></div></div>
     <div class="mins">${minsLabel}</div>
     <div></div><div></div>
+    ${progHTML}
   </div>`;
 }
 
@@ -963,13 +995,19 @@ function timerFinish(auto) {
     totalPlannedSec = timerState.focusSec * timerState.sections;
   }
   if (studied < 1) { timerClose(); return; }
-  const concluidoNatural = !timerState.freeMode && !!auto && timerState.mode === 'focus' && timerState.currentSection >= timerState.sections && timerState.leftSec <= 0;
+  // Terminar o cronômetro NÃO conclui a tarefa por si só: uma tarefa planejada só
+  // é marcada como concluída quando o tempo estudado atinge o tempo planejado ou
+  // quando o aluno confirma manualmente (botão ✓ ou "Sim, concluí" no modal).
   const isRevisaoSession = !!timerState.revHistId;
   const sessaoRevHistId = timerState.revHistId;
   const sessaoMateria = timerState.discNome;
   const sessaoConteudo = timerState.conteudo || '';
 
   let novoRevBlocoId = null;
+  // Bloco de estudo afetado por esta sessão (planejado ou avulso). Guardado pra
+  // que o modal "conteúdo concluído?" possa marcá-lo como concluído quando o
+  // aluno confirmar manualmente que terminou o conteúdo.
+  let estudoBlocoRef = null;
   // Pra sessões de revisão sem bloco vinculado direto, tenta achar um bloco já
   // existente apontando para essa entrada do feed de revisões. Evita criar um
   // bloco duplicado quando o aluno depois marca a "Revisão programada"
@@ -998,15 +1036,23 @@ function timerFinish(auto) {
         });
       });
     } else {
-      const wk = weekKey(new Date());
-      plan[wk] = (plan[wk]||[]).map(b => {
-        if (b.id !== blocoIdAlvo) return b;
-        const plannedMin = b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60);
-        const studiedAcum = (b.minutosFeitos || 0) + studied;
-        const feito = concluidoNatural || studiedAcum >= plannedMin;
-        const updated = { ...b, feito, minutos: plannedMin, minutosFeitos: studiedAcum, data: todayKey() };
-        if (sessaoConteudo) updated.conteudo = sessaoConteudo;
-        return updated;
+      // Estudo planejado: acumula o tempo estudado e só marca "concluído" quando
+      // o total estudado alcança o tempo PLANEJADO. Uma sessão curta (ex.: 5 de
+      // 60 min) fica como progresso parcial; a conclusão manual acontece no modal
+      // "conteúdo concluído?" ou no botão ✓ da lista. Terminar o cronômetro por
+      // si só NÃO conclui a tarefa. Percorre todas as semanas porque o bloco pode
+      // estar guardado em outra weekKey.
+      Object.keys(plan).forEach(wk => {
+        plan[wk] = (plan[wk]||[]).map(b => {
+          if (b.id !== blocoIdAlvo) return b;
+          const plannedMin = b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60);
+          const studiedAcum = (b.minutosFeitos || 0) + studied;
+          const feito = !!b.feito || (plannedMin > 0 && studiedAcum >= plannedMin);
+          const updated = { ...b, feito, minutos: plannedMin, minutosFeitos: studiedAcum, data: todayKey() };
+          if (sessaoConteudo) updated.conteudo = sessaoConteudo;
+          estudoBlocoRef = { wk, id: b.id };
+          return updated;
+        });
       });
     }
     savePlan(plan);
@@ -1014,9 +1060,9 @@ function timerFinish(auto) {
     // Revisão sem bloco vinculado (ex.: revisão manual sem metodologia) — cria
     // um bloco hoje marcado como feito para aparecer na lista do histórico.
     const plan = loadPlan();
-    const wk = weekKey(new Date());
+    const wk = weekKey(nowCuiaba());
     if (!plan[wk]) plan[wk] = [];
-    const now = new Date();
+    const now = nowCuiaba();
     const endH = now.getHours() + now.getMinutes()/60;
     const startH = Math.max(0, endH - studied/60);
     novoRevBlocoId = uid();
@@ -1033,9 +1079,9 @@ function timerFinish(auto) {
   } else {
     // Novo bloco (apenas para estudos avulsos).
     const plan = loadPlan();
-    const wk = weekKey(new Date());
+    const wk = weekKey(nowCuiaba());
     if (!plan[wk]) plan[wk] = [];
-    const now = new Date();
+    const now = nowCuiaba();
     const endH = now.getHours() + now.getMinutes()/60;
     const startH = Math.max(0, endH - studied/60);
     const bloco = { id: uid(), tipo:'estudo', discId: timerState.discId, matNome: timerState.discNome, conteudo: timerState.conteudo || '', dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: true, fromTimer: true, minutos: studied, extra: true, data: todayKey(), revisar: timerState.revisar };
@@ -1049,6 +1095,7 @@ function timerFinish(auto) {
     }
     plan[wk].push(bloco);
     savePlan(plan);
+    estudoBlocoRef = { wk, id: bloco.id };
   }
 
   if (isRevisaoSession) {
@@ -1074,7 +1121,8 @@ function timerFinish(auto) {
   const resumoConclusao = {
     materia: sessaoMateria || 'Estudo',
     conteudo: sessaoConteudo,
-    minutos: studied
+    minutos: studied,
+    bloco: estudoBlocoRef
   };
   timerClose();
   render();
@@ -1165,12 +1213,29 @@ function responderConclusaoConteudo(concluiu) {
   conclusaoCtx = null;
   document.getElementById('conclusaoContModal').classList.remove('open');
   if (!ctx) return;
+  // Conclusão MANUAL do conteúdo: se o aluno confirma que terminou, o bloco de
+  // estudo correspondente é marcado como concluído mesmo que o tempo estudado
+  // ainda não tenha alcançado o planejado (essa é a via manual prevista). Ao
+  // responder "Não", o bloco continua com o progresso parcial que já tem.
+  if (concluiu && ctx.bloco && ctx.bloco.id) {
+    const plan = loadPlan();
+    const wksBusca = ctx.bloco.wk ? [ctx.bloco.wk] : Object.keys(plan);
+    let salvar = false;
+    wksBusca.forEach(wk => {
+      plan[wk] = (plan[wk]||[]).map(b => {
+        if (b.id !== ctx.bloco.id || b.feito) return b;
+        salvar = true;
+        return { ...b, feito: true, data: b.data || todayKey() };
+      });
+    });
+    if (salvar) savePlan(plan);
+  }
   // Registra no feed. `revisar` só é true quando o aluno confirma "Sim" — é isso
   // que faz o conteúdo aparecer em revisoes.html. O ESTUDO já está concluído; o
   // conteúdo entra como base aguardando o aluno configurar as revisões espaçadas
   // (revConfigured:false) — não como "revisão pendente".
   pushHist({
-    data: fmtDataBR(new Date()),
+    data: fmtDataBR(nowCuiaba()),
     materia: ctx.materia || 'Estudo',
     conteudo: ctx.conteudo || '',
     minutos: ctx.minutos || 0,
@@ -1282,7 +1347,7 @@ function registrarSimuladoDeRevisao(questoes, acertos, minutos) {
   const mins = Math.max(0, parseInt(minutos) || 0);
   const h = Math.floor(mins / 60), m = mins % 60;
   const tempo = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
-  const today = new Date();
+  const today = nowCuiaba();
   const dataIso = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
   sims.unshift({
     id: 'sm-' + Date.now() + '-' + Math.random().toString(36).slice(2,6),
@@ -1426,9 +1491,9 @@ function salvarExtraManual() {
   const minsAtuais = mins * sessoesReg;
   const minsPlanejado = planoMin || minsAtuais;
   const plan = loadPlan();
-  const wk = weekKey(new Date());
+  const wk = weekKey(nowCuiaba());
   if (!plan[wk]) plan[wk] = [];
-  const now = new Date();
+  const now = nowCuiaba();
   const totalRange = Math.max(minsPlanejado, minsAtuais);
   const endH = now.getHours() + now.getMinutes()/60;
   const startH = Math.max(0, endH - totalRange/60);
@@ -1507,10 +1572,11 @@ function abrirPlayDuracao(discId, discNome, blocoId) {
   document.getElementById('secOptsWrap').style.display = '';
   document.getElementById('durFreeBtn').style.display = '';
   document.getElementById('durConteudoWrap').style.display = '';
-  // Pre-fill conteudo from the block if it already has one
+  // Pre-fill conteudo from the block if it already has one (procura em todas as
+  // semanas — o bloco pode estar guardado em outra weekKey).
   const plan = loadPlan();
-  const wk = weekKey(new Date());
-  const bloco = (plan[wk]||[]).find(b => b.id === blocoId);
+  let bloco = null;
+  for (const wk of Object.keys(plan)) { const f = (plan[wk]||[]).find(b => b.id === blocoId); if (f) { bloco = f; break; } }
   document.getElementById('durConteudo').value = (bloco && bloco.conteudo) || '';
   setSecoes(1);
   setPausa(5);
@@ -1601,10 +1667,13 @@ function render() {
   backfillRevLinks();
   const disc = loadDisc();
   const plan = loadPlan();
-  const hoje = new Date();
+  const hoje = nowCuiaba();
   const hojeDia = hoje.getDay();
   const wk = weekKey(hoje);
-  const yyyy = hoje.toISOString().slice(0,10);
+  // Dia de HOJE em Cuiabá pelos campos locais — NUNCA via toISOString() (que
+  // devolve a data em UTC e, à noite no Brasil, já aponta pro dia seguinte,
+  // fazendo a lista de "hoje" mostrar as tarefas de amanhã).
+  const yyyy = dateKey(hoje);
 
   document.getElementById('dataHoje').textContent = hoje.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
 

@@ -436,7 +436,10 @@
   }
   function parseTime(t) { const [h,m] = t.split(':').map(Number); return h + m/60; }
   function startOfWeek(d) { const x=new Date(d); x.setHours(0,0,0,0); const w=(x.getDay()+6)%7; x.setDate(x.getDate()-w); return x; }
-  function weekKey(d) { return startOfWeek(d).toISOString().slice(0,10); }
+  // Datas no fuso de Cuiabá (America/Cuiaba); chaves por campos locais, sem UTC.
+  function nowCuiaba() { return (window.TrackerMedTime && window.TrackerMedTime.now()) || new Date(); }
+  function dateKey(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function weekKey(d) { return dateKey(startOfWeek(d)); }
   function addDays(d,n) { const x=new Date(d); x.setDate(x.getDate()+n); return x; }
   function blocoMin(b) { return b.minutos || Math.round((parseTime(b.fim) - parseTime(b.ini)) * 60); }
 
@@ -454,7 +457,7 @@
   function renderPreview() {
     const plan = loadJSON(PLAN_KEY, {});
     const prova = loadJSON(PROVA_KEY, {});
-    const hoje = new Date();
+    const hoje = nowCuiaba();
     const wk = weekKey(hoje);
 
     // Semana
@@ -473,13 +476,13 @@
       const inicioSem = new Date(wkS + 'T00:00');
       (blocos || []).filter(b => b.feito).forEach(b => {
         const d = addDays(inicioSem, (b.dia + 6) % 7);
-        diasEstudo.add(d.toISOString().slice(0,10));
+        diasEstudo.add(dateKey(d));
       });
     });
     let streak = 0;
     for (let i = 0; i < 365; i++) {
       const d = addDays(hoje, -i);
-      const key = d.toISOString().slice(0,10);
+      const key = dateKey(d);
       if (diasEstudo.has(key)) streak++;
       else if (i > 0) break;
     }

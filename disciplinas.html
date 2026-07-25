@@ -447,7 +447,9 @@ function horasDaAula(a) {
   return Math.max(0, (h2+m2/60)-(h1+m1/60));
 }
 function fmtData(d) { if(!d) return ''; const [y,m,dd]=d.split('-'); return `${dd}/${m}/${y.slice(2)}`; }
-function diasAte(d) { if(!d) return null; const t=new Date(d+'T12:00'); const n=new Date(); n.setHours(0,0,0,0); return Math.round((t-n)/86400000); }
+// "Hoje" no fuso de Cuiabá (America/Cuiaba), ver theme.js.
+function nowCuiaba() { return (window.TrackerMedTime && window.TrackerMedTime.now()) || new Date(); }
+function diasAte(d) { if(!d) return null; const t=new Date(d+'T12:00'); const n=nowCuiaba(); n.setHours(0,0,0,0); return Math.round((t-n)/86400000); }
 
 // Barra de troca por plano (planos ativos, até 3). As disciplinas mostradas são
 // as do plano em edição; clicar em outro plano ativo troca o conteúdo aqui.

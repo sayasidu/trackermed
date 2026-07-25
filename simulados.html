@@ -223,6 +223,12 @@ function fmtData(iso) {
   const d = new Date(iso + 'T00:00:00');
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
 }
+// Data de hoje (YYYY-MM-DD) no fuso de Cuiabá (America/Cuiaba), ver theme.js.
+function todayISO() {
+  if (window.TrackerMedTime) return window.TrackerMedTime.todayKey();
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
 
 function atualizarPreview() {
   const q = parseInt(document.getElementById('sQuestoes').value);
@@ -247,7 +253,7 @@ function atualizarPreview() {
 function abrirModal(id) {
   document.getElementById('sForm').reset();
   document.getElementById('sId').value = '';
-  document.getElementById('sData').value = new Date().toISOString().slice(0,10);
+  document.getElementById('sData').value = todayISO();
   if (id) {
     const s = loadSims().find(x => x.id === id);
     if (s) {
@@ -257,7 +263,7 @@ function abrirModal(id) {
       document.getElementById('sQuestoes').value = s.questoes;
       document.getElementById('sAcertos').value = s.acertos;
       document.getElementById('sTempo').value = s.tempo;
-      document.getElementById('sData').value = s.data || new Date().toISOString().slice(0,10);
+      document.getElementById('sData').value = s.data || todayISO();
     }
   } else {
     document.getElementById('mTitulo').innerHTML = 'Adicionar <i>simulado</i>';

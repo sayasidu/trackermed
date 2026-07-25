@@ -609,7 +609,7 @@ const HORA_INI = 7, HORA_FIM = 23; // 7h → 23h, 16h cobertura
 const PRIO_MIN = { 'muito-alta': 60, 'alta': 45, 'media': 25, 'baixa': 15 };
 const PRIO_LBL = { 'muito-alta': 'Muito alta', 'alta': 'Alta', 'media': 'Média', 'baixa': 'Baixa' };
 
-let anchorDate = new Date();
+let anchorDate = (window.TrackerMedTime && window.TrackerMedTime.now()) || new Date();
 let editSlot = null;
 
 function toISODate(d) {
@@ -627,7 +627,7 @@ function loadPeriodo() {
     const raw = JSON.parse(localStorage.getItem(PERIODO_KEY) || 'null');
     if (raw && raw.ini && raw.fim) return raw;
   } catch {}
-  const wkStart = startOfWeek(new Date());
+  const wkStart = startOfWeek(nowCuiaba());
   const wkEnd = addDays(wkStart, 6);
   return { ini: toISODate(wkStart), fim: toISODate(wkEnd) };
 }
@@ -693,7 +693,7 @@ function fmtDispHoras(h) {
 function renderDisp() {
   const grid = document.getElementById('dispGrid');
   if (!grid) return;
-  const hojeWd = new Date().getDay();
+  const hojeWd = nowCuiaba().getDay();
   const data = loadDisp();
   grid.innerHTML = DISP_DAYS.map(day => `
     <div class="disp-day ${day.wd === hojeWd ? 'hoje' : ''}">
@@ -1049,15 +1049,19 @@ function metaPrioHoras(d, diasLivresCount) {
   const m = PRIO_MIN[d.prioridade || 'media'] || 25;
   return (m * diasLivresCount) / 60;
 }
-function weekKey(d) { const m=startOfWeek(d); return m.toISOString().slice(0,10); }
+// Chave da semana pelos campos locais (segunda-feira), sem passar por UTC — casa
+// com historico.html e independe do fuso do navegador.
+function weekKey(d) { return toISODate(startOfWeek(d)); }
 function startOfWeek(d) { const x=new Date(d); x.setHours(0,0,0,0); const w=(x.getDay()+6)%7; x.setDate(x.getDate()-w); return x; }
+// "Agora"/"hoje" sempre no fuso de Cuiabá (America/Cuiaba), ver theme.js.
+function nowCuiaba() { return (window.TrackerMedTime && window.TrackerMedTime.now()) || new Date(); }
 function uid() { return 'b-'+Date.now()+'-'+Math.random().toString(36).slice(2,6); }
 function parseTime(t) { const [h,m]=t.split(':').map(Number); return h+m/60; }
 function fmtDate(d) { return d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0'); }
 function addDays(d,n) { const x=new Date(d); x.setDate(x.getDate()+n); return x; }
 
 function mudarSemana(dir) {
-  if (dir === 0) anchorDate = new Date();
+  if (dir === 0) anchorDate = nowCuiaba();
   else anchorDate = addDays(startOfWeek(anchorDate), dir*7);
   render();
 }
@@ -1077,7 +1081,7 @@ function resumoSugestoes(discList, wkKey, plan, diasLivresCount) {
     const falta = Math.max(0, meta - agendado);
     const prox = (d.provas || []).map(p => {
       if (!p.data) return Infinity;
-      return Math.round((new Date(p.data+'T12:00') - new Date().setHours(0,0,0,0))/86400000);
+      return Math.round((new Date(p.data+'T12:00') - nowCuiaba().setHours(0,0,0,0))/86400000);
     }).filter(x => x >= 0).sort((a,b)=>a-b)[0];
     itens.push({ disc: d, meta, agendado, falta, urgente: prox !== undefined && prox <= 14 });
   });
@@ -1440,7 +1444,7 @@ function escH(s) { return String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&a
 
 function renderGrade(discList) {
   const wkStart = startOfWeek(anchorDate);
-  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const hoje = nowCuiaba(); hoje.setHours(0,0,0,0);
   const horas = [];
   for (let h = HORA_INI; h <= HORA_FIM; h++) horas.push(h);
 
@@ -1468,7 +1472,7 @@ function renderGrade(discList) {
     body += `<div class="col-dia ${isHoje?'hoje':''}" data-dia="${d.getDay()}">`;
     horas.forEach(() => body += `<div class="hora-tick"></div>`);
     if (isHoje) {
-      const now = new Date();
+      const now = nowCuiaba();
       const nowH = now.getHours() + now.getMinutes()/60;
       if (nowH >= HORA_INI && nowH <= HORA_FIM+1) {
         const nowTop = (nowH - HORA_INI) * 50;
@@ -1713,7 +1717,7 @@ function blocoDataReal(wk, b) {
 function findPendentesTransfer() {
   const plan = loadPlan();
   const dispensados = loadTransDispensados();
-  const hojeISO = toISODate(new Date());
+  const hojeISO = toISODate(nowCuiaba());
   const discById = {};
   loadDisc().forEach(d => { discById[d.id] = d; });
   const itens = [];
@@ -1748,7 +1752,7 @@ function fmtMinTransfer(min) {
 function abrirTransferModal() {
   const itens = findPendentesTransfer();
   if (itens.length === 0) return;
-  const target = new Date();
+  const target = nowCuiaba();
   const targetWk = weekKey(target);
   const targetDia = target.getDay();
   const plan = loadPlan();
@@ -1819,7 +1823,7 @@ function confirmarTransferencia() {
   if (selecionados.length === 0) { fecharTransferModal(); return; }
 
   const plan = loadPlan();
-  const target = new Date();
+  const target = nowCuiaba();
   const targetWk = weekKey(target);
   const targetDia = target.getDay();
   if (!plan[targetWk]) plan[targetWk] = [];
@@ -1928,7 +1932,7 @@ function render() {
   let nProvas = 0, menorDias = null;
   discList.forEach(d => (d.provas||[]).forEach(p => {
     if (!p.data) return;
-    const dd = Math.round((new Date(p.data+'T12:00') - new Date().setHours(0,0,0,0))/86400000);
+    const dd = Math.round((new Date(p.data+'T12:00') - nowCuiaba().setHours(0,0,0,0))/86400000);
     if (dd >= 0 && dd <= 30) { nProvas++; if (menorDias===null || dd<menorDias) menorDias=dd; }
   }));
   document.getElementById('statProv').textContent = nProvas;
@@ -2061,7 +2065,7 @@ const CAL_VIEW_KEY = 'trackermed.planner.calView.v1';
 const CAL_FILTER_KEY = 'trackermed.planner.calFilter.v1';
 let calView = (localStorage.getItem(CAL_VIEW_KEY) === 'semana') ? 'semana' : 'mes';
 let calFilter = localStorage.getItem(CAL_FILTER_KEY) || 'todos';
-let calAnchor = (function(){ const d = new Date(); d.setHours(12,0,0,0); return d; })();
+let calAnchor = (function(){ const d = nowCuiaba(); d.setHours(12,0,0,0); return d; })();
 const MES_LONG = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const MES_ABREV = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 
@@ -2121,7 +2125,7 @@ function calCollect() {
 function calSetView(v) { calView = v; localStorage.setItem(CAL_VIEW_KEY, v); renderCalGeral(); }
 function calSetFilter(id) { calFilter = id; localStorage.setItem(CAL_FILTER_KEY, id); renderCalGeral(); }
 function calNav(dir) {
-  if (dir === 0) { calAnchor = new Date(); calAnchor.setHours(12,0,0,0); }
+  if (dir === 0) { calAnchor = nowCuiaba(); calAnchor.setHours(12,0,0,0); }
   else if (calView === 'mes') calAnchor = new Date(calAnchor.getFullYear(), calAnchor.getMonth() + dir, 1, 12, 0, 0);
   else calAnchor = addDays(calAnchor, dir * 7);
   renderCalGeral();
@@ -2208,7 +2212,7 @@ function renderCalMonth(acts, marks) {
   const first = new Date(calAnchor.getFullYear(), calAnchor.getMonth(), 1, 12, 0, 0);
   const start = startOfWeek(first);
   const mesAtual = calAnchor.getMonth();
-  const hojeStr = toISODate(new Date());
+  const hojeStr = toISODate(nowCuiaba());
   const DOW = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
 
   let cells = DOW.map(d => `<div class="cm-dow">${d}</div>`).join('');
@@ -2246,7 +2250,7 @@ function renderCalWeek(acts, marks) {
   for (const k in byDate) byDate[k].sort((a,b) => (a.ini||'').localeCompare(b.ini||''));
 
   const start = startOfWeek(calAnchor);
-  const hojeStr = toISODate(new Date());
+  const hojeStr = toISODate(nowCuiaba());
   const DOW = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
   let cols = '';
   for (let i = 0; i < 7; i++) {

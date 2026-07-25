@@ -269,6 +269,65 @@
     }
   });
 
+  // ---- Fuso horário do app: America/Cuiaba (Mato Grosso, Brasil) --------
+  // Todo o sistema de datas/horários calcula "hoje", "agora", dia da semana e
+  // as chaves de semana neste fuso, independentemente do fuso configurado no
+  // navegador/dispositivo, pra que o site sempre reconheça o dia e o horário
+  // locais de Cuiabá. As funções abaixo devolvem uma Date "deslocada" cujos
+  // CAMPOS LOCAIS (getFullYear, getMonth, getDate, getDay, getHours…) já
+  // refletem o horário de parede em Cuiabá — use só pra ler campos e fazer
+  // aritmética de calendário, nunca via toISOString()/UTC.
+  var APP_TZ = 'America/Cuiaba';
+  var _tzDTF = null;
+  function tzFormatter() {
+    if (_tzDTF !== null) return _tzDTF;
+    try {
+      _tzDTF = new Intl.DateTimeFormat('en-US', {
+        timeZone: APP_TZ, hourCycle: 'h23',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+    } catch (e) { _tzDTF = false; }
+    return _tzDTF;
+  }
+  // Campos de data/hora em Cuiabá para um instante (default: agora).
+  function tzParts(instant) {
+    var d = instant || new Date();
+    var dtf = tzFormatter();
+    if (!dtf) { // ambiente sem Intl/tz — cai pro horário local do navegador
+      return { year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate(),
+               hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds() };
+    }
+    var o = {};
+    dtf.formatToParts(d).forEach(function (p) { if (p.type !== 'literal') o[p.type] = p.value; });
+    var hour = parseInt(o.hour, 10); if (hour === 24) hour = 0;
+    return { year: +o.year, month: +o.month, day: +o.day,
+             hour: hour, minute: +o.minute, second: +o.second };
+  }
+  function tzNow() {
+    var p = tzParts(new Date());
+    return new Date(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+  }
+  function tzToday() {
+    var p = tzParts(new Date());
+    return new Date(p.year, p.month - 1, p.day);
+  }
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  // Chave YYYY-MM-DD a partir dos CAMPOS LOCAIS de uma Date (deslocada ou não).
+  function tzKeyOf(d) {
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+  function tzTodayKey() { return tzKeyOf(tzNow()); }
+
+  window.TrackerMedTime = {
+    TZ: APP_TZ,
+    now: tzNow,          // Date deslocada = horário de parede atual em Cuiabá
+    today: tzToday,      // Date deslocada às 00:00 de hoje em Cuiabá
+    todayKey: tzTodayKey,// 'YYYY-MM-DD' de hoje em Cuiabá
+    keyOf: tzKeyOf,      // 'YYYY-MM-DD' pelos campos locais de uma Date
+    parts: tzParts       // {year,month,day,hour,minute,second} em Cuiabá
+  };
+
   window.TrackerMedTheme = { toggle, apply, current };
   window.TrackerMedContext = {
     MAX: MAX_ATIVOS,
