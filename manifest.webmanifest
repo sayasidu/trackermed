@@ -1,0 +1,21 @@
+{
+  "name": "TrackerMed",
+  "short_name": "TrackerMed",
+  "description": "Seu painel de estudo para medicina — no iPhone e no iPad.",
+  "lang": "pt-BR",
+  "start_url": "app.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F4F1EA",
+  "theme_color": "#0A1330",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Estudar agora", "url": "app.html#/hist?play=1", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Dashboard", "url": "dashboard.html" }
+  ]
+}
