@@ -593,6 +593,148 @@
     tipoLabel: matTipoLabel
   };
 
+  // ---- Conteúdos hierárquicos: Disciplina → Conteúdo/Área → Tópico ------
+  // Motor compartilhado dos campos "Conteúdo (opcional)" nos modais de estudo
+  // (historico.html e plannerstudy.html). As opções vêm do cadastro feito em
+  // disciplinas.html (d.conteudos[].topicos[]): quando a disciplina tem
+  // conteúdos cadastrados o aluno escolhe entre eles — o mesmo conteúdo nunca
+  // é registrado com nomes diferentes; sem cadastro, ou em matéria avulsa, o
+  // campo continua sendo texto livre.
+  var HIER_OUTRO = '__outro__';
+  function hierConteudosDe(discId) {
+    if (!discId) return [];
+    var list = jparse(lsGet(LIVE_KEYS.disciplinas), []);
+    var d = null;
+    for (var i = 0; i < list.length; i++) { if (list[i] && list[i].id === discId) { d = list[i]; break; } }
+    return ((d && d.conteudos) || []).filter(function (c) { return c && c.id && c.nome; });
+  }
+  function hierRotulo(contNome, topNome) { return topNome ? contNome + ' — ' + topNome : (contNome || ''); }
+  // Casa um texto livre antigo com o cadastro ("Cardiologia — SCA", "SCA"…),
+  // pra registros anteriores à estrutura hierárquica pré-selecionarem certo.
+  function hierAcharPorTexto(conteudos, texto) {
+    function norm(s) { return String(s == null ? '' : s).trim().toLowerCase(); }
+    var alvo = norm(texto);
+    if (!alvo) return null;
+    for (var i = 0; i < conteudos.length; i++) {
+      var c = conteudos[i];
+      var tops = c.topicos || [];
+      for (var j = 0; j < tops.length; j++) {
+        var t = tops[j];
+        if (t && t.nome && (alvo === norm(hierRotulo(c.nome, t.nome)) || alvo === norm(t.nome))) {
+          return { conteudoId: c.id, topicoId: t.id };
+        }
+      }
+      if (alvo === norm(c.nome)) return { conteudoId: c.id, topicoId: null };
+    }
+    return null;
+  }
+  // Controlador de um par de selects dependentes + fallback de texto livre.
+  // ids: { sel, topico, selWrap, livreWrap, livre, hint? } — ids de elementos.
+  function hierCtrl(ids) {
+    function el(k) { return ids[k] ? document.getElementById(ids[k]) : null; }
+    function mostrar(elm, on) { if (elm) elm.style.display = on ? '' : 'none'; }
+    var ctrl = { conteudos: [], soLivre: true };
+
+    function topicosDe(cid) {
+      for (var i = 0; i < ctrl.conteudos.length; i++) {
+        if (ctrl.conteudos[i].id === cid) {
+          return (ctrl.conteudos[i].topicos || []).filter(function (t) { return t && t.id && t.nome; });
+        }
+      }
+      return [];
+    }
+    function renderTopicos(topicoId) {
+      var top = el('topico');
+      var cid = el('sel').value;
+      if (!cid || cid === HIER_OUTRO) {
+        top.innerHTML = '<option value="">' + (cid === HIER_OUTRO ? '—' : '— escolha o conteúdo —') + '</option>';
+        top.disabled = true;
+        return;
+      }
+      var tops = topicosDe(cid);
+      if (!tops.length) {
+        top.innerHTML = '<option value="">— sem tópicos cadastrados —</option>';
+        top.disabled = true;
+        return;
+      }
+      top.innerHTML = '<option value="">— nenhum —</option>' + tops.map(function (t) {
+        return '<option value="' + escTxt(t.id) + '"' + (t.id === topicoId ? ' selected' : '') + '>' + escTxt(t.nome) + '</option>';
+      }).join('');
+      top.disabled = false;
+    }
+
+    // onchange do select de conteúdo: repovoa os tópicos daquele conteúdo e
+    // alterna o texto livre (opção "Outro").
+    ctrl.onConteudoChange = function () {
+      var outro = el('sel').value === HIER_OUTRO;
+      mostrar(el('livreWrap'), outro);
+      mostrar(el('hint'), false);
+      if (outro) { var lv = el('livre'); if (lv) lv.focus(); }
+      renderTopicos(null);
+    };
+
+    // Monta os campos pra disciplina. pre = { conteudoId, topicoId, texto } —
+    // valores já gravados no estudo aparecem pré-selecionados.
+    ctrl.montar = function (discId, pre) {
+      pre = pre || {};
+      ctrl.conteudos = hierConteudosDe(discId);
+      ctrl.soLivre = !ctrl.conteudos.length;
+      el('livre').value = '';
+      if (ctrl.soLivre) {
+        mostrar(el('selWrap'), false);
+        mostrar(el('livreWrap'), true);
+        mostrar(el('hint'), !!discId); // disciplina sem cadastro: aponta pra disciplinas.html
+        el('livre').value = pre.texto || '';
+        return;
+      }
+      var conteudoId = pre.conteudoId || null, topicoId = pre.topicoId || null;
+      var valido = false;
+      for (var i = 0; i < ctrl.conteudos.length; i++) { if (ctrl.conteudos[i].id === conteudoId) { valido = true; break; } }
+      if (!valido) { conteudoId = null; topicoId = null; }
+      if (!conteudoId && pre.texto) {
+        var m = hierAcharPorTexto(ctrl.conteudos, pre.texto);
+        if (m) { conteudoId = m.conteudoId; topicoId = m.topicoId; }
+      }
+      var usarOutro = !conteudoId && !!String(pre.texto == null ? '' : pre.texto).trim();
+      mostrar(el('selWrap'), true);
+      mostrar(el('hint'), false);
+      el('sel').innerHTML = '<option value="">— nenhum —</option>' + ctrl.conteudos.map(function (c) {
+        return '<option value="' + escTxt(c.id) + '"' + (c.id === conteudoId ? ' selected' : '') + '>' + escTxt(c.nome) + '</option>';
+      }).join('') + '<option value="' + HIER_OUTRO + '"' + (usarOutro ? ' selected' : '') + '>✎ Outro (texto livre)</option>';
+      mostrar(el('livreWrap'), usarOutro);
+      if (usarOutro) el('livre').value = pre.texto;
+      renderTopicos(topicoId);
+    };
+
+    // Lê a escolha atual → { conteudoId, topicoId, conteudo (texto exibido) }.
+    ctrl.ler = function () {
+      if (ctrl.soLivre || el('sel').value === HIER_OUTRO) {
+        return { conteudoId: null, topicoId: null, conteudo: (el('livre').value || '').trim() };
+      }
+      var cid = el('sel').value || null;
+      var cont = null;
+      for (var i = 0; i < ctrl.conteudos.length; i++) { if (ctrl.conteudos[i].id === cid) { cont = ctrl.conteudos[i]; break; } }
+      if (!cont) return { conteudoId: null, topicoId: null, conteudo: '' };
+      var top = el('topico');
+      var t = null;
+      if (!top.disabled && top.value) {
+        var tops = topicosDe(cid);
+        for (var j = 0; j < tops.length; j++) { if (tops[j].id === top.value) { t = tops[j]; break; } }
+      }
+      return { conteudoId: cont.id, topicoId: t ? t.id : null, conteudo: hierRotulo(cont.nome, t && t.nome) };
+    };
+
+    return ctrl;
+  }
+
+  window.TrackerMedConteudos = {
+    OUTRO: HIER_OUTRO,
+    daDisciplina: hierConteudosDe,
+    rotulo: hierRotulo,
+    acharPorTexto: hierAcharPorTexto,
+    ctrl: hierCtrl
+  };
+
   window.TrackerMedTheme = { toggle, apply, current };
   window.TrackerMedContext = {
     MAX: MAX_ATIVOS,

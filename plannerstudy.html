@@ -489,7 +489,18 @@
     <form onsubmit="event.preventDefault(); salvarBloco();">
       <input type="hidden" id="aId">
       <div class="mfield"><label>Disciplina</label>
-        <select id="aDisc"></select>
+        <select id="aDisc" onchange="aDiscChange()"></select>
+      </div>
+      <div id="aConteudoWrap">
+        <div class="mfield row2" id="aConteudoSelWrap" style="display:none">
+          <div><label>Conteúdo / Área (opcional)</label><select id="aConteudoSel" onchange="aHier.onConteudoChange()"></select></div>
+          <div><label>Tópico (opcional)</label><select id="aTopicoSel"></select></div>
+        </div>
+        <div class="mfield" id="aConteudoLivreWrap" style="display:none">
+          <label>Conteúdo (opcional)</label>
+          <input type="text" id="aConteudo" maxlength="160" placeholder="ex: capítulo 3, sistema cardiovascular…">
+          <div id="aConteudoHint" style="display:none;font-size:11px;color:var(--muted);margin-top:6px">Cadastre conteúdos e tópicos em <a href="disciplinas.html" style="color:var(--cobalt);font-weight:600">Disciplinas</a> pra escolher aqui sem digitar.</div>
+        </div>
       </div>
       <div class="mfield"><label>Dia</label>
         <select id="aDia">
@@ -1390,6 +1401,9 @@ function abrirEditBloco(blocoId) {
   document.getElementById('aFeito').checked = !!b.feito;
   document.getElementById('aId').value = blocoId;
   popularSelectDisc(b.discId);
+  // Conteúdo/tópico cadastrados em disciplinas.html — o que já foi definido no
+  // bloco aparece pré-selecionado (texto livre antigo é casado por nome).
+  aHier.montar(b.discId, { conteudoId: b.conteudoId, topicoId: b.topicoId, texto: b.conteudo || '' });
   document.getElementById('aDia').value = String(b.dia);
   document.getElementById('aIni').value = b.ini;
   document.getElementById('aFim').value = b.fim;
@@ -1402,6 +1416,10 @@ function popularSelectDisc(selected) {
   sel.innerHTML = discList.map(d => `<option value="${d.id}"${d.id===selected?' selected':''}>${d.nome || 'Sem nome'}</option>`).join('');
 }
 
+// Selects dependentes de conteúdo/tópico (motor compartilhado em theme.js).
+const aHier = TrackerMedConteudos.ctrl({ sel: 'aConteudoSel', topico: 'aTopicoSel', selWrap: 'aConteudoSelWrap', livreWrap: 'aConteudoLivreWrap', livre: 'aConteudo', hint: 'aConteudoHint' });
+function aDiscChange() { aHier.montar(document.getElementById('aDisc').value, {}); }
+
 function fecharAdd() { document.getElementById('addModal').classList.remove('open'); editSlot = null; }
 
 function salvarBloco() {
@@ -1412,16 +1430,19 @@ function salvarBloco() {
   const ini = document.getElementById('aIni').value;
   const fim = document.getElementById('aFim').value;
   if (!ini || !fim || parseTime(fim) <= parseTime(ini)) { alert('Horário inválido.'); return; }
+  const cont = aHier.ler();
   if (editSlot && editSlot.id) {
     plan[wk] = plan[wk].map(b => b.id === editSlot.id ? {
       ...b, discId: document.getElementById('aDisc').value,
       dia, ini, fim, feito: document.getElementById('aFeito').checked,
+      conteudo: cont.conteudo, conteudoId: cont.conteudoId, topicoId: cont.topicoId,
       auto: false // edição manual protege o bloco em futuras regenerações
     } : b);
   } else {
     plan[wk].push({
       id: uid(), tipo: 'estudo',
       discId: document.getElementById('aDisc').value,
+      conteudo: cont.conteudo, conteudoId: cont.conteudoId, topicoId: cont.topicoId,
       dia, ini, fim, feito: false, auto: false
     });
   }
@@ -1876,6 +1897,9 @@ function confirmarTransferencia() {
       tipo: 'estudo',
       discId: orig.discId,
       matNome: orig.matNome || null,
+      conteudo: orig.conteudo || '',
+      conteudoId: orig.conteudoId || null,
+      topicoId: orig.topicoId || null,
       dia: targetDia,
       ini: toHHMMmin(ini),
       fim: toHHMMmin(fim),
