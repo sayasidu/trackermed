@@ -574,6 +574,195 @@
     return out;
   }
 
+  // ---- Ritmo de estudo: velocidade real por recurso + projeções ---------
+  // Usa os avanços registrados ao encerrar sessões (qtd + sessaoMin no log
+  // dos materiais; fallback: recurso gravado no historicoEstudos) para
+  // calcular a velocidade REAL do aluno por tipo de recurso — páginas/hora
+  // de leitura, minutos de conteúdo consumidos por hora real de estudo (o
+  // que embute velocidade de reprodução, pausas e retornos), itens/hora —
+  // e projetar quanto tempo falta para concluir cada material.
+  var RIT_CATS = {
+    leitura:      { label: 'Leitura',      icon: '📖', tipos: ['livro','artigo','resumo'], unidade: 'paginas' },
+    visualizacao: { label: 'Visualização', icon: '🎬', tipos: ['video','gravacao'],        unidade: 'minutos' },
+    escuta:       { label: 'Escuta',       icon: '🎧', tipos: ['audio'],                   unidade: 'minutos' },
+    outros:       { label: 'Outros',       icon: '📚', tipos: ['outro'],                   unidade: 'itens' }
+  };
+  function ritCatOf(tipo) {
+    for (var k in RIT_CATS) { if (RIT_CATS[k].tipos.indexOf(tipo) >= 0) return k; }
+    return 'outros';
+  }
+  // Amostras: cada sessão com avanço + tempo medidos → { data, ts, materialId,
+  // tipo, unidade, qtd, min }. Fonte primária: log dos materiais (sessaoMin);
+  // fallback: entradas do historicoEstudos com recurso + minutos (sessões
+  // registradas antes do sessaoMin existir), deduplicadas por chave.
+  function ritSamples() {
+    var out = [], seen = {};
+    matLoad().forEach(function (m) {
+      if (!m || !Array.isArray(m.log)) return;
+      m.log.forEach(function (e) {
+        if (!e || !(matNum(e.qtd) > 0) || !(matNum(e.sessaoMin) > 0)) return;
+        var s = { ts: e.ts || 0, data: e.data || '', materialId: m.id, tipo: m.tipo || 'outro',
+                  unidade: m.unidade || 'paginas', qtd: matNum(e.qtd), min: matNum(e.sessaoMin) };
+        out.push(s);
+        seen[m.id + '|' + s.data + '|' + s.qtd] = true;
+      });
+    });
+    var hist = jparse(lsGet('historicoEstudos'), []);
+    if (Array.isArray(hist)) {
+      var mats = {};
+      matLoad().forEach(function (m) { if (m) mats[m.id] = m; });
+      hist.forEach(function (r) {
+        if (!r || !r.recurso || !(matNum(r.recurso.qtd) > 0) || !(matNum(r.minutos) > 0)) return;
+        var dm = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(r.data || '');
+        var dk = dm ? (dm[3] + '-' + dm[2] + '-' + dm[1]) : '';
+        var key = (r.recurso.materialId || '') + '|' + dk + '|' + matNum(r.recurso.qtd);
+        if (seen[key]) return;
+        seen[key] = true;
+        var m = mats[r.recurso.materialId];
+        out.push({ ts: 0, data: dk, materialId: r.recurso.materialId || null,
+                   tipo: (m && m.tipo) || r.recurso.tipo || 'outro',
+                   unidade: (m && m.unidade) || r.recurso.unidade || 'paginas',
+                   qtd: matNum(r.recurso.qtd), min: matNum(r.minutos) });
+      });
+    }
+    out.sort(function (a, b) { return a.data === b.data ? (a.ts - b.ts) : (a.data < b.data ? -1 : 1); });
+    return out;
+  }
+  function ritVelSimples(list) {
+    var q = 0, mi = 0;
+    list.forEach(function (s) { q += s.qtd; mi += s.min; });
+    return mi > 0 ? q / mi * 60 : null;
+  }
+  // Velocidade média ponderada por recência (decaimento 0.8 por sessão — as
+  // últimas sessões pesam mais, sem descartar o histórico). Uma sessão isolada
+  // não vira verdade: com menos de 3 amostras a estimativa é `provisoria`.
+  // Tendência: média simples das últimas ~3 sessões × das anteriores
+  // (±8% = melhora/redução; no meio, estável).
+  function ritVelocidade(samples) {
+    var n = samples.length;
+    if (!n) return null;
+    var wq = 0, wm = 0, q = 0, mi = 0;
+    for (var i = 0; i < n; i++) {
+      var w = Math.pow(0.8, n - 1 - i);
+      wq += samples[i].qtd * w;
+      wm += samples[i].min * w;
+      q += samples[i].qtd;
+      mi += samples[i].min;
+    }
+    if (wm <= 0) return null;
+    var porHora = wq / wm * 60;
+    var trend = null;
+    if (n >= 4) {
+      var cut = Math.max(1, n - 3);
+      var vr = ritVelSimples(samples.slice(cut));
+      var va = ritVelSimples(samples.slice(0, cut));
+      if (vr != null && va != null && va > 0) {
+        var dp = Math.round((vr - va) / va * 100);
+        trend = { pct: dp, dir: dp >= 8 ? 'melhora' : (dp <= -8 ? 'reducao' : 'estavel'), atual: vr, anterior: va };
+      }
+    }
+    return { porHora: porHora, minPorUnidade: porHora > 0 ? 60 / porHora : null,
+             n: n, provisoria: n < 3, trend: trend, totalQtd: q, totalMin: mi };
+  }
+  // Minutos dedicados por dia CORRIDO na janela recente (últimos 14 dias, ou
+  // desde a 1ª sessão se mais curto) — base realista pra converter tempo
+  // restante em dias de calendário.
+  function ritMediaDiaria(samples) {
+    if (!samples.length) return 0;
+    var hoje = tzToday();
+    var first = null;
+    samples.forEach(function (s) { var d = matParseKey(s.data); if (d && (!first || d < first)) first = d; });
+    var span = first ? Math.max(1, matDiffDias(first, hoje) + 1) : 1;
+    var janela = Math.min(14, span);
+    var ini = new Date(hoje.getTime() - (janela - 1) * MAT_DAY_MS);
+    var min = 0;
+    samples.forEach(function (s) {
+      var d = matParseKey(s.data);
+      if (d && d >= ini && d <= hoje) min += s.min;
+    });
+    return min / janela;
+  }
+  // Projeção completa de um material: velocidade (do próprio material ou, sem
+  // amostras dele, da categoria), tempo restante, dias e data prevista.
+  function ritMaterial(m, allSamples) {
+    var st = matStats(m);
+    var all = allSamples || ritSamples();
+    var proprios = all.filter(function (s) { return s.materialId === m.id; });
+    var vel = ritVelocidade(proprios);
+    var fonte = vel ? 'material' : null;
+    if (!vel) {
+      var cat = ritCatOf(m.tipo);
+      var daCat = all.filter(function (s) {
+        return ritCatOf(s.tipo) === cat && s.unidade === m.unidade;
+      });
+      vel = ritVelocidade(daCat);
+      if (vel) { fonte = 'categoria'; vel = Object.assign({}, vel, { provisoria: true }); }
+    }
+    var tempoInvestidoMin = 0;
+    proprios.forEach(function (s) { tempoInvestidoMin += s.min; });
+    var restanteMin = (vel && vel.porHora > 0 && st.restante > 0) ? st.restante / vel.porHora * 60 : null;
+    var mediaDiaMin = ritMediaDiaria(proprios);
+    var metaDiariaMin = matNum(m.metaDiariaMin) > 0 ? matNum(m.metaDiariaMin) : null;
+    var baseDia = metaDiariaMin || mediaDiaMin;
+    var dias = (restanteMin != null && baseDia > 0) ? Math.max(1, Math.ceil(restanteMin / baseDia)) : null;
+    var dataPrevista = dias != null ? tzKeyOf(new Date(tzToday().getTime() + dias * MAT_DAY_MS)) : null;
+    return { material: m, stats: st, samples: proprios, vel: vel, fonte: fonte,
+             tempoInvestidoMin: tempoInvestidoMin, restanteMin: restanteMin,
+             mediaDiaMin: mediaDiaMin, metaDiariaMin: metaDiariaMin,
+             dias: dias, dataPrevista: dataPrevista };
+  }
+  // Médias agregadas por categoria de recurso (só amostras na unidade
+  // canônica da categoria, pra não misturar páginas com minutos).
+  function ritCategorias(allSamples) {
+    var all = allSamples || ritSamples();
+    var out = {};
+    for (var k in RIT_CATS) {
+      var c = RIT_CATS[k];
+      var sc = all.filter(function (s) { return ritCatOf(s.tipo) === k && s.unidade === c.unidade; });
+      var matIds = {};
+      var totalMin = 0, totalQtd = 0;
+      sc.forEach(function (s) { if (s.materialId) matIds[s.materialId] = 1; totalMin += s.min; totalQtd += s.qtd; });
+      out[k] = { key: k, label: c.label, icon: c.icon, unidade: c.unidade,
+                 vel: ritVelocidade(sc), nSessoes: sc.length,
+                 nMateriais: Object.keys(matIds).length, totalMin: totalMin, totalQtd: totalQtd };
+    }
+    return out;
+  }
+  // Cenários "e se": dias pra concluir estudando X min/dia.
+  function ritCenarios(restanteMin, minsPorDiaList) {
+    return (minsPorDiaList || []).map(function (pd) {
+      return { minDia: pd, dias: (restanteMin != null && pd > 0) ? Math.max(1, Math.ceil(restanteMin / pd)) : null };
+    });
+  }
+  function ritSetMetaDiaria(id, minPorDia) {
+    var m = matGet(id);
+    if (!m) return null;
+    var v = matNum(minPorDia);
+    m.metaDiariaMin = v > 0 ? v : null;
+    matUpsert(m);
+    return m;
+  }
+  // "12,4 págs/h", "72 min/h", "3,5 itens/h"
+  function ritFmtVel(porHora, unidade) {
+    var v = Math.round(matNum(porHora) * 10) / 10;
+    var num = (v % 1 === 0) ? String(v) : String(v).replace('.', ',');
+    var ab = unidade === 'percentual' ? '%' : ((MAT_UNIDADES[unidade] || MAT_UNIDADES.paginas).abbr);
+    return num + ' ' + ab + '/h';
+  }
+
+  window.TrackerMedRitmo = {
+    CATS: RIT_CATS,
+    catOf: ritCatOf,
+    samples: ritSamples,
+    velocidade: ritVelocidade,
+    mediaDiaria: ritMediaDiaria,
+    material: ritMaterial,
+    categorias: ritCategorias,
+    cenarios: ritCenarios,
+    setMetaDiaria: ritSetMetaDiaria,
+    fmtVel: ritFmtVel
+  };
+
   window.TrackerMedMateriais = {
     KEY: MAT_KEY,
     TIPOS: MAT_TIPOS,

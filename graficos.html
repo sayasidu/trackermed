@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=3"></script>
+<script src="theme.js?v=4"></script>
 <style>
 /* ---- Period switch --------------------------------------------------- */
 .period-switch { display: inline-flex; gap: 4px; padding: 4px; background: var(--surface-soft); border: 1px solid var(--line); border-radius: 999px; margin-top: 28px; }
@@ -155,6 +155,55 @@
 .par-next .hz .hz-lbl { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; color: var(--acid); }
 .par-next .hz .hz-txt { font-size: 13px; line-height: 1.5; color: rgba(244,241,234,0.9); margin-top: 6px; }
 
+/* ---- Ritmo & projeções ----------------------------------------------- */
+.vel-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+.vel-card { background: var(--surface-soft); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+.vel-card .vc-top { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.vel-card .vc-val { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; letter-spacing: -0.02em; color: var(--cobalt); margin-top: 8px; line-height: 1; }
+.vel-card .vc-val span { font-size: 13px; color: var(--muted); }
+.vel-card .vc-sub { font-size: 11.5px; color: var(--ink2); margin-top: 7px; line-height: 1.45; }
+.vel-card .vc-trend { font-size: 11px; font-weight: 700; margin-top: 6px; }
+.vel-card .vc-trend.up { color: var(--mint); }
+.vel-card .vc-trend.down { color: var(--rose); }
+.vel-card .vc-trend.flat { color: var(--muted); }
+.rit-mat { border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin-bottom: 14px; background: var(--card); }
+.rit-mat .rm-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.rit-mat .rm-nome { font-size: 15px; font-weight: 700; color: var(--text); flex: 1; min-width: 200px; }
+.rit-mat .rm-nome .rm-disc { color: var(--muted); font-weight: 500; font-size: 12px; }
+.rit-badge { font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.rit-badge.up { background: rgba(31,194,138,0.15); color: var(--mint); }
+.rit-badge.down { background: rgba(230,57,92,0.13); color: var(--rose); }
+.rit-badge.flat { background: var(--surface-soft); color: var(--muted); border: 1px solid var(--line); }
+.rit-bar { height: 10px; background: var(--surface-soft); border-radius: 999px; overflow: hidden; margin-top: 12px; }
+.rit-bar i { display: block; height: 100%; background-image: var(--grad-brand); border-radius: 999px; }
+.rit-bar-lbl { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); margin-top: 5px; }
+.rit-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 14px; margin-top: 14px; }
+.rit-stat .rsl { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.rit-stat .rsv { font-family: 'Fraunces', serif; font-size: 18px; color: var(--text); margin-top: 3px; }
+.rit-stat .rsv small { font-size: 12px; color: var(--muted); font-family: 'Inter Tight', sans-serif; }
+.rit-aviso { font-size: 12px; color: #8D5A00; background: rgba(244,167,47,0.13); border-left: 3px solid var(--amber); border-radius: 0 8px 8px 0; padding: 8px 12px; margin-top: 12px; }
+[data-theme="dark"] .rit-aviso { color: #EFC177; }
+.rit-frases { font-size: 13px; color: var(--ink2); margin-top: 12px; line-height: 1.65; }
+.rit-frases b { color: var(--text); }
+.rit-cen { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+.rit-cen .cen-lbl { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-right: 2px; }
+.rit-cen .cen-chip { font-size: 12px; font-weight: 600; color: var(--ink2); background: var(--surface-soft); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; }
+.rit-cen .cen-chip b { color: var(--cobalt); }
+.rit-cen .cen-chip.atual { border-color: var(--cobalt); }
+.rit-cen input { width: 78px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); font-family: inherit; font-size: 12px; }
+.rit-cen input:focus { outline: none; border-color: var(--cobalt); }
+.rit-cen button { font-size: 11px; font-weight: 700; border: 1px solid var(--cobalt); background: transparent; color: var(--cobalt); border-radius: 999px; padding: 6px 12px; cursor: pointer; font-family: inherit; }
+.rit-cen button:hover { background: var(--cobalt); color: #fff; }
+.rit-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+.rit-chart h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-bottom: 6px; }
+.rit-chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.rit-proj { margin-top: 16px; }
+.rit-charts-details { margin-top: 12px; }
+.rit-charts-details summary { font-size: 12px; color: var(--cobalt); cursor: pointer; font-weight: 600; list-style: none; }
+.rit-charts-details summary::-webkit-details-marker { display: none; }
+.rit-charts-details summary::before { content: '▸ '; }
+.rit-charts-details[open] summary::before { content: '▾ '; }
+
 .empty-inline { padding: 30px 8px; color: var(--muted); font-size: 13px; font-style: italic; text-align: center; }
 .empty-inline a { color: var(--cobalt); font-weight: 600; font-style: normal; }
 [data-theme="dark"] .empty-inline a { color: var(--acid); }
@@ -163,6 +212,8 @@
   .grid2, .grid2.even { grid-template-columns: 1fr; }
   .kpi-row { grid-template-columns: 1fr 1fr; }
   .parecer-grid, .par-next .horizons { grid-template-columns: 1fr; }
+  .vel-cards, .rit-stats { grid-template-columns: 1fr 1fr; }
+  .rit-charts { grid-template-columns: 1fr; }
 }
 @media (max-width: 560px) {
   .kpi-row { grid-template-columns: 1fr; }
@@ -238,6 +289,15 @@
     <div class="box-head"><div><h2>Tempo por <i>conteúdo</i></h2><div class="box-sub">Onde o tempo foi parar, conteúdo a conteúdo.</div></div></div>
     <div id="contList"></div>
   </div>
+</div>
+
+<div class="box" style="margin-top:18px" id="ritmoBox">
+  <div class="box-head">
+    <div><h2>Ritmo de estudo & <i>projeções</i></h2>
+    <div class="box-sub">Sua velocidade real por tipo de recurso — medida nos avanços registrados ao encerrar as sessões no Histórico — e a previsão personalizada de quanto falta pra concluir cada material.</div></div>
+  </div>
+  <div class="vel-cards" id="velCards"></div>
+  <div id="ritmoMats"></div>
 </div>
 
 <div class="box" style="margin-top:18px">
@@ -674,6 +734,251 @@ function renderParecer(s, period) {
     </div>`;
 }
 
+/* ---------- render: ritmo & projeções ---------- */
+// Velocidade REAL do aluno por tipo de recurso + previsão de conclusão por
+// material. Motor em theme.js (TrackerMedRitmo): amostras = sessões com
+// avanço E tempo medidos, registradas ao encerrar sessões no Histórico.
+const RITMO = window.TrackerMedRitmo;
+const MATE = window.TrackerMedMateriais;
+
+function fmtQtdU(q, u) { return MATE ? MATE.fmtUnid(q, u) : String(q); }
+function fmtDiaCurto(k) { const d = parseISO(k); return d ? d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '—'; }
+function fmtX(n) { return String(Math.round(n * 100) / 100).replace('.', ','); }
+
+function velTrendHTML(vel) {
+  if (!vel || !vel.trend) return '';
+  const t = vel.trend;
+  if (t.dir === 'melhora') return `<div class="vc-trend up">▲ +${t.pct}% — ritmo em melhora</div>`;
+  if (t.dir === 'reducao') return `<div class="vc-trend down">▼ ${Math.abs(t.pct)}% — ritmo em redução</div>`;
+  return `<div class="vc-trend flat">▬ ritmo estável (${t.pct >= 0 ? '+' : ''}${t.pct}%)</div>`;
+}
+
+function renderVelCards(cats) {
+  const el = document.getElementById('velCards');
+  el.innerHTML = ['leitura', 'visualizacao', 'escuta', 'outros'].map(k => {
+    const c = cats[k];
+    if (!c.nSessoes || !c.vel) {
+      return `<div class="vel-card"><div class="vc-top">${c.icon} ${esc(c.label)}</div>
+        <div class="vc-val" style="color:var(--muted)">—</div>
+        <div class="vc-sub">Sem sessões medidas deste tipo ainda.</div></div>`;
+    }
+    const vel = c.vel;
+    const sess = `${c.nSessoes} ${plural(c.nSessoes, 'sessão', 'sessões')}`;
+    let sub;
+    if (k === 'leitura') {
+      const mpp = vel.minPorUnidade != null ? fmtX(vel.minPorUnidade) : null;
+      sub = `${mpp != null ? `~${mpp} min por página · ` : ''}${sess} · ${fmtHM(c.totalMin)} medidos`;
+    } else if (k === 'visualizacao' || k === 'escuta') {
+      sub = `ritmo efetivo ~${fmtX(vel.porHora / 60)}× do tempo real (reprodução acelerada, pausas e retornos já embutidos) · ${sess}`;
+    } else {
+      sub = `${sess} · ${fmtHM(c.totalMin)} medidos`;
+    }
+    const prov = vel.provisoria ? ' · <i>estimativa inicial</i>' : '';
+    return `<div class="vel-card"><div class="vc-top">${c.icon} ${esc(c.label)}</div>
+      <div class="vc-val">${esc(RITMO.fmtVel(vel.porHora, c.unidade))}</div>
+      <div class="vc-sub">${sub}${prov}</div>
+      ${velTrendHTML(vel)}</div>`;
+  }).join('');
+}
+
+// Frases-resumo no estilo "Você lê, em média, 12 páginas por hora…"
+function ritFrases(ri) {
+  const st = ri.stats, u = ri.material.unidade;
+  const fr = [];
+  if (ri.vel) {
+    const velTxt = esc(RITMO.fmtVel(ri.vel.porHora, u));
+    const verbo = u === 'paginas' ? 'Você lê, em média,' : (u === 'minutos' ? 'Você consome, em média,' : 'Você conclui, em média,');
+    const base = ri.fonte === 'categoria'
+      ? `Pela sua média em materiais do mesmo tipo, você avança cerca de <b>${velTxt}</b>`
+      : `${verbo} <b>${velTxt}</b> neste material`;
+    fr.push(`${base}. Faltam <b>${esc(fmtQtdU(st.restante, u))}</b>.`);
+  } else {
+    fr.push(`Faltam <b>${esc(fmtQtdU(st.restante, u))}</b>. Registre sessões cronometradas com este material no Histórico pra calcular sua velocidade real.`);
+  }
+  if (ri.restanteMin != null) {
+    let f = `Mantendo sua velocidade atual, você precisa de aproximadamente <b>${fmtHM(ri.restanteMin)}</b> de estudo pra concluir`;
+    if (ri.dias != null) {
+      const baseDia = ri.metaDiariaMin || ri.mediaDiaMin;
+      const baseTxt = ri.metaDiariaMin ? `com a sua meta de <b>${fmtHM(baseDia)}/dia</b>` : `no seu ritmo recente de <b>~${fmtHM(baseDia)}/dia</b>`;
+      f += ` — ${baseTxt}, são <b>≈${ri.dias} ${plural(ri.dias, 'dia', 'dias')}</b>, com conclusão prevista para <b>${esc(MATE.fmtDataBR(ri.dataPrevista))}</b>.`;
+    } else {
+      f += '. Defina abaixo quantos minutos por dia pretende dedicar pra ver a data prevista.';
+    }
+    fr.push(f);
+  }
+  return fr;
+}
+
+function ritCenariosHTML(ri, idx) {
+  if (ri.restanteMin == null) return '';
+  const dias = pd => RITMO.cenarios(ri.restanteMin, [pd])[0].dias;
+  const chips = [];
+  if (ri.mediaDiaMin > 0) {
+    chips.push(`<span class="cen-chip atual">Ritmo atual (~${fmtHM(ri.mediaDiaMin)}/dia): <b>≈${dias(ri.mediaDiaMin)}d</b></span>`);
+    chips.push(`<span class="cen-chip">+30min/dia: <b>≈${dias(ri.mediaDiaMin + 30)}d</b></span>`);
+  }
+  chips.push(`<span class="cen-chip">1h/dia: <b>≈${dias(60)}d</b></span>`);
+  chips.push(`<span class="cen-chip">2h/dia: <b>≈${dias(120)}d</b></span>`);
+  const metaVal = ri.metaDiariaMin ? Math.round(ri.metaDiariaMin) : '';
+  chips.push(`<input type="number" min="0" step="5" id="ritMeta-${idx}" value="${metaVal}" placeholder="min/dia" aria-label="Minha dedicação diária em minutos"> <button type="button" onclick="ritAplicarMeta('${esc(ri.material.id)}', ${idx})">Usar como minha meta</button>`);
+  return `<div class="rit-cen"><span class="cen-lbl">Cenários</span>${chips.join('')}</div>`;
+}
+function ritAplicarMeta(id, idx) {
+  const inp = document.getElementById('ritMeta-' + idx);
+  RITMO.setMetaDiaria(id, parseFloat(inp && inp.value));
+  renderAll();
+}
+
+/* mini-gráficos SVG (linha, barras, linha do tempo com projeção) */
+function ritSvgLine(vals, tips, yFmt) {
+  const W = 340, H = 110, pL = 38, pR = 8, pT = 10, pB = 18;
+  const n = vals.length;
+  const maxV = Math.max(...vals, 1) * 1.1;
+  const x = i => pL + (n <= 1 ? (W - pL - pR) / 2 : i * (W - pL - pR) / (n - 1));
+  const y = v => pT + (H - pT - pB) * (1 - v / maxV);
+  let grid = '';
+  [0.5, 1].forEach(f => {
+    const v = maxV * f / 1.1, yy = y(v);
+    grid += `<line class="grid-line" x1="${pL}" y1="${yy.toFixed(1)}" x2="${W - pR}" y2="${yy.toFixed(1)}"/><text class="axis-lbl" x="${pL - 6}" y="${(yy + 4).toFixed(1)}" text-anchor="end">${yFmt(v)}</text>`;
+  });
+  const pts = vals.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`);
+  const dots = vals.map((v, i) => `<circle class="ev-dot" cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3.4" data-tip="${esc(tips[i])}"/>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img">${grid}<polyline class="ev-line" points="${pts.join(' ')}"/>${dots}</svg>`;
+}
+function ritSvgBars(vals, tips, yFmt) {
+  const W = 340, H = 110, pL = 38, pR = 8, pT = 10, pB = 18;
+  const n = vals.length;
+  const maxV = Math.max(...vals, 1) * 1.1;
+  const slot = (W - pL - pR) / n;
+  const bw = Math.min(26, slot * 0.62);
+  const y = v => pT + (H - pT - pB) * (1 - v / maxV);
+  let grid = '';
+  [0.5, 1].forEach(f => {
+    const v = maxV * f / 1.1, yy = y(v);
+    grid += `<line class="grid-line" x1="${pL}" y1="${yy.toFixed(1)}" x2="${W - pR}" y2="${yy.toFixed(1)}"/><text class="axis-lbl" x="${pL - 6}" y="${(yy + 4).toFixed(1)}" text-anchor="end">${yFmt(v)}</text>`;
+  });
+  const bars = vals.map((v, i) => {
+    const bx = pL + slot * i + (slot - bw) / 2;
+    return `<rect x="${bx.toFixed(1)}" y="${y(v).toFixed(1)}" width="${bw.toFixed(1)}" height="${(H - pB - y(v)).toFixed(1)}" rx="3" fill="var(--cobalt)" opacity="0.85" data-tip="${esc(tips[i])}"/>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img">${grid}${bars}</svg>`;
+}
+// Linha do tempo: progresso acumulado real + projeção tracejada até a data
+// prevista de conclusão (previsão visual da conclusão).
+function ritSvgProj(ri) {
+  const m = ri.material, st = ri.stats, u = m.unidade;
+  const porDia = {};
+  (m.log || []).forEach(e => { if (e && e.qtd > 0 && e.data) porDia[e.data] = (porDia[e.data] || 0) + e.qtd; });
+  const dias = Object.keys(porDia).sort();
+  if (!dias.length) return '';
+  let acc = 0;
+  const pontos = dias.map(k => { acc += porDia[k]; return { d: parseISO(k), acc: Math.min(acc, st.total) }; }).filter(p => p.d);
+  if (!pontos.length) return '';
+  const hoje = dOnly(nowCuiaba());
+  const inicio = pontos[0].d;
+  const fimProj = ri.dataPrevista ? parseISO(ri.dataPrevista) : null;
+  const fim = fimProj && fimProj > hoje ? fimProj : hoje;
+  const spanMs = Math.max(86400000, fim.getTime() - inicio.getTime());
+  const W = 720, H = 140, pL = 44, pR = 14, pT = 12, pB = 20;
+  const x = d => pL + (d.getTime() - inicio.getTime()) / spanMs * (W - pL - pR);
+  const y = v => pT + (H - pT - pB) * (1 - (st.total > 0 ? v / st.total : 0));
+  const yTot = y(st.total);
+  let head = `<line class="grid-line" x1="${pL}" y1="${yTot.toFixed(1)}" x2="${W - pR}" y2="${yTot.toFixed(1)}" stroke-dasharray="2 3"/>
+    <text class="axis-lbl" x="${pL - 6}" y="${(yTot + 4).toFixed(1)}" text-anchor="end">${esc(MATE.fmtCurto(st.total, u))}</text>
+    <line class="grid-line" x1="${pL}" y1="${y(0).toFixed(1)}" x2="${W - pR}" y2="${y(0).toFixed(1)}"/>
+    <text class="axis-lbl" x="${pL}" y="${H - 4}" text-anchor="start">${esc(fmtDiaCurto(isoOf(inicio)))}</text>
+    <text class="axis-lbl" x="${W - pR}" y="${H - 4}" text-anchor="end">${fimProj ? 'previsão ' + esc(fmtDiaCurto(isoOf(fimProj))) : esc(fmtDiaCurto(isoOf(hoje)))}</text>`;
+  const pts = pontos.map(p => `${x(p.d).toFixed(1)},${y(p.acc).toFixed(1)}`);
+  const dots = pontos.map(p => `<circle class="ev-dot" cx="${x(p.d).toFixed(1)}" cy="${y(p.acc).toFixed(1)}" r="3.2" data-tip="${esc(`<div class='tt-title'>${p.d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</div>Acumulado: <b>${fmtQtdU(p.acc, u)}</b> de ${fmtQtdU(st.total, u)}`)}"/>`).join('');
+  let proj = '';
+  if (fimProj && st.restante > 0) {
+    const last = pontos[pontos.length - 1];
+    proj = `<line class="ev-plan" x1="${x(last.d).toFixed(1)}" y1="${y(last.acc).toFixed(1)}" x2="${x(fimProj).toFixed(1)}" y2="${yTot.toFixed(1)}"/>
+      <circle cx="${x(fimProj).toFixed(1)}" cy="${yTot.toFixed(1)}" r="4" fill="var(--mint)" data-tip="${esc(`Conclusão prevista: <b>${MATE.fmtDataBR(ri.dataPrevista)}</b>`)}"/>`;
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Linha do tempo da progressão e previsão de conclusão">${head}<polyline class="ev-line" points="${pts.join(' ')}"/>${proj}${dots}</svg>`;
+}
+
+function ritMatCard(ri, idx) {
+  const m = ri.material, st = ri.stats, u = m.unidade;
+  const icon = MATE.tipoIcon(m.tipo);
+  const disc = m.discNome ? ` <span class="rm-disc">· ${esc(m.discNome)}${m.conteudoNome ? ' — ' + esc(m.conteudoNome) : ''}</span>` : '';
+  // Badge de tendência: só com histórico suficiente do próprio material.
+  let badge = '';
+  if (ri.fonte === 'material' && ri.vel && ri.vel.trend) {
+    const t = ri.vel.trend;
+    badge = t.dir === 'melhora' ? `<span class="rit-badge up">▲ ritmo em melhora (+${t.pct}%)</span>`
+      : t.dir === 'reducao' ? `<span class="rit-badge down">▼ ritmo em redução (${t.pct}%)</span>`
+      : `<span class="rit-badge flat">▬ ritmo estável</span>`;
+  }
+  const stat = (l, v) => `<div class="rit-stat"><div class="rsl">${l}</div><div class="rsv">${v}</div></div>`;
+  const baseDia = ri.metaDiariaMin || ri.mediaDiaMin;
+  const stats = [
+    stat('Concluído', `${esc(MATE.fmtCurto(st.feito, u))} <small>de ${esc(fmtQtdU(st.total, u))} · ${st.pct}%</small>`),
+    stat('Restante', esc(fmtQtdU(st.restante, u))),
+    stat('Velocidade média', ri.vel ? esc(RITMO.fmtVel(ri.vel.porHora, u)) + (ri.fonte === 'categoria' ? ' <small>(do tipo)</small>' : '') : '—'),
+    stat('Tempo investido', ri.tempoInvestidoMin > 0 ? fmtHM(ri.tempoInvestidoMin) : '—'),
+    stat('Tempo restante', ri.restanteMin != null ? '~' + fmtHM(ri.restanteMin) : '—'),
+    stat('Ritmo diário', baseDia > 0 ? fmtHM(baseDia) + '/dia' + (ri.metaDiariaMin ? ' <small>(meta)</small>' : '') : '—'),
+    stat('Dias p/ concluir', ri.dias != null ? `≈${ri.dias}` : '—'),
+    stat('Conclusão prevista', ri.dataPrevista ? esc(MATE.fmtDataBR(ri.dataPrevista)) : '—')
+  ].join('');
+  let aviso = '';
+  if (ri.vel && ri.vel.provisoria) {
+    const n = ri.fonte === 'material' ? ri.samples.length : 0;
+    aviso = `<div class="rit-aviso">⚠ Esta estimativa ainda é provisória — ${ri.fonte === 'categoria'
+      ? 'não há sessões medidas deste material; ela usa a sua média em materiais do mesmo tipo'
+      : `há ${n === 1 ? 'apenas 1 registro medido' : 'apenas ' + n + ' registros medidos'} deste material`}. Ela ficará mais precisa conforme você concluir novas sessões.</div>`;
+  }
+  const frases = `<div class="rit-frases">${ritFrases(ri).join('<br>')}</div>`;
+  // Gráficos: só com ≥2 sessões medidas do próprio material.
+  let charts = '';
+  if (ri.samples.length >= 2) {
+    const velVals = ri.samples.map(s => s.qtd / s.min * 60);
+    const tips = ri.samples.map((s, i) => `<div class='tt-title'>${fmtDiaCurto(s.data)}</div>${fmtQtdU(s.qtd, u)} em ${fmtHM(s.min)} → <b>${RITMO.fmtVel(s.qtd / s.min * 60, u)}</b>`);
+    const proj = ritSvgProj(ri);
+    charts = `<details class="rit-charts-details"><summary>Ver evolução da velocidade, avanço por sessão e linha do tempo</summary>
+      <div class="rit-charts">
+        <div class="rit-chart"><h4>Velocidade por sessão</h4>${ritSvgLine(velVals, tips, v => Math.round(v))}</div>
+        <div class="rit-chart"><h4>Avanço por sessão</h4>${ritSvgBars(ri.samples.map(s => s.qtd), tips, v => Math.round(v))}</div>
+      </div>
+      ${proj ? `<div class="rit-chart rit-proj"><h4>Linha do tempo & previsão de conclusão</h4>${proj}</div>` : ''}
+    </details>`;
+  }
+  return `<div class="rit-mat">
+    <div class="rm-head"><div class="rm-nome">${icon} ${esc(m.nome)}${disc}</div>${badge}</div>
+    <div class="rit-bar"><i style="width:${st.pct}%"></i></div>
+    <div class="rit-bar-lbl"><span>${esc(MATE.fmtCurto(st.feito, u))} de ${esc(fmtQtdU(st.total, u))} · ${st.pct}%</span><span>restam ${esc(fmtQtdU(st.restante, u))}</span></div>
+    <div class="rit-stats">${stats}</div>
+    ${frases}
+    ${aviso}
+    ${ritCenariosHTML(ri, idx)}
+    ${charts}
+  </div>`;
+}
+
+function renderRitmo() {
+  const box = document.getElementById('ritmoBox');
+  if (!box) return;
+  if (!RITMO || !MATE) { box.style.display = 'none'; return; }
+  const samples = RITMO.samples();
+  const emAndamento = MATE.emAndamento();
+  box.style.display = '';
+  renderVelCards(RITMO.categorias(samples));
+  if (!emAndamento.length) {
+    document.getElementById('ritmoMats').innerHTML = `<div class="empty-inline">Nenhum material em andamento. Cadastre um material em <a href="disciplinas.html">Disciplinas</a> — ou registre o recurso utilizado ao encerrar uma sessão no <a href="historico.html">Histórico</a> — pra ver as projeções personalizadas aqui.</div>`;
+    return;
+  }
+  const infos = emAndamento.map(m => RITMO.material(m, samples));
+  // Mais recentes primeiro (última sessão medida; sem sessões, por criação).
+  infos.sort((a, b) => {
+    const la = a.samples.length ? a.samples[a.samples.length - 1].data : (a.material.criadoEm || '');
+    const lb = b.samples.length ? b.samples[b.samples.length - 1].data : (b.material.criadoEm || '');
+    return la < lb ? 1 : (la > lb ? -1 : 0);
+  });
+  document.getElementById('ritmoMats').innerHTML = infos.map((ri, i) => ritMatCard(ri, i)).join('');
+}
+
 /* ---------- compute + render everything ---------- */
 let PERIOD = 'semana';
 function compute(period) {
@@ -790,6 +1095,7 @@ function renderAll() {
   renderRevisoes(s.reviews, s.okPeriodo);
   renderHeat(s.ev);
   renderReg(s);
+  renderRitmo();
   renderParecer(s, period);
 }
 
@@ -801,6 +1107,8 @@ function setPeriod(p, btn) {
 }
 
 renderAll();
-window.addEventListener('storage', e => { if (!e.key || [PLAN_KEY, DISC_KEY, HIST_KEY].includes(e.key)) renderAll(); });
+// Re-renderiza quando outra aba registra sessão/avanço — as projeções de
+// ritmo se atualizam automaticamente a cada novo registro.
+window.addEventListener('storage', e => { if (!e.key || [PLAN_KEY, DISC_KEY, HIST_KEY, MATE && MATE.KEY].includes(e.key)) renderAll(); });
 </script>
 </body></html>
