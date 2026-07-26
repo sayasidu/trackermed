@@ -121,9 +121,86 @@
 .mbtn-save { background-image: var(--grad-brand); color: #fff; border: none; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; border-radius: 8px; box-shadow: var(--sh-glow); transition: transform .2s var(--ease), box-shadow .2s var(--ease); }
 .mbtn-save:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(30,58,232,.45); }
 
+/* ---- Resumo consolidado dos planos + laudo ---- */
+.resumo-sec { margin-bottom: 40px; }
+.resumo-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.resumo-head h2 { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; letter-spacing: -0.02em; }
+.resumo-head h2 i { color: var(--cobalt); font-style: italic; }
+.resumo-head .rsub { font-size: 12px; color: var(--muted); margin-top: 4px; max-width: 520px; }
+.view-tabs { display: inline-flex; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 4px; gap: 4px; box-shadow: var(--sh-1); }
+.view-tab { border: none; background: transparent; padding: 8px 18px; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--ink2); cursor: pointer; transition: background .2s var(--ease), color .2s var(--ease); }
+.view-tab:hover { color: var(--ink); }
+.view-tab.active { background-image: var(--grad-brand); color: #fff; box-shadow: var(--sh-glow); }
+
+.resumo-grid { display: grid; grid-template-columns: 1fr 1.8fr; gap: 20px; align-items: start; }
+.prog-card .prog-big { font-family: 'Fraunces', serif; font-size: 64px; font-weight: 400; letter-spacing: -0.04em; line-height: 1; color: var(--cobalt); margin-top: 10px; }
+.prog-card .prog-big span { font-size: 24px; color: var(--muted); }
+.prog-bar { height: 8px; background: var(--paper); border-radius: 999px; overflow: hidden; margin-top: 14px; }
+.prog-bar div { height: 100%; background-image: var(--grad-brand); border-radius: 999px; transition: width .6s var(--ease); }
+.prog-hint { font-size: 12px; color: var(--ink2); margin-top: 8px; }
+.prog-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--line); }
+.prog-stats b { display: block; font-family: 'Fraunces', serif; font-size: 19px; font-weight: 500; }
+.prog-stats span { font-size: 11px; color: var(--muted); }
+
+.laudo { background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--sh-1); overflow: hidden; }
+.laudo-top { padding: 18px 26px; border-bottom: 1px dashed var(--line); background: var(--paper); display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+.laudo-title { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; letter-spacing: -0.01em; }
+.laudo-meta { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-top: 3px; }
+.laudo-body { padding: 20px 26px 22px; display: grid; gap: 16px; }
+.laudo-body p { font-size: 13.5px; line-height: 1.65; color: var(--ink2); }
+.laudo-sec-lbl { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; font-weight: 700; color: var(--muted); margin-bottom: 5px; }
+.laudo-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.laudo-list { list-style: none; margin: 0; padding: 0; }
+.laudo-list li { position: relative; padding-left: 20px; font-size: 13px; line-height: 1.55; color: var(--ink2); margin-bottom: 6px; }
+.laudo-list li::before { position: absolute; left: 0; top: 0; font-weight: 700; }
+.laudo-list.pos li::before { content: '+'; color: #2E7D32; }
+.laudo-list.neg li::before { content: '!'; color: #C62828; }
+.laudo-list.cond li::before { content: '℞'; color: var(--cobalt); font-size: 12px; }
+.laudo-foot { padding: 14px 26px 18px; border-top: 1px dashed var(--line); display: flex; justify-content: space-between; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+.laudo-foot .assin b { font-family: 'Fraunces', serif; font-size: 15px; font-style: italic; display: block; }
+.laudo-foot .assin span { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.laudo-disc { font-size: 10px; color: var(--muted); font-style: italic; max-width: 280px; text-align: right; }
+
+.st-badge { display: inline-flex; align-items: center; padding: 5px 13px; border-radius: 999px; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.st-good { background: #E8F5E9; color: #1B5E20; }
+.st-ok   { background: #E8EDFF; color: #1E3AE8; }
+.st-warn { background: #FFF8E1; color: #8D5A00; }
+.st-bad  { background: #FFEBEE; color: #B71C1C; }
+.st-mute { background: var(--paper); color: var(--muted); border: 1px solid var(--line); }
+[data-theme="dark"] .st-good { background: rgba(67,160,71,.16); color: #81C784; }
+[data-theme="dark"] .st-ok   { background: rgba(30,58,232,.22); color: #93B4FF; }
+[data-theme="dark"] .st-warn { background: rgba(244,167,47,.16); color: #F7C77A; }
+[data-theme="dark"] .st-bad  { background: rgba(198,40,40,.18); color: #EF9A9A; }
+[data-theme="dark"] .laudo-list.pos li::before { color: #81C784; }
+[data-theme="dark"] .laudo-list.neg li::before { color: #EF9A9A; }
+/* --paper vira superfície suave no escuro (mesma convenção do app.css) */
+[data-theme="dark"] .laudo-top,
+[data-theme="dark"] .plano-card .pc-parecer,
+[data-theme="dark"] .st-mute { background: var(--surface-soft); }
+[data-theme="dark"] .prog-bar { background: rgba(241,238,229,0.1); }
+
+.planos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.plano-card { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--cobalt); border-radius: 12px; padding: 20px 22px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease); display: flex; flex-direction: column; gap: 12px; }
+.plano-card:hover { transform: translateY(-3px); box-shadow: var(--sh-2); }
+.plano-card .pc-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.plano-card .pc-nome { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 500; letter-spacing: -0.01em; }
+.plano-card .pc-tipo { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: var(--muted); margin-top: 2px; }
+.plano-card .pc-alvo { font-size: 12px; color: var(--ink2); }
+.plano-card .pc-alvo b { color: var(--cobalt); }
+.plano-card .pc-stats { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink2); }
+.plano-card .pc-stats b { font-variant-numeric: tabular-nums; }
+.plano-card .pc-parecer { font-size: 12.5px; line-height: 1.55; color: var(--ink2); background: var(--paper); border-left: 3px solid var(--line); padding: 10px 12px; border-radius: 0 8px 8px 0; }
+.plano-card .pc-parecer b { font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 3px; }
+.plano-card .pc-frase { font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; color: var(--ink2); line-height: 1.5; }
+.plano-card .pc-frase::before { content: '“ '; color: var(--cobalt); }
+.plano-card .pc-frase::after { content: ' ”'; color: var(--cobalt); }
+.resumo-empty { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 28px; text-align: center; color: var(--muted); font-size: 13px; font-style: italic; }
+.resumo-empty a { color: var(--cobalt); font-weight: 600; font-style: normal; }
+
 @media (max-width: 900px) {
   .greet-row, .col2 { grid-template-columns: 1fr; }
   .kpi-row, .quick-links { grid-template-columns: 1fr 1fr; }
+  .resumo-grid, .laudo-cols { grid-template-columns: 1fr; }
 }
 </style></head><body>
 <div class="app">
@@ -166,6 +243,21 @@
 <div class="frase-box" id="fraseBox">
   <div class="frase-ico">"</div>
   <div class="frase-txt" id="fraseTxt">—</div>
+</div>
+
+<div class="resumo-sec">
+  <div class="resumo-head">
+    <div>
+      <h2>Resumo <i>consolidado</i> dos planos</h2>
+      <div class="rsub">Tudo o que você já realizou nos planos ativos — com parecer clínico do Dr. TrackerMed, atualizado com seus dados reais.</div>
+    </div>
+    <div class="view-tabs" role="tablist">
+      <button type="button" class="view-tab active" id="tabGeral" role="tab" onclick="setResumoView('geral')">Visão geral</button>
+      <button type="button" class="view-tab" id="tabPlanos" role="tab" onclick="setResumoView('planos')">Por plano</button>
+    </div>
+  </div>
+  <div id="viewGeral"></div>
+  <div id="viewPlanos" style="display:none"></div>
 </div>
 
 <div class="kpi-row">
@@ -520,10 +612,10 @@ function render() {
   }
 }
 
-render();
-renderFrase();
-
-function renderFrase() {
+// A frase do topo agora é personalizada: se a meta do dia foi batida mantém o
+// tom comemorativo; senão, usa o estado geral do aluno (calculado no resumo
+// consolidado) pra escolher uma frase à altura do quadro clínico.
+function renderFrase(resumo) {
   const plan = loadJSON(PLAN_KEY, {});
   const hoje = nowCuiaba();
   const hojeDia = hoje.getDay();
@@ -542,10 +634,469 @@ function renderFrase() {
     txt.textContent = FRASES_META_OK[idx];
   } else {
     box.classList.remove('meta-ok');
-    const idx = getFraseIndex(FRASES_GERAIS);
-    txt.textContent = FRASES_GERAIS[idx];
+    const estado = resumo && resumo.estado;
+    const lista = (estado && FRASES_ESTADO[estado] && FRASES_ESTADO[estado].length)
+      ? FRASES_ESTADO[estado] : FRASES_GERAIS;
+    const idx = getFraseIndex(lista);
+    txt.textContent = lista[idx];
   }
 }
+
+// ===== Resumo consolidado dos planos ativos + laudo do Dr. TrackerMed =====
+// Reúne os dados de TODOS os planos ativos: o em foco vem das chaves vivas;
+// os demais, dos snapshots (trackermed.semestres.v1) via TrackerMedContext —
+// mesmo esquema do Histórico. Sobre eles calcula progresso, ritmo, pendências
+// e regularidade, e gera um "laudo médico" + frases ácidas por estado.
+const RESUMO_VIEW_KEY = 'trackermed.dashResumoView.v1';
+const PLANO_COR = { semestre:'#1FC28A', residencia:'#1E3AE8', enamed:'#F4A72F', objetivo:'#7C5CFC' };
+const PLANO_TIPO_LBL = { semestre:'Semestre', residencia:'Residência', enamed:'ENAMED', objetivo:'Objetivo' };
+const PLANO_ICON = { semestre:'🎓', residencia:'🏥', enamed:'📋', objetivo:'📌' };
+
+const ESTADO_INFO = {
+  excelente:  { lbl: 'Prognóstico favorável', cls: 'st-good' },
+  recuperando:{ lbl: 'Em recuperação',        cls: 'st-good' },
+  bom:        { lbl: 'Quadro estável',        cls: 'st-ok'   },
+  atencao:    { lbl: 'Requer atenção',        cls: 'st-warn' },
+  queda:      { lbl: 'Queda de ritmo',        cls: 'st-warn' },
+  pendencias: { lbl: 'Acúmulo crítico',       cls: 'st-bad'  },
+  inativo:    { lbl: 'Sem atividade',         cls: 'st-bad'  },
+  aguardando: { lbl: 'Aguardando início',     cls: 'st-mute' },
+  sem_dados:  { lbl: 'Sem dados',             cls: 'st-mute' }
+};
+
+// Frases estilo Dr. House por estado — ácidas, mas do lado do paciente.
+const FRASES_ESTADO = {
+  excelente: [
+    'Surpreendentemente, você está seguindo o plano. Vou pedir um exame de imagem pra confirmar que é você mesmo.',
+    'Todos mentem. Seus dados, não: você está realmente estudando. Impressionante.',
+    'Diagnóstico: disciplina aguda. Condição rara, felizmente não fatal. Mantenha o quadro.',
+    'O plano previu, você cumpriu. Anotem no prontuário antes que passe.',
+    'Nível de consistência incompatível com o histórico do paciente. Seguirei acompanhando o caso de perto.',
+    'Se continuar assim, vou ter que dar alta. E eu detesto dar alta.'
+  ],
+  bom: [
+    'Quadro estável. Não é brilhante, mas também não precisa de UTI. Continue.',
+    'Você está quase cumprindo o plano. "Quase" não passa em prova, mas indica sinais vitais presentes.',
+    'Prontuário razoável. Uma dose extra de foco e isso vira caso de sucesso.',
+    'Os exames mostram progresso. Não se empolgue: mostram também o que ficou pra trás.',
+    'Funcionando dentro dos parâmetros. Prova de residência, porém, se passa excedendo parâmetros.'
+  ],
+  recuperando: [
+    'Sinais de recuperação detectados. Prognóstico favorável — desde que não haja recaída como a da semana passada.',
+    'O paciente voltou a apresentar atividade cerebral de estudo. A equipe está cautelosamente otimista.',
+    'Ritmo em ascensão. Não é milagre, é esforço — mas no seu caso a diferença andava difícil de notar.',
+    'A curva voltou a subir. Continue assim e eu retiro parte do que disse sobre você.',
+    'Alta do leito de procrastinação concedida. Recaídas serão devidamente registradas no prontuário.'
+  ],
+  queda: [
+    'Queda de ritmo detectada. O plano não vai se concluir por osmose, muito menos por boas intenções.',
+    'Seus últimos 7 dias estudaram menos que os 7 anteriores. Os dados não mentem; pacientes, sim.',
+    'A curva de estudo está caindo. Se fosse pressão arterial, eu já teria chamado a emergência.',
+    'Boas intenções não pontuam em prova. Volte ao cronograma antes que o quadro piore.',
+    'Desaceleração progressiva. Prescrevo a intervenção clássica: abrir o material e, pasme, estudá-lo.'
+  ],
+  pendencias: [
+    'O acúmulo de pendências já apresenta sinais clínicos preocupantes. Recomendo drenagem imediata.',
+    'Suas pendências estão se multiplicando mais rápido que bactéria em placa de Petri.',
+    'Diagnóstico: conteúdo acumulado em estado febril. Tratamento: estudar. Eu sei, decepcionante.',
+    'Isso já não é uma lista de atrasos, é um quadro infeccioso. Comece a antibioticoterapia pelo mais antigo.',
+    'As pendências atingiram volume digno de CID próprio. Uma por dia e o quadro reverte.'
+  ],
+  inativo: [
+    'Paciente não comparece às sessões há dias. Se estiver vivo, favor abrir o planner.',
+    'Eletroencefalograma de estudo: linha reta. Felizmente reversível — basta começar.',
+    'Sem atividade registrada na última semana. O edital, porém, segue em atividade plena.',
+    'O plano está aí, intacto, sem uso. Igual esteira comprada em janeiro.',
+    'Ausência prolongada detectada. Vou registrar como "evasão temporária", por educação.'
+  ],
+  atencao: [
+    'Quadro instável: metade do planejado ficou no papel. O papel não faz prova por você.',
+    'Progresso abaixo do esperado. Nada que uma relação menos platônica com o cronograma não resolva.',
+    'Os números estão medianos. A medicina, infelizmente, não aceita "mais ou menos".',
+    'Sinais vitais presentes, porém fracos. Aumente a dose diária de estudo.'
+  ],
+  aguardando: [
+    'Plano cadastrado, estudo ainda teórico. Comece antes que o prazo vire diagnóstico.',
+    'Tudo pronto, nada iniciado. O primeiro bloco de estudo não se marca sozinho.'
+  ],
+  sem_dados: [
+    'Sem dados clínicos suficientes. Cadastre um plano e estude — aí terei o que criticar.',
+    'Prontuário vazio. Impossível diagnosticar quem nunca apareceu pra consulta.'
+  ]
+};
+
+// Parecer curto (1 frase clínica) usado no card de cada plano.
+const PARECER_PLANO = {
+  excelente:  'Adesão exemplar ao protocolo. Manter a conduta atual e retornar apenas para receber os parabéns.',
+  bom:        'Boa resposta ao tratamento, com pequenas falhas de adesão. Reforçar a dose de constância.',
+  recuperando:'Retomada de ritmo após período de baixa adesão. Prognóstico favorável se mantida a tendência.',
+  queda:      'Desaceleração significativa na última semana. Risco de não conclusão do plano se o quadro persistir.',
+  pendencias: 'Acúmulo importante de sessões em atraso. Indicada força-tarefa de recuperação imediata.',
+  inativo:    'Sem registro de estudo recente neste plano. Retomar o protocolo antes que o prazo o retome por você.',
+  atencao:    'Adesão parcial ao planejado. Quadro reversível com aumento da carga de estudo.',
+  aguardando: 'Plano sem sessões realizadas até o momento. Aguardando início do protocolo.',
+  sem_dados:  'Sem dados suficientes para emitir parecer.'
+};
+
+// Data 'YYYY-MM-DD' de um bloco: respeita b.data (registrada pelo Histórico)
+// ou deriva da segunda-feira da semana + dia da semana do bloco.
+function blocoDateKey(wk, b) {
+  if (b && b.data) return b.data;
+  if (!wk || !b || b.dia == null) return null;
+  const [y,m,d] = wk.split('-').map(Number);
+  if (!y) return null;
+  const monday = new Date(y, m-1, d);
+  const offset = b.dia === 0 ? 6 : b.dia - 1;
+  return dateKey(addDays(monday, offset));
+}
+
+function coletarPlanosAtivos() {
+  const ctx = window.TrackerMedContext;
+  const focoId = ctx ? ctx.focusId() : null;
+  const ativos = ctx ? ctx.activePlanos() : [];
+  const out = [];
+  for (const p of ativos) {
+    let disc = [], planData = {};
+    if (p.id === focoId) {
+      disc = loadJSON(DISC_KEY, []);
+      planData = loadJSON(PLAN_KEY, {});
+    } else {
+      const snap = (ctx && ctx.snapshotOf(p.id)) || {};
+      try { disc = JSON.parse(snap.disciplinas || '[]'); } catch {}
+      try { planData = JSON.parse(snap.plan || '{}'); } catch {}
+    }
+    out.push({ p, disc, plan: planData });
+  }
+  // Legado: há estudo nas chaves vivas mas nenhum plano ativo registrado.
+  if (!out.length) {
+    const planData = loadJSON(PLAN_KEY, {});
+    if (Object.keys(planData).length) {
+      out.push({ p: { id:'__foco__', tipo:'semestre', nome:'Meu plano atual' }, disc: loadJSON(DISC_KEY, []), plan: planData });
+    }
+  }
+  return out;
+}
+
+function calcTendencia(min7, minPrev7) {
+  if (min7 === 0 && minPrev7 === 0) return 'parado';
+  if (minPrev7 === 0) return 'subindo';
+  if (min7 >= minPrev7 * 1.25) return 'subindo';
+  if (min7 <= minPrev7 * 0.6) return 'caindo';
+  return 'estavel';
+}
+
+function metricasDoPlan(planData, hoje) {
+  const hojeKey = dateKey(hoje);
+  const ini7 = dateKey(addDays(hoje,-6));
+  const ini14 = dateKey(addDays(hoje,-13));
+  const fimPrev7 = dateKey(addDays(hoje,-7));
+  const m = {
+    planejadoTotal:0, feitoTotal:0, blocosTotal:0,
+    planejadoAteHoje:0, feitoAteHoje:0, blocosAteHoje:0, blocosFeitos:0, atrasados:0,
+    min7:0, minPrev7:0, dias14:new Set(), diasEstudo:new Set(),
+    semTotal:0, semBatidas:0
+  };
+  for (const wk in planData) {
+    let wkPlan = 0, wkFeito = 0, temBloco = false;
+    for (const b of (planData[wk] || [])) {
+      const isRev = b.tipo === 'revisao' || b.revisao;
+      if (b.tipo && b.tipo !== 'estudo' && !isRev) continue;
+      const date = blocoDateKey(wk, b);
+      if (!date) continue;
+      const pm = getPlannedMin(b), sm = getStudiedMin(b);
+      temBloco = true;
+      m.blocosTotal++; m.planejadoTotal += pm; m.feitoTotal += sm;
+      wkPlan += pm; wkFeito += sm;
+      if (date <= hojeKey) {
+        m.blocosAteHoje++; m.planejadoAteHoje += pm; m.feitoAteHoje += sm;
+        if (b.feito) m.blocosFeitos++;
+        else if (date < hojeKey && sm < pm) m.atrasados++;
+        if (sm > 0) { m.diasEstudo.add(date); if (date >= ini14) m.dias14.add(date); }
+        if (date >= ini7) m.min7 += sm;
+        else if (date >= ini14 && date <= fimPrev7) m.minPrev7 += sm;
+      }
+    }
+    // Semanas já encerradas contam pro placar de metas semanais cumpridas.
+    const [y,mo,d] = wk.split('-').map(Number);
+    if (y && temBloco && wkPlan > 0) {
+      const fimSemana = dateKey(addDays(new Date(y, mo-1, d), 6));
+      if (fimSemana < hojeKey) { m.semTotal++; if (wkFeito >= wkPlan) m.semBatidas++; }
+    }
+  }
+  m.pctAteHoje = m.planejadoAteHoje > 0 ? m.feitoAteHoje / m.planejadoAteHoje : null;
+  m.tendencia = calcTendencia(m.min7, m.minPrev7);
+  return m;
+}
+
+function estadoDoResumo(m) {
+  if (!m.blocosTotal) return 'sem_dados';
+  if (!m.blocosAteHoje) return 'aguardando';
+  if (m.min7 === 0 && m.feitoAteHoje === 0) return m.atrasados > 0 ? 'pendencias' : 'aguardando';
+  if (m.min7 === 0) return 'inativo';
+  const pctPend = m.atrasados / m.blocosAteHoje;
+  if (m.atrasados >= 5 || pctPend >= 0.4) return 'pendencias';
+  if (m.tendencia === 'caindo') return 'queda';
+  if (m.tendencia === 'subindo' && m.minPrev7 > 0 && (m.pctAteHoje == null || m.pctAteHoje < 0.9)) return 'recuperando';
+  if ((m.pctAteHoje ?? 0) >= 0.9 && m.atrasados <= 1) return 'excelente';
+  if ((m.pctAteHoje ?? 0) >= 0.7) return 'bom';
+  return 'atencao';
+}
+
+function streakDe(diasSet, hoje) {
+  let s = 0;
+  for (let i = 0; i < 365; i++) {
+    const k = dateKey(addDays(hoje, -i));
+    if (diasSet.has(k)) s++;
+    else if (i > 0) break;
+  }
+  return s;
+}
+
+function alvoDoPlano(p, hoje) {
+  const data = p.dataProva || p.dataAlvo || p.fim;
+  if (!data) return null;
+  const [y,m,d] = String(data).split('-').map(Number);
+  if (!y) return null;
+  const alvo = new Date(y, m-1, d);
+  const dias = Math.round((alvo - new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) / 86400000);
+  const lblMap = { residencia:'a prova', enamed:'a prova do ENAMED', objetivo:'a data alvo', semestre:'o fim do semestre' };
+  return { dias, data: alvo, label: lblMap[p.tipo] || 'o prazo' };
+}
+
+function consolidar(porPlano, hoje) {
+  const c = {
+    planejadoTotal:0, feitoTotal:0, blocosTotal:0,
+    planejadoAteHoje:0, feitoAteHoje:0, blocosAteHoje:0, blocosFeitos:0, atrasados:0,
+    min7:0, minPrev7:0, semTotal:0, semBatidas:0,
+    dias14:new Set(), diasEstudo:new Set()
+  };
+  const somas = ['planejadoTotal','feitoTotal','blocosTotal','planejadoAteHoje','feitoAteHoje','blocosAteHoje','blocosFeitos','atrasados','min7','minPrev7','semTotal','semBatidas'];
+  for (const { m } of porPlano) {
+    for (const k of somas) c[k] += m[k];
+    m.dias14.forEach(x => c.dias14.add(x));
+    m.diasEstudo.forEach(x => c.diasEstudo.add(x));
+  }
+  c.pctAteHoje = c.planejadoAteHoje > 0 ? c.feitoAteHoje / c.planejadoAteHoje : null;
+  c.tendencia = calcTendencia(c.min7, c.minPrev7);
+  c.estado = estadoDoResumo(c);
+  c.streak = streakDe(c.diasEstudo, hoje);
+  return c;
+}
+
+function plu(n, sing, plur) { return n === 1 ? sing : plur; }
+
+function quadroTexto(c, nPlanos) {
+  if (!c.blocosTotal) return 'Paciente sem histórico de estudo registrado nos planos ativos.';
+  const pct = c.pctAteHoje != null ? Math.round(c.pctAteHoje * 100) + '%' : '—';
+  return `Paciente em acompanhamento com ${nPlanos} ${plu(nPlanos,'plano ativo','planos ativos')}. `
+    + `Registra ${fmtHrange(c.feitoTotal)} de estudo, cumprindo ${pct} do planejado até hoje `
+    + `(${fmtHrange(c.feitoAteHoje)} de ${fmtHrange(c.planejadoAteHoje)}), com ${c.blocosFeitos} de ${c.blocosAteHoje} `
+    + `${plu(c.blocosAteHoje,'sessão concluída','sessões concluídas')} e ${c.atrasados} ${plu(c.atrasados,'pendência','pendências')}. `
+    + `Ritmo dos últimos 7 dias: ${fmtHrange(c.min7)}${c.minPrev7 > 0 ? ` (7 dias anteriores: ${fmtHrange(c.minPrev7)})` : ''}.`;
+}
+
+function achadosBem(c) {
+  const bem = [];
+  if (c.streak >= 3) bem.push(`Assiduidade: ${c.streak} dias consecutivos de estudo.`);
+  if (c.dias14.size >= 8) bem.push(`Regularidade: estudo registrado em ${c.dias14.size} dos últimos 14 dias.`);
+  if (c.semTotal > 0 && c.semBatidas / c.semTotal >= 0.5) bem.push(`Metas semanais: ${c.semBatidas} de ${c.semTotal} ${plu(c.semTotal,'semana encerrada','semanas encerradas')} com meta cumprida.`);
+  if (c.tendencia === 'subindo' && c.minPrev7 > 0) bem.push(`Ritmo em ascensão: ${fmtHrange(c.min7)} nos últimos 7 dias, contra ${fmtHrange(c.minPrev7)} nos 7 anteriores.`);
+  if (c.pctAteHoje != null && c.pctAteHoje >= 0.9) bem.push(`Adesão de ${Math.round(c.pctAteHoje*100)}% ao planejado até hoje.`);
+  if (c.atrasados === 0 && c.blocosAteHoje > 0) bem.push('Nenhuma sessão em atraso. Prontuário limpo.');
+  if (!bem.length && c.feitoTotal > 0) bem.push(`${fmtHrange(c.feitoTotal)} de estudo registradas até o momento — o esforço existe, ainda que irregular.`);
+  if (!bem.length) bem.push('Nenhum achado favorável até o momento. Há amplo espaço para surpreender.');
+  return bem.slice(0, 4);
+}
+
+function achadosAtencao(c) {
+  const at = [];
+  if (c.atrasados > 0) at.push(`${c.atrasados} ${plu(c.atrasados,'sessão pendente acumulada','sessões pendentes acumuladas')} de dias anteriores.`);
+  if (c.tendencia === 'caindo') at.push(`Queda de ritmo: ${fmtHrange(c.min7)} nos últimos 7 dias, contra ${fmtHrange(c.minPrev7)} nos 7 anteriores.`);
+  if (c.min7 === 0 && c.blocosAteHoje > 0) at.push('Nenhum estudo registrado nos últimos 7 dias.');
+  if (c.pctAteHoje != null && c.pctAteHoje < 0.7) at.push(`Apenas ${Math.round(c.pctAteHoje*100)}% do planejado até hoje foi cumprido.`);
+  if (c.semTotal > 0 && c.semBatidas / c.semTotal < 0.5) at.push(`Metas semanais: só ${c.semBatidas} de ${c.semTotal} ${plu(c.semTotal,'semana encerrada','semanas encerradas')} com meta batida.`);
+  if (c.dias14.size > 0 && c.dias14.size < 7) at.push(`Regularidade baixa: estudo em apenas ${c.dias14.size} dos últimos 14 dias.`);
+  if (!at.length) at.push('Nenhum achado relevante. Sim, o consultório também está surpreso.');
+  return at.slice(0, 4);
+}
+
+function prognosticoTexto(c, alvoProx) {
+  const prazo = alvoProx && alvoProx.dias >= 0
+    ? ` Prazo mais próximo no horizonte: ${alvoProx.dias} ${plu(alvoProx.dias,'dia','dias')} até ${alvoProx.label}.` : '';
+  switch (c.estado) {
+    case 'excelente':
+      return 'Mantido o ritmo atual, o paciente conclui o planejado dentro do prazo e ainda garante o direito raro de dormir na véspera da prova. Prognóstico francamente favorável — expressão que este consultório usa com extrema avareza.' + prazo;
+    case 'bom':
+      return 'Com a manutenção (e leve reforço) do ritmo atual, a conclusão do planejado é provável. Prognóstico favorável, com as ressalvas de praxe.' + prazo;
+    case 'recuperando':
+      return 'A retomada recente do ritmo indica boa resposta ao tratamento. Mantida a tendência, o prognóstico é favorável — recaídas, porém, serão devidamente documentadas.' + prazo;
+    case 'queda':
+      return 'Persistindo a desaceleração observada, o plano não será concluído no prazo — boas intenções não constam na literatura como método de estudo. Recomenda-se retomada imediata do ritmo anterior, antes que o quadro evolua de "atraso" para "arrependimento".' + prazo;
+    case 'pendencias':
+      return 'O acúmulo progressivo de pendências apresenta sinais clínicos preocupantes e compromete o prognóstico. Sem intervenção imediata, a véspera da prova será tratada em regime de urgência, com sequelas previsíveis.' + prazo;
+    case 'inativo':
+      return 'A ausência prolongada de atividade torna o prognóstico reservado. O quadro é totalmente reversível — mas exige a controversa técnica de abrir o material e estudar.' + prazo;
+    case 'aguardando':
+      return 'Plano registrado, protocolo ainda não iniciado. Prognóstico indefinido: depende inteiramente de a primeira sessão sair do campo das ideias.' + prazo;
+    case 'sem_dados':
+      return 'Sem dados suficientes para prognóstico. Compareça às sessões.';
+    default:
+      return 'Quadro instável, porém reversível. Com aumento da adesão ao planejado, o prognóstico migra para favorável em poucas semanas.' + prazo;
+  }
+}
+
+function condutaItens(c) {
+  const itens = [];
+  if (c.atrasados > 0) itens.push(`Liquidar ${c.atrasados === 1 ? 'a sessão pendente' : `as ${c.atrasados} sessões pendentes`}, começando pela mais antiga — não pela mais simpática.`);
+  if (c.tendencia === 'caindo' && c.minPrev7 > 0) itens.push(`Retomar já nesta semana o ritmo de ${fmtHrange(c.minPrev7)}/semana que o próprio paciente provou ser capaz de manter.`);
+  if (c.min7 === 0 && c.blocosAteHoje > 0) itens.push('Reintroduzir o estudo em doses diárias mínimas de 30 minutos, aumentando conforme tolerância.');
+  if (c.dias14.size > 0 && c.dias14.size < 7 && c.tendencia !== 'caindo') itens.push('Fracionar a carga em doses diárias: constância supera heroísmo de véspera.');
+  if (!itens.length) itens.push('Manter exatamente a conduta atual. Sem inventar moda.');
+  return itens.slice(0, 3);
+}
+
+function progCardHTML(c) {
+  const pct = c.pctAteHoje != null ? Math.round(c.pctAteHoje * 100) : null;
+  const pctBar = pct != null ? Math.min(100, pct) : 0;
+  const arrow = { subindo:'↑ subindo', caindo:'↓ caindo', estavel:'→ estável', parado:'— parado' }[c.tendencia] || '—';
+  return `<div class="box prog-card">
+    <div class="laudo-sec-lbl">Progresso consolidado · até hoje</div>
+    <div class="prog-big">${pct != null ? pct + '<span>%</span>' : '—'}</div>
+    <div class="prog-bar"><div style="width:${pctBar}%"></div></div>
+    <div class="prog-hint">${fmtHrange(c.feitoAteHoje)} estudadas de ${fmtHrange(c.planejadoAteHoje)} planejadas</div>
+    <div class="prog-stats">
+      <div><b>${c.blocosFeitos}/${c.blocosAteHoje}</b><span>sessões concluídas</span></div>
+      <div><b>${c.atrasados}</b><span>${plu(c.atrasados,'pendência','pendências')}</span></div>
+      <div><b>${fmtHrange(c.min7)}</b><span>últimos 7 dias · ${arrow}</span></div>
+      <div><b>${c.dias14.size}/14</b><span>dias com estudo</span></div>
+      <div><b>${c.streak}</b><span>${plu(c.streak,'dia seguido','dias seguidos')}</span></div>
+      <div><b>${fmtHrange(c.feitoTotal)}</b><span>total registrado</span></div>
+    </div>
+  </div>`;
+}
+
+function laudoHTML(c, porPlano, hoje) {
+  const est = ESTADO_INFO[c.estado] || ESTADO_INFO.sem_dados;
+  const nome = localStorage.getItem(NOME_KEY) || 'Estudante sem identificação';
+  const alvoProx = porPlano.map(x => x.m.alvo).filter(a => a && a.dias >= 0).sort((a,b) => a.dias - b.dias)[0];
+  const bem = achadosBem(c);
+  const atencao = achadosAtencao(c);
+  const conduta = condutaItens(c);
+  return `<div class="laudo">
+    <div class="laudo-top">
+      <div>
+        <div class="laudo-title">Laudo de acompanhamento acadêmico</div>
+        <div class="laudo-meta">Protocolo ${dateKey(hoje).replace(/-/g,'')}-TM · ${hoje.toLocaleDateString('pt-BR', {day:'2-digit', month:'long', year:'numeric'})}</div>
+      </div>
+      <span class="st-badge ${est.cls}">${est.lbl}</span>
+    </div>
+    <div class="laudo-body">
+      <div><div class="laudo-sec-lbl">Identificação</div>
+        <p>${esc(nome)} · ${porPlano.length} ${plu(porPlano.length,'plano ativo','planos ativos')}: ${porPlano.map(x => esc(x.p.nome)).join(', ') || '—'}.</p></div>
+      <div><div class="laudo-sec-lbl">Quadro atual</div>
+        <p>${quadroTexto(c, porPlano.length)}</p></div>
+      <div class="laudo-cols">
+        <div><div class="laudo-sec-lbl">Evolução favorável</div>
+          <ul class="laudo-list pos">${bem.map(x => `<li>${x}</li>`).join('')}</ul></div>
+        <div><div class="laudo-sec-lbl">Achados que pedem atenção</div>
+          <ul class="laudo-list neg">${atencao.map(x => `<li>${x}</li>`).join('')}</ul></div>
+      </div>
+      <div><div class="laudo-sec-lbl">Prognóstico</div>
+        <p>${prognosticoTexto(c, alvoProx)}</p></div>
+      <div><div class="laudo-sec-lbl">Conduta recomendada</div>
+        <ul class="laudo-list cond">${conduta.map(x => `<li>${x}</li>`).join('')}</ul></div>
+    </div>
+    <div class="laudo-foot">
+      <div class="assin"><b>Dr. TrackerMed</b><span>Clínica de Produtividade Acadêmica · CRM-MT 0001/TM</span></div>
+      <div class="laudo-disc">Laudo gerado automaticamente a partir dos seus dados reais de estudo. Sarcasmo administrado em dose terapêutica.</div>
+    </div>
+  </div>`;
+}
+
+function planoCardHTML(x, hoje) {
+  const { p, m } = x;
+  const est = ESTADO_INFO[m.estado] || ESTADO_INFO.sem_dados;
+  const cor = PLANO_COR[p.tipo] || '#7C5CFC';
+  const pct = m.pctAteHoje != null ? Math.round(m.pctAteHoje * 100) : null;
+  const pctBar = pct != null ? Math.min(100, pct) : 0;
+  const arrow = { subindo:'↑', caindo:'↓', estavel:'→', parado:'—' }[m.tendencia] || '—';
+  const frases = FRASES_ESTADO[m.estado] || FRASES_GERAIS;
+  const frase = pickMeme(dateKey(hoje) + '|' + p.id + '|' + m.estado, frases);
+  let alvoLine = 'sem data alvo definida';
+  if (m.alvo) {
+    alvoLine = m.alvo.dias >= 0
+      ? `<b>${m.alvo.dias}</b> ${plu(m.alvo.dias,'dia','dias')} até ${m.alvo.label} · ${m.alvo.data.toLocaleDateString('pt-BR')}`
+      : `${m.alvo.label} passou ${plu(-m.alvo.dias,'há 1 dia','há ' + (-m.alvo.dias) + ' dias')}`;
+  }
+  const corpo = m.estado === 'sem_dados'
+    ? `<div class="empty-inline">Nenhuma sessão registrada neste plano ainda. <a href="plannerstudy.html">Planejar →</a></div>`
+    : `<div>
+        <div class="prog-bar"><div style="width:${pctBar}%"></div></div>
+        <div class="prog-hint">${pct != null ? pct + '% do planejado até hoje · ' : ''}${fmtHrange(m.feitoAteHoje)} de ${fmtHrange(m.planejadoAteHoje)}</div>
+      </div>
+      <div class="pc-stats">
+        <span><b>${m.blocosFeitos}/${m.blocosAteHoje}</b> sessões</span>
+        <span><b>${m.atrasados}</b> ${plu(m.atrasados,'pendência','pendências')}</span>
+        <span><b>${fmtHrange(m.min7)}</b> últimos 7d ${arrow}</span>
+        <span><b>${m.dias14.size}/14</b> dias c/ estudo</span>
+        ${m.semTotal > 0 ? `<span><b>${m.semBatidas}/${m.semTotal}</b> metas semanais</span>` : ''}
+      </div>`;
+  return `<div class="plano-card" style="border-left-color:${cor}">
+    <div class="pc-head">
+      <div>
+        <div class="pc-nome">${PLANO_ICON[p.tipo] || '📘'} ${esc(p.nome)}</div>
+        <div class="pc-tipo">${PLANO_TIPO_LBL[p.tipo] || 'Plano'}</div>
+      </div>
+      <span class="st-badge ${est.cls}">${est.lbl}</span>
+    </div>
+    <div class="pc-alvo">${alvoLine}</div>
+    ${corpo}
+    <div class="pc-parecer"><b>Parecer</b>${PARECER_PLANO[m.estado] || PARECER_PLANO.sem_dados}</div>
+    <div class="pc-frase">${frase}</div>
+  </div>`;
+}
+
+function setResumoView(v) {
+  try { localStorage.setItem(RESUMO_VIEW_KEY, v); } catch {}
+  document.getElementById('viewGeral').style.display = v === 'geral' ? '' : 'none';
+  document.getElementById('viewPlanos').style.display = v === 'planos' ? '' : 'none';
+  document.getElementById('tabGeral').classList.toggle('active', v === 'geral');
+  document.getElementById('tabPlanos').classList.toggle('active', v === 'planos');
+}
+
+function renderResumo() {
+  const hoje = nowCuiaba();
+  const dados = coletarPlanosAtivos();
+  const porPlano = dados.map(d => {
+    const m = metricasDoPlan(d.plan, hoje);
+    m.estado = estadoDoResumo(m);
+    m.alvo = alvoDoPlano(d.p, hoje);
+    return { p: d.p, m };
+  });
+  const gEl = document.getElementById('viewGeral');
+  const pEl = document.getElementById('viewPlanos');
+  if (!porPlano.length) {
+    const vazio = `<div class="resumo-empty">Nenhum plano ativo e nenhum estudo registrado. <a href="planos.html">Ative um plano →</a> pra o Dr. TrackerMed ter o que diagnosticar.</div>`;
+    gEl.innerHTML = vazio;
+    pEl.innerHTML = vazio;
+    setResumoView(loadResumoView());
+    return { estado: 'sem_dados' };
+  }
+  const c = consolidar(porPlano, hoje);
+  gEl.innerHTML = `<div class="resumo-grid">${progCardHTML(c)}${laudoHTML(c, porPlano, hoje)}</div>`;
+  pEl.innerHTML = `<div class="planos-grid">${porPlano.map(x => planoCardHTML(x, hoje)).join('')}</div>`;
+  setResumoView(loadResumoView());
+  return { estado: c.estado, cons: c, porPlano };
+}
+
+function loadResumoView() {
+  let v = 'geral';
+  try { v = localStorage.getItem(RESUMO_VIEW_KEY) || 'geral'; } catch {}
+  return v === 'planos' ? 'planos' : 'geral';
+}
+
+render();
+renderFrase(renderResumo());
 incrementVisit();
 </script>
 </body></html>
