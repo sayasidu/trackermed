@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body { margin:0; background:#E9E5DB; font-family:'Inter Tight',-apple-system,sans-serif; color:#0A1330; }
+a { color:#1E3AE8; text-decoration:none; }
+a:hover { color:#7C5CFC; }
+* { box-sizing:border-box; }
+</style>
+</helmet>
+
+<section style="padding:44px 48px 40px">
+<div style="font:700 11px/1 'Inter Tight',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#6B6A5F">TrackerMed · proposta de app</div>
+<h1 style="font-family:Fraunces,serif;font-size:52px;font-weight:500;letter-spacing:-.035em;line-height:1;margin:12px 0 0;max-width:900px">O mesmo painel, agora no <i style="font-style:italic;color:#1E3AE8">iPhone e no iPad</i>.</h1>
+<p style="font-size:16px;color:#2A3356;margin:14px 0 0;max-width:640px;text-wrap:pretty">Mesma identidade do site — creme, cobalto, ácido, Fraunces — reorganizada para tela de toque. Abaixo: as decisões, o protótipo navegável do celular, o layout do tablet e o que precisa existir para os dados aparecerem nos dois aparelhos.</p>
+
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:32px;max-width:1180px">
+  <div style="background:#FFFFFF;border:1px solid #E4DFD2;border-radius:14px;padding:22px 24px;box-shadow:0 1px 2px rgba(10,19,48,.05),0 3px 10px rgba(10,19,48,.05)">
+    <div style="font:700 10px/1 'Inter Tight',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#6B6A5F">Premissas</div>
+    <ul style="margin:12px 0 0;padding-left:18px;font-size:13.5px;line-height:1.65;color:#2A3356">
+      <li>iPhone e iPad, instalado na tela inicial (abre em tela cheia, sem barra do navegador).</li>
+      <li>No celular você <b>consulta</b>: o que estudar hoje e como está o progresso.</li>
+      <li>Cronômetro roda com o app aberto — sem contagem em segundo plano.</li>
+      <li>Funciona sem internet, com aviso explícito quando estiver offline.</li>
+    </ul>
+  </div>
+  <div style="background:#FFFFFF;border:1px solid #E4DFD2;border-radius:14px;padding:22px 24px;box-shadow:0 1px 2px rgba(10,19,48,.05),0 3px 10px rgba(10,19,48,.05)">
+    <div style="font:700 10px/1 'Inter Tight',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#6B6A5F">O que muda no celular</div>
+    <ul style="margin:12px 0 0;padding-left:18px;font-size:13.5px;line-height:1.65;color:#2A3356">
+      <li>A sidebar de 240px vira a tela inicial com os 9 atalhos — como você pediu.</li>
+      <li>Cards de KPI em duas colunas; tabelas viram listas.</li>
+      <li>Botão fixo <b>Estudar agora</b> em todas as telas (o atalho que você pediu).</li>
+      <li>Toda área de toque com no mínimo 44px.</li>
+    </ul>
+  </div>
+  <div style="background:linear-gradient(150deg,#13224E 0%,#0A1330 68%);border:1px solid #0A1330;border-left:5px solid #E6FF3D;border-radius:14px;padding:22px 24px;color:#F4F1EA;box-shadow:0 4px 14px rgba(10,19,48,.08),0 14px 34px rgba(10,19,48,.09)">
+    <div style="font:700 10px/1 'Inter Tight',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#E6FF3D">A parte técnica · leia</div>
+    <p style="font-size:13.5px;line-height:1.65;margin:12px 0 0;color:rgba(244,241,234,.86)">Hoje seus dados ficam <b>só no navegador onde foram digitados</b> (<code style="font-size:12px;color:#E6FF3D">localStorage</code>): plano, disciplinas, simulados, erros, prova. Nada disso viaja sozinho para outro aparelho.</p>
+    <p style="font-size:13.5px;line-height:1.65;margin:10px 0 0;color:rgba(244,241,234,.86)">Você escolheu <b>conta com sincronização na nuvem</b>. Desenhei o fluxo inteiro (entrar, sincronizar, conflito, offline) — falta ligar um serviço de banco/autenticação por trás. Enquanto isso, a mesma tela permite exportar um arquivo de backup e importar no outro aparelho.</p>
+  </div>
+</div>
+</section>
+
+<section style="padding:8px 48px 48px">
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:6px">
+  <span style="font:600 10.5px/1 ui-monospace,Menlo,monospace;padding:4px 8px;background:#0A1330;color:#fff;border-radius:5px">01</span>
+  <h2 style="font-family:Fraunces,serif;font-size:30px;font-weight:500;letter-spacing:-.02em;margin:0">iPhone · protótipo <i style="font-style:italic;color:#1E3AE8">navegável</i></h2>
+</div>
+<p style="font-size:13.5px;color:#6B6A5F;margin:0 0 26px;max-width:620px">Toque nos atalhos, inicie o cronômetro, marque uma sessão como feita, ligue o modo offline. É o app funcionando, não uma imagem.</p>
+
+<div style="display:flex;flex-wrap:wrap;gap:38px;align-items:flex-start">
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="font:600 11px/1 'Inter Tight',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6B6A5F">App · interativo</div>
+    <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+      <div style="height:100%;display:flex;flex-direction:column;background:#F4F1EA;font-family:'Inter Tight',-apple-system,sans-serif;color:#0A1330;position:relative;overflow:hidden">
+
+        <div style="flex:none;padding:56px 20px 0;background:#F4F1EA">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+            <div style="display:flex;align-items:center;gap:7px">
+              <span style="font-family:Fraunces,serif;font-size:23px;font-weight:600;letter-spacing:-.04em">Tracker<em style="font-style:italic;color:#1E3AE8">Med</em></span>
+              <span style="width:6px;height:6px;border-radius:50%;background:#E6FF3D;box-shadow:0 0 0 3px rgba(230,255,61,.35)"></span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button type="button" onClick="{{ toggleOnline }}" style="min-height:34px;display:inline-flex;align-items:center;gap:6px;border:1px solid #E4DFD2;background:#fff;border-radius:999px;padding:7px 12px;font:600 10px 'Inter Tight',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#0A1330;cursor:pointer">{{ netLabel }}</button>
+              <button type="button" onClick="{{ goSync }}" style="width:38px;height:38px;border-radius:999px;border:1px solid #E4DFD2;background:#fff;font-size:15px;cursor:pointer;color:#0A1330">↻</button>
+            </div>
+          </div>
+        </div>
+
+        <sc-if value="{{ offline }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:none;margin:12px 16px 0;display:flex;align-items:center;gap:10px;background:#FFF8E1;border:1px solid #F4A72F;border-left:4px solid #FB8C00;border-radius:0 10px 10px 0;padding:11px 14px">
+            <span style="font-size:16px;line-height:1">⚠︎</span>
+            <div style="font-size:12px;line-height:1.45;color:#8D5A00"><b style="font-weight:700">Sem internet.</b> Tudo que você marcar fica salvo no aparelho e sincroniza quando a conexão voltar.</div>
+          </div>
+        </sc-if>
+
+        <div style="flex:1;overflow:auto;padding:0 16px 128px">
+
+          <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <div style="padding:18px 4px 0">
+                <div style="font:700 10px/1 'Inter Tight',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#6B6A5F">{{ saudacao }}</div>
+                <h1 style="font-family:Fraunces,serif;font-size:34px;font-weight:500;letter-spacing:-.035em;line-height:1.02;margin:8px 0 0">Seu <i style="font-style:italic;color:#1E3AE8">resumo</i> de hoje.</h1>
+              </div>
+
+              <div style="margin-top:16px;background:linear-gradient(150deg,#13224E 0%,#0A1330 68%);border-left:5px solid #E6FF3D;border-radius:12px;padding:18px 20px;color:#F4F1EA;position:relative;overflow:hidden">
+                <div style="position:absolute;top:-30%;right:-12%;width:46%;height:160%;background:radial-gradient(circle,rgba(124,92,252,.34),transparent 70%);pointer-events:none"></div>
+                <div style="position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:14px">
+                  <div>
+                    <div style="font:700 10px/1 'Inter Tight',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#E6FF3D">Próxima prova</div>
+                    <div style="font-family:Fraunces,serif;font-size:18px;font-weight:500;margin-top:5px">{{ provaNome }}</div>
+                    <div style="font-size:11px;color:rgba(244,241,234,.6);margin-top:5px;letter-spacing:.04em">{{ provaData }}</div>
+                  </div>
+                  <div style="text-align:right;line-height:1">
+                    <span style="font-family:Fraunces,serif;font-size:62px;font-weight:500;color:#E6FF3D;letter-spacing:-.04em;text-shadow:0 6px 30px rgba(230,255,61,.25)">{{ diasProva }}</span>
+                    <span style="font-family:Fraunces,serif;font-size:15px;font-style:italic;color:rgba(244,241,234,.6);margin-left:4px">dias</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+                <div style="background:#fff;border:1px solid #E4DFD2;border-radius:12px;padding:16px 18px">
+                  <div style="font:700 10px/1 'Inter Tight',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#6B6A5F">Estudado hoje</div>
+                  <div style="font-family:Fraunces,serif;font-size:40px;font-weight:400;letter-spacing:-.04em;line-height:1;margin-top:10px;color:#1E3AE8">{{ hojeH }}<span style="font-size:16px;color:#6B6A5F">{{ hojeM }}</span></div>
+                  <div style="font-size:12px;color:#2A3356;margin-top:8px">{{ hojeSub }}</div>
+                </div>
+                <div style="background:linear-gradient(150deg,#12204A,#0A1330 72%);border:1px solid #0A1330;border-radius:12px;padding:16px 18px;color:#F4F1EA">
+                  <div style="font:700 10px/1 'Inter Tight',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#E6FF3D">Streak</div>
+                  <div style="font-family:Fraunces,serif;font-size:40px;font-weight:400;letter-spacing:-.04em;line-height:1;margin-top:10px;color:#E6FF3D">12</div>
+                  <div style="font-size:12px;color:rgba(244,241,234,.6);margin-top:8px">dias seguidos</div>
+                </div>
+              </div>
+
+              <div style="display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid #E4DFD2;border-radius:12px;padding:16px 18px;margin-top:12px">
+                <div style="font-family:Fraunces,serif;font-size:28px;line-height:1;color:#1E3AE8;flex:none">“</div>
+                <div style="font-family:Fraunces,serif;font-size:15px;font-style:italic;color:#2A3356;line-height:1.5">Você está aqui. Isso já é mais do que a maioria fez hoje.</div>
+              </div>
+
+              <div style="font:700 10px/1 'Inter Tight',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#6B6A5F;margin:26px 4px 12px">Atalhos</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <button type="button" onClick="{{ goDash }}" style="text-align:left;min-height:106px;display:flex;flex-direction:column;gap:6px;background:linear-gradient(150deg,#12204A,#0A1330 72%);border:1px solid #0A1330;border-radius:12px;padding:16px;color:#F4F1EA;font-family:inherit;cursor:pointer">
+                  <span style="font-family:Fraunces,serif;font-size:14px;font-style:italic;color:#E6FF3D">01</span>
+                  <span style="font-family:Fraunces,serif;font-size:19px;font-weight:500;letter-spacing:-.02em">Dashboard</span>
+                  <span style="font-size:11.5px;color:rgba(244,241,234,.6);margin-top:auto">progresso e metas</span>
+                </button>
+                <button type="button" onClick="{{ goHist }}" style="text-align:left;min-height:106px;display:flex;flex-direction:column;gap:6px;background:linear-gradient(135deg,#ECFF6B,#E6FF3D 60%,#D4F52E);border:1px solid #E6FF3D;border-radius:12px;padding:16px;color:#0A1330;font-family:inherit;cursor:pointer">
+                  <span style="font-family:Fraunces,serif;font-size:14px;font-style:italic">02</span>
+                  <span style="font-family:Fraunces,serif;font-size:19px;font-weight:500;letter-spacing:-.02em">Histórico</span>
+                  <span style="font-size:11.5px;color:#2A3356;margin-top:auto">hoje + cronômetro</span>
+                </button>
+                <sc-for list="{{ atalhos }}" as="a" hint-placeholder-count="7">
+                  <div style="min-height:106px;display:flex;flex-direction:column;gap:6px;background:#fff;border:1px solid #E4DFD2;border-radius:12px;padding:16px">
+                    <span style="font-family:Fraunces,serif;font-size:14px;font-style:italic;color:#1E3AE8">{{ a.n }}</span>
+                    <span style="font-family:Fraunces,serif;font-size:19px;font-weight:500;letter-spacing:-.02em">{{ a.t }}</span>
+                    <span style="font-size:11.5px;color:#6B6A5F;margin-top:auto">{{ a.s }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="text-align:center;font:600 10px/1 'Inter Tight',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#9e9c92;padding:22px 0 8px">v0.1 · pessoal</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isDash }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <button type="button" onClick="{{ goHome }}" style="min-height:44px;display:inline-flex;align-items:center;gap:6px;background:transparent;border:none;padding:14px 4px 4px;font:600 12px 'Inter Tight',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#6B6A5F;cursor:pointer;font-family:inherit">‹ Início</button>
+              <h1 style="font-family:Fraunces,serif;font-size:32px;font-weight:500;letter-spacing:-.035em;line-height:1.02;margin:6px 0 0">Progresso por <i style="font-style:italic;color:#1E3AE8">disciplina</i>.</h1>
+              <p style="font-size:13px;color:#2A3356;margin:10px 0 0">Cobertura do edital por matéria nesta semana.</p>
+
+              <div style="background:#fff;border:1px solid #E4DFD2;border-radius:14px;padding:18px 20px;margin-top:16px">
+                <sc-for list="{{ disciplinas }}" as="d" hint-placeholder-count="5">
+                  <div style="display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #E4DFD2">
+                    <div style="font-weight:600;font-size:13px;min-width:112px">{{ d.nome }}</div>
+                    <div style="flex:1;height:6px;background:#F4F1EA;border-radius:999px;overflow:hidden"><div style="height:100%;border-radius:999px;background:{{ d.fill }};width:{{ d.w }}"></div></div>
+                    <div style="font-size:12px;color:#6B6A5F;font-variant-numeric:tabular-nums;min-width:46px;text-align:right">{{ d.pct }}</div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+                <div style="background:#fff;border:1px solid #E4DFD2;border-radius:12px;padding:16px 18px">
+                  <div style="font:700 10px/1 'Inter Tight',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#6B6A5F">Semana</div>
+                  <div style="font-family:Fraunces,serif;font-size:38px;letter-spacing:-.04em;line-height:1;margin-top:10px;color:#1E3AE8">9<span style="font-size:16px;color:#6B6A5F">h20</span></div>
+                  <div style="font-size:12px;color:#2A3356;margin-top:8px">67% do plano da semana</div>
+                </div>
+                <div style="background:linear-gradient(135deg,#ECFF6B,#E6FF3D 60%,#D4F52E);border:1px solid #E6FF3D;border-radius:12px;padding:16px 18px">
+                  <div style="font:700 10px/1 'Inter Tight',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#0A1330">Erros pendentes</div>
+                  <div style="font-family:Fraunces,serif;font-size:38px;font-style:italic;letter-spacing:-.04em;line-height:1;margin-top:10px;color:#0A1330">7</div>
+                  <div style="font-size:12px;color:#2A3356;margin-top:8px">de 34 registrados</div>
+                </div>
+              </div>
+
+              <div style="background:#fff;border:1px solid #E4DFD2;border-radius:14px;padding:18px 20px;margin-top:12px">
+                <div style="font-family:Fraunces,serif;font-size:20px;font-weight:500;letter-spacing:-.02em">Erros <i style="font-style:italic;color:#1E3AE8">recentes</i></div>
+                <div style="font-size:12px;color:#6B6A5F;margin-top:4px;margin-bottom:14px">Últimos registros do seu caderno de erros.</div>
+                <sc-for list="{{ erros }}" as="e" hint-placeholder-count="2">
+                  <div style="border-left:3px solid #FF5B5B;background:#F4F1EA;border-radius:0 8px 8px 0;padding:11px 14px;margin-bottom:10px">
+                    <div style="font:700 10px/1 'Inter Tight',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#FF5B5B">{{ e.disc }}</div>
+                    <div style="font-family:Fraunces,serif;font-size:15px;font-weight:500;margin-top:3px">{{ e.assunto }}</div>
+                    <div style="font-size:12px;color:#2A3356;margin-top:4px;line-height:1.5">{{ e.porQue }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isHist }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <button type="button" onClick="{{ goHome }}" style="min-height:44px;display:inline-flex;align-items:center;gap:6px;background:transparent;border:none;padding:14px 4px 4px;font:600 12px 'Inter Tight',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#6B6A5F;cursor:pointer;font-family:inherit">‹ Início</button>
+              <h1 style="font-family:Fraunces,serif;font-size:32px;font-weight:500;letter-spacing:-.035em;line-height:1.02;margin:6px 0 0">Seu <i style="font-style:italic;color:#1E3AE8">estudo</i> de hoje.</h1>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
+                <div style="background:#fff;border:1px solid #E4DFD2;border-radius:12px;padding:15px 16px">
+                  <div style="font:700 10px/1 'Inter Tight',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#6B6A5F">Estudado</div>
+                  <div style="font-family:Fraunces,serif;font-size:32px;letter-spacing:-.03em;line-height:1;margin-top:8px;color:#1E3AE8">{{ hojeH }}<span style="font-size:14px;color:#6B6A5F">{{ hojeM }}</span></div>
+                </div>
+                <div style="background:#fff;border:1px solid #E4DFD2;border-radius:12px;padding:15px 16px">
+                  <div style="font:700 10px/1 'Inter Tight',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#6B6A5F">Planejado</div>
+                  <div style="font-family:Fraunces,serif;font-size:32px;letter-spacing:-.03em;line-height:1;margin-top:8px">3<span style="font-size:14px;color:#6B6A5F">h40</span></div>
+                </div>
+              </div>
+
+              <div style="background:#fff;border:1px solid #E4DFD2;border-radius:14px;padding:18px 20px;margin-top:12px">
+                <div style="font-family:Fraunces,serif;font-size:20px;font-weight:500;letter-spacing:-.02em">Planejado <i style="font-style:italic;color:#1E3AE8">pra hoje</i></div>
+                <div style="font-size:12px;color:#6B6A5F;margin-top:4px;margin-bottom:14px">Toque em ▶ para iniciar o cronômetro.</div>
+                <sc-for list="{{ sessoes }}" as="s" hint-placeholder-count="3">
+                  <div style="display:grid;grid-template-columns:1fr auto;gap:10px 12px;align-items:center;padding:12px 14px;margin-bottom:8px;border-radius:0 10px 10px 0;border-left:3px solid {{ s.bc }};background:{{ s.bg }};opacity:{{ s.op }}">
+                    <div style="min-width:0">
+                      <div style="font-variant-numeric:tabular-nums;font-size:12px;font-weight:600;color:#2A3356">{{ s.hora }}</div>
+                      <div style="font-weight:600;font-size:14px;margin-top:2px;text-decoration:{{ s.strike }}">{{ s.tag }}{{ s.nome }}</div>
+                      <div style="font-size:11px;color:#6B6A5F;margin-top:2px">{{ s.motivo }}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <span style="font-family:Fraunces,serif;font-style:italic;font-size:19px;font-variant-numeric:tabular-nums;color:{{ s.minColor }}">{{ s.minsLbl }}</span>
+                      <button type="button" onClick="{{ s.onPlay }}" style="width:44px;height:44px;border-radius:10px;border:none;background:{{ s.btnBg }};color:{{ s.btnColor }};font-size:14px;cursor:pointer;box-shadow:{{ s.btnShadow }}">{{ s.btnIcon }}</button>
+                    </div>
+                    <div style="grid-column:1 / -1">
+                      <div style="height:7px;background:rgba(10,19,48,.1);border-radius:999px;overflow:hidden"><div style="height:100%;border-radius:999px;background:{{ s.fill }};width:{{ s.w }}"></div></div>
+                      <div style="display:flex;justify-content:space-between;font-size:10.5px;color:#6B6A5F;margin-top:4px"><span>{{ s.progLbl }}</span><span>{{ s.progPct }}</span></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="background:#fff;border:1px solid #E4DFD2;border-radius:14px;padding:18px 20px;margin-top:12px">
+                <div style="font-family:Fraunces,serif;font-size:20px;font-weight:500;letter-spacing:-.02em">Últimos <i style="font-style:italic;color:#1E3AE8">7 dias</i></div>
+                <div style="font-size:12px;color:#6B6A5F;margin-top:4px;margin-bottom:8px">Todo o estudo registrado, marcado ou via cronômetro.</div>
+                <sc-for list="{{ dias7 }}" as="d" hint-placeholder-count="7">
+                  <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #F1F1F1">
+                    <div>
+                      <b style="display:block;font-family:Fraunces,serif;font-size:16px;font-weight:500">{{ d.dia }}</b>
+                      <div style="height:8px;background:#F1F1F1;border-radius:999px;overflow:hidden;margin-top:6px;max-width:180px"><div style="height:100%;border-radius:999px;background:linear-gradient(120deg,#1E3AE8 0%,#4361FF 46%,#7C5CFC 100%);width:{{ d.w }}"></div></div>
+                    </div>
+                    <div style="font-family:Fraunces,serif;font-size:18px;font-variant-numeric:tabular-nums;letter-spacing:-.02em">{{ d.tot }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isSync }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <button type="button" onClick="{{ goHome }}" style="min-height:44px;display:inline-flex;align-items:center;gap:6px;background:transparent;border:none;padding:14px 4px 4px;font:600 12px 'Inter Tight',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#6B6A5F;cursor:pointer;font-family:inherit">‹ Início</button>
+              <h1 style="font-family:Fraunces,serif;font-size:32px;font-weight:500;letter-spacing:-.035em;line-height:1.02;margin:6px 0 0">Conta e <i style="font-style:italic;color:#1E3AE8">sincronização</i>.</h1>
+              <p style="font-size:13px;color:#2A3356;margin:10px 0 0">Seus dados em todos os aparelhos, com o mesmo login.</p>
+
+              <div style="background:linear-gradient(150deg,#13224E 0%,#0A1330 68%);border-left:5px solid #E6FF3D;border-radius:12px;padding:18px 20px;margin-top:16px;color:#F4F1EA">
+                <div style="font:700 10px/1 'Inter Tight',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#E6FF3D">Conectada como</div>
+                <div style="font-family:Fraunces,serif;font-size:20px;font-weight:500;margin-top:6px">{{ nome }}</div>
+                <div style="font-size:12px;color:rgba(244,241,234,.6);margin-top:4px">{{ syncStatus }}</div>
+                <button type="button" onClick="{{ doSync }}" style="width:100%;min-height:46px;margin-top:16px;border:none;border-radius:10px;background:#E6FF3D;color:#0A1330;font:700 13px 'Inter Tight',sans-serif;letter-spacing:.03em;cursor:pointer;font-family:inherit">{{ syncBtn }}</button>
+              </div>
+
+              <div style="background:#fff;border:1px solid #E4DFD2;border-radius:14px;padding:18px 20px;margin-top:12px">
+                <div style="font:700 10px/1 'Inter Tight',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#6B6A5F">Aparelhos nesta conta</div>
+                <sc-for list="{{ aparelhos }}" as="ap" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #E4DFD2">
+                    <span style="font-size:18px;line-height:1;width:24px;text-align:center">{{ ap.ico }}</span>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-weight:600;font-size:13.5px">{{ ap.nome }}</div>
+                      <div style="font-size:11.5px;color:#6B6A5F;margin-top:2px">{{ ap.quando }}</div>
+                    </div>
+                    <span style="font:700 9.5px 'Inter Tight',sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px;background:{{ ap.tagBg }};color:{{ ap.tagColor }}">{{ ap.tag }}</span>
+                  </div>
+                </sc-for>
+                <div style="font-size:11.5px;color:#6B6A5F;line-height:1.5;margin-top:14px">Ao entrar num aparelho novo, o app pergunta se você quer <b>trazer os dados da nuvem</b> ou <b>enviar os deste aparelho</b> — nunca sobrescreve sem perguntar.</div>
+              </div>
+
+              <div style="background:#fff;border:1px solid #E4DFD2;border-radius:14px;padding:18px 20px;margin-top:12px">
+                <div style="font:700 10px/1 'Inter Tight',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#6B6A5F">Sem nuvem, por enquanto</div>
+                <div style="font-size:12.5px;color:#2A3356;line-height:1.55;margin-top:8px">Enquanto o servidor não estiver ligado, leve seus dados num arquivo.</div>
+                <div style="display:flex;gap:10px;margin-top:14px">
+                  <button type="button" style="flex:1;min-height:46px;border-radius:10px;border:none;background:linear-gradient(120deg,#1E3AE8 0%,#4361FF 46%,#7C5CFC 100%);color:#fff;font:600 13px 'Inter Tight',sans-serif;cursor:pointer;font-family:inherit">Exportar backup</button>
+                  <button type="button" style="flex:1;min-height:46px;border-radius:10px;border:1px solid #0A1330;background:transparent;color:#0A1330;font:600 13px 'Inter Tight',sans-serif;cursor:pointer;font-family:inherit">Importar</button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+        </div>
+
+        <sc-if value="{{ timerOpen }}" hint-placeholder-val="{{ true }}">
+          <div style="position:absolute;left:0;right:0;bottom:0;z-index:80;background:linear-gradient(150deg,#13224E 0%,#0A1330 68%);border-top-left-radius:22px;border-top-right-radius:22px;border-top:1px solid rgba(244,241,234,.12);border-left:5px solid #E6FF3D;padding:20px 22px 40px;color:#F4F1EA;box-shadow:0 -18px 44px rgba(10,19,48,.4)">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div>
+                <div style="font:700 10px/1 'Inter Tight',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#E6FF3D">{{ timerLabel }}</div>
+                <div style="font-size:15px;font-weight:600;margin-top:5px">{{ timerDisc }}</div>
+              </div>
+              <button type="button" onClick="{{ closeTimer }}" style="width:40px;height:40px;border-radius:999px;background:rgba(244,241,234,.08);border:1px solid rgba(244,241,234,.15);color:rgba(244,241,234,.7);font-size:18px;cursor:pointer">×</button>
+            </div>
+            <div>{{ timerDisplay }}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:16px">
+              <button type="button" onClick="{{ toggleTimer }}" style="min-height:48px;border-radius:10px;background:rgba(244,241,234,.08);border:1px solid rgba(244,241,234,.15);color:#F4F1EA;font:600 11px 'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;font-family:inherit">{{ playLabel }}</button>
+              <button type="button" onClick="{{ resetTimer }}" style="min-height:48px;border-radius:10px;background:rgba(244,241,234,.08);border:1px solid rgba(244,241,234,.15);color:#F4F1EA;font:600 11px 'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;font-family:inherit">Resetar</button>
+              <button type="button" onClick="{{ finishTimer }}" style="min-height:48px;border-radius:10px;background:#E6FF3D;border:1px solid #E6FF3D;color:#0A1330;font:700 11px 'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;font-family:inherit">Concluir</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ fabVisible }}" hint-placeholder-val="{{ true }}">
+          <button type="button" onClick="{{ estudarAgora }}" style="position:absolute;left:16px;right:16px;bottom:44px;z-index:70;min-height:56px;border:none;border-radius:14px;background:linear-gradient(120deg,#1E3AE8 0%,#4361FF 46%,#7C5CFC 100%);color:#fff;font:600 15px 'Inter Tight',sans-serif;letter-spacing:.01em;cursor:pointer;box-shadow:0 10px 30px rgba(30,58,232,.42);display:flex;align-items:center;justify-content:center;gap:10px;font-family:inherit">▶ Estudar agora · {{ proximaLbl }}</button>
+        </sc-if>
+
+      </div>
+    </x-import>
+    <div style="font-size:11.5px;color:#6B6A5F;max-width:402px;line-height:1.5">Tela inicial com os 9 atalhos · botão fixo <b>Estudar agora</b> · cronômetro em folha inferior · toque em <b>Wi-Fi</b> no topo para ver o estado offline.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="font:600 11px/1 'Inter Tight',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6B6A5F">Notificações · tela bloqueada</div>
+    <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+      <div style="height:100%;background:linear-gradient(165deg,#101A3C 0%,#0A1330 55%,#05091C 100%);padding:96px 16px 0;font-family:'Inter Tight',-apple-system,sans-serif;display:flex;flex-direction:column">
+        <div style="text-align:center;color:#F4F1EA">
+          <div style="font-size:15px;opacity:.7">segunda-feira, 27 de julho</div>
+          <div style="font-family:Fraunces,serif;font-size:76px;font-weight:500;letter-spacing:-.04em;line-height:1.05">07:12</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:52px">
+          <sc-for list="{{ notifs }}" as="n" hint-placeholder-count="3">
+            <div style="background:rgba(244,241,234,.12);border:1px solid rgba(244,241,234,.14);backdrop-filter:blur(20px);border-radius:18px;padding:14px 16px;color:#F4F1EA">
+              <div style="display:flex;align-items:center;gap:9px">
+                <span style="width:22px;height:22px;border-radius:6px;background:#0A1330;border:1px solid rgba(230,255,61,.5);display:inline-flex;align-items:center;justify-content:center;font-family:Fraunces,serif;font-size:12px;color:#E6FF3D">T</span>
+                <span style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;opacity:.75">TrackerMed</span>
+                <span style="margin-left:auto;font-size:11px;opacity:.55">{{ n.quando }}</span>
+              </div>
+              <div style="font-size:14.5px;font-weight:600;margin-top:8px">{{ n.titulo }}</div>
+              <div style="font-size:13px;opacity:.75;margin-top:3px;line-height:1.4">{{ n.corpo }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="margin-top:auto;padding-bottom:56px;text-align:center;font-size:11.5px;color:rgba(244,241,234,.45);line-height:1.5">Três lembretes, no máximo: revisões do dia,<br>hora de estudar e marcos da contagem da prova.</div>
+      </div>
+    </x-import>
+    <div style="font-size:11.5px;color:#6B6A5F;max-width:402px;line-height:1.5">Notificações exigem o app instalado na tela inicial — funciona no iPhone e iPad a partir do iOS 16.4.</div>
+  </div>
+
+</div>
+</section>
+
+<section style="padding:8px 48px 56px">
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:6px">
+  <span style="font:600 10.5px/1 ui-monospace,Menlo,monospace;padding:4px 8px;background:#0A1330;color:#fff;border-radius:5px">02</span>
+  <h2 style="font-family:Fraunces,serif;font-size:30px;font-weight:500;letter-spacing:-.02em;margin:0">iPad · sidebar de volta, <i style="font-style:italic;color:#1E3AE8">densidade maior</i></h2>
+</div>
+<p style="font-size:13.5px;color:#6B6A5F;margin:0 0 26px;max-width:620px">No tablet cabe a estrutura original do site: sidebar navy fixa e conteúdo em duas colunas. É a mesma tela do Dashboard, só respirando.</p>
+
+<div style="width:1194px;flex:none;background:#0F0F12;border-radius:34px;padding:16px;box-shadow:0 40px 80px rgba(0,0,0,.18),0 0 0 1px rgba(0,0,0,.12)">
+  <div style="border-radius:22px;overflow:hidden;background:#F4F1EA;display:grid;grid-template-columns:210px 1fr;height:940px">
+    <aside style="background:linear-gradient(180deg,#0B1533 0%,#0A1330 55%,#080F27 100%);color:#F4F1EA;padding:24px 16px;display:flex;flex-direction:column;gap:3px">
+      <div style="display:flex;align-items:center;gap:8px;font-family:Fraunces,serif;font-size:23px;font-weight:600;letter-spacing:-.04em;margin-bottom:22px">Tracker<em style="font-style:italic;color:#E6FF3D">Med</em><span style="width:6px;height:6px;border-radius:50%;background:#E6FF3D"></span></div>
+      <sc-for list="{{ navItens }}" as="n" hint-placeholder-count="10">
+        <div style="display:flex;align-items:center;justify-content:space-between;min-height:44px;padding:11px 13px;border-radius:8px;font-size:13.5px;font-weight:500;color:{{ n.color }};background:{{ n.bg }}">
+          <span>{{ n.nome }}</span>
+          <span style="width:6px;height:6px;border-radius:50%;background:{{ n.dot }}"></span>
+        </div>
+      </sc-for>
+      <div style="margin-top:auto;padding-top:18px;border-top:1px solid rgba(244,241,234,.08);font:600 10px 'Inter Tight',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:rgba(244,241,234,.5)">v0.1 · pessoal</div>
+    </aside>
+    <main style="padding:28px 32px;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:18px;border-bottom:1px solid #E4DFD2;margin-bottom:24px">
+        <div style="font:600 11.5px 'Inter Tight',sans-serif;letter-spacing:.15em;text-transform:uppercase;color:#6B6A5F">Home <i style="font-style:normal;color:#1E3AE8">›</i> Dashboard</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="border:1px solid #E4DFD2;background:#fff;padding:7px 13px;border-radius:999px;font:600 11px 'Inter Tight',sans-serif;letter-spacing:.05em">segunda-feira, 27 de julho</span>
+          <span style="border:1px solid #E4DFD2;background:#fff;padding:7px 13px;border-radius:999px;font:600 11px 'Inter Tight',sans-serif;letter-spacing:.05em">☾ Escuro</span>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:22px;align-items:start">
+        <div>
+          <div style="font:700 11px 'Inter Tight',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#6B6A5F">Bom dia, {{ nome }} —</div>
+          <h1 style="font-family:Fraunces,serif;font-size:50px;font-weight:500;letter-spacing:-.035em;line-height:1;margin:8px 0 0">Seu <i style="font-style:italic;color:#1E3AE8">resumo</i> de hoje.</h1>
+          <p style="font-size:15px;color:#2A3356;margin:12px 0 0;max-width:440px">Tudo num lugar só: o que você estudou, o que tá pendente, onde você errou e quanto falta pra prova.</p>
+        </div>
+        <div style="background:linear-gradient(150deg,#13224E 0%,#0A1330 68%);color:#F4F1EA;padding:22px 24px;border-left:5px solid #E6FF3D;border-radius:12px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:-30%;right:-12%;width:46%;height:160%;background:radial-gradient(circle,rgba(124,92,252,.34),transparent 70%)"></div>
+          <div style="position:relative">
+            <div style="font:700 10px 'Inter Tight',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#E6FF3D">Próxima prova</div>
+            <div style="font-family:Fraunces,serif;font-size:19px;font-weight:500;margin-top:4px">{{ provaNome }}</div>
+            <div style="font-family:Fraunces,serif;font-size:74px;font-weight:500;color:#E6FF3D;line-height:1;letter-spacing:-.04em;margin-top:6px">{{ diasProva }}<span style="font-size:18px;color:rgba(244,241,234,.6);font-style:italic;margin-left:6px">dias</span></div>
+            <div style="font-size:11.5px;color:rgba(244,241,234,.6);margin-top:8px">{{ provaData }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid #E4DFD2;border-radius:12px;padding:16px 22px;margin-top:22px">
+        <div style="font-family:Fraunces,serif;font-size:30px;line-height:1;color:#1E3AE8">“</div>
+        <div style="font-family:Fraunces,serif;font-size:16px;font-style:italic;color:#2A3356;line-height:1.5">Todos mentem. Seus dados, não: você está realmente estudando. Impressionante.</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:20px">
+        <div style="background:#fff;border:1px solid #E4DFD2;border-radius:12px;padding:18px 20px">
+          <div style="font:700 10px 'Inter Tight',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#6B6A5F">Estudado hoje</div>
+          <div style="font-family:Fraunces,serif;font-size:44px;letter-spacing:-.04em;line-height:1;margin-top:10px;color:#1E3AE8">1<span style="font-size:17px;color:#6B6A5F">h35</span></div>
+          <div style="font-size:12.5px;color:#2A3356;margin-top:8px">1 de 3 sessões · 43% da meta</div>
+        </div>
+        <div style="background:linear-gradient(150deg,#12204A,#0A1330 72%);border:1px solid #0A1330;border-radius:12px;padding:18px 20px;color:#F4F1EA">
+          <div style="font:700 10px 'Inter Tight',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#E6FF3D">Streak</div>
+          <div style="font-family:Fraunces,serif;font-size:44px;letter-spacing:-.04em;line-height:1;margin-top:10px;color:#E6FF3D">12</div>
+          <div style="font-size:12.5px;color:rgba(244,241,234,.6);margin-top:8px">dias seguidos</div>
+        </div>
+        <div style="background:#fff;border:1px solid #E4DFD2;border-radius:12px;padding:18px 20px">
+          <div style="font:700 10px 'Inter Tight',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#6B6A5F">Semana</div>
+          <div style="font-family:Fraunces,serif;font-size:44px;letter-spacing:-.04em;line-height:1;margin-top:10px;color:#1E3AE8">9<span style="font-size:17px;color:#6B6A5F">h20</span></div>
+          <div style="font-size:12.5px;color:#2A3356;margin-top:8px">67% do plano da semana</div>
+        </div>
+        <div style="background:linear-gradient(135deg,#ECFF6B,#E6FF3D 60%,#D4F52E);border:1px solid #E6FF3D;border-radius:12px;padding:18px 20px">
+          <div style="font:700 10px 'Inter Tight',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#0A1330">Erros pendentes</div>
+          <div style="font-family:Fraunces,serif;font-size:44px;font-style:italic;letter-spacing:-.04em;line-height:1;margin-top:10px;color:#0A1330">7</div>
+          <div style="font-size:12.5px;color:#2A3356;margin-top:8px">de 34 registrados</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:18px;margin-top:20px">
+        <div style="background:#fff;border:1px solid #E4DFD2;border-radius:14px;padding:22px 24px">
+          <div style="font-family:Fraunces,serif;font-size:22px;font-weight:500;letter-spacing:-.02em">Progresso por <i style="font-style:italic;color:#1E3AE8">disciplina</i></div>
+          <div style="font-size:12px;color:#6B6A5F;margin-top:4px;margin-bottom:14px">Cobertura do edital por matéria — do que você já estudou.</div>
+          <sc-for list="{{ disciplinas }}" as="d" hint-placeholder-count="5">
+            <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid #E4DFD2;font-size:13px">
+              <div style="font-weight:600;min-width:132px">{{ d.nome }}</div>
+              <div style="flex:1;height:6px;background:#F4F1EA;border-radius:999px;overflow:hidden"><div style="height:100%;border-radius:999px;background:{{ d.fill }};width:{{ d.w }}"></div></div>
+              <div style="font-size:12px;color:#6B6A5F;font-variant-numeric:tabular-nums;min-width:46px;text-align:right">{{ d.pct }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:#fff;border:1px solid #E4DFD2;border-radius:14px;padding:22px 24px">
+          <div style="font-family:Fraunces,serif;font-size:22px;font-weight:500;letter-spacing:-.02em">Hoje <i style="font-style:italic;color:#1E3AE8">pra você</i></div>
+          <div style="font-size:12px;color:#6B6A5F;margin-top:4px;margin-bottom:14px">Sessões planejadas do dia.</div>
+          <sc-for list="{{ sessoes }}" as="s" hint-placeholder-count="3">
+            <div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:11px 13px;margin-bottom:8px;background:{{ s.bg }};border-left:3px solid {{ s.bc }};border-radius:0 8px 8px 0;font-size:12.5px;opacity:{{ s.op }}">
+              <span style="font-variant-numeric:tabular-nums;font-weight:600;font-size:11.5px;color:#2A3356;min-width:72px">{{ s.hora }}</span>
+              <span style="font-weight:600;text-decoration:{{ s.strike }}">{{ s.nome }}</span>
+              <span style="font-family:Fraunces,serif;font-style:italic;font-size:15px;color:{{ s.minColor }}">{{ s.minsLbl }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+</section>
+
+<section style="padding:8px 48px 64px">
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:6px">
+  <span style="font:600 10.5px/1 ui-monospace,Menlo,monospace;padding:4px 8px;background:#0A1330;color:#fff;border-radius:5px">03</span>
+  <h2 style="font-family:Fraunces,serif;font-size:30px;font-weight:500;letter-spacing:-.02em;margin:0">Como isso vira app <i style="font-style:italic;color:#1E3AE8">de verdade</i></h2>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:22px;max-width:1194px">
+  <div style="background:#fff;border:1px solid #E4DFD2;border-radius:14px;padding:20px 22px">
+    <div style="font-family:Fraunces,serif;font-size:15px;font-style:italic;color:#1E3AE8">01</div>
+    <div style="font-family:Fraunces,serif;font-size:19px;font-weight:500;margin-top:6px">Instalar na tela inicial</div>
+    <p style="font-size:12.5px;color:#2A3356;line-height:1.6;margin:8px 0 0">Um arquivo de manifesto + ícone e o site abre em tela cheia, com ícone próprio, no iPhone e no iPad. Sem loja de aplicativos.</p>
+  </div>
+  <div style="background:#fff;border:1px solid #E4DFD2;border-radius:14px;padding:20px 22px">
+    <div style="font-family:Fraunces,serif;font-size:15px;font-style:italic;color:#1E3AE8">02</div>
+    <div style="font-family:Fraunces,serif;font-size:19px;font-weight:500;margin-top:6px">Funcionar offline</div>
+    <p style="font-size:12.5px;color:#2A3356;line-height:1.6;margin:8px 0 0">Um service worker guarda as páginas no aparelho. O aviso âmbar do protótipo aparece quando cai a conexão.</p>
+  </div>
+  <div style="background:#fff;border:1px solid #E4DFD2;border-radius:14px;padding:20px 22px">
+    <div style="font-family:Fraunces,serif;font-size:15px;font-style:italic;color:#1E3AE8">03</div>
+    <div style="font-family:Fraunces,serif;font-size:19px;font-weight:500;margin-top:6px">Conta + nuvem</div>
+    <p style="font-size:12.5px;color:#2A3356;line-height:1.6;margin:8px 0 0">As 6 chaves que hoje vivem no navegador passam a viver numa conta. É a única parte que precisa de um serviço externo — o resto é o site que você já tem.</p>
+  </div>
+  <div style="background:#fff;border:1px solid #E4DFD2;border-radius:14px;padding:20px 22px">
+    <div style="font-family:Fraunces,serif;font-size:15px;font-style:italic;color:#1E3AE8">04</div>
+    <div style="font-family:Fraunces,serif;font-size:19px;font-weight:500;margin-top:6px">Levar o que já existe</div>
+    <p style="font-size:12.5px;color:#2A3356;line-height:1.6;margin:8px 0 0">Seus dados atuais saem num arquivo do computador e entram na conta em um passo. Nada é digitado de novo.</p>
+  </div>
+</div>
+<p style="font-size:13px;color:#6B6A5F;margin:26px 0 0;max-width:760px;line-height:1.6">Próximos passos possíveis: adaptar as outras 7 telas (Planejamento, Revisões, Disciplinas, Gráficos, Simulados, Córtex, Planos) para o celular · desenhar o fluxo de conflito quando os dois aparelhos editam o mesmo dia · versão escura do app, que o site já tem.</p>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;nome&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Sarah&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;provaNome&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;ENAMED 2026&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;diasProva&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:132,&quot;min&quot;:0,&quot;max&quot;:720,&quot;tsType&quot;:&quot;number&quot;},&quot;offline&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Estados&quot;}}">
+const GRAD = 'linear-gradient(120deg,#1E3AE8 0%,#4361FF 46%,#7C5CFC 100%)';
+const el = React.createElement;
+
+// O relógio escreve direto no DOM (sem passar por re-render do React): assim ele
+// continua andando mesmo quando o agendador de renderização está estrangulado.
+function TimerDisplay({ startedAt, baseSec, planejado }) {
+  const clockRef = React.useRef(null);
+  const fillRef = React.useRef(null);
+  const progRef = React.useRef(null);
+  const pctRef = React.useRef(null);
+  React.useEffect(() => {
+    const paint = () => {
+      const sec = (baseSec || 0) + (startedAt ? Math.max(0, Math.floor((Date.now() - startedAt) / 1000)) : 0);
+      const mins = Math.floor(sec / 60);
+      const pct = Math.min(100, planejado ? mins / planejado * 100 : 0);
+      if (clockRef.current) clockRef.current.textContent = String(mins).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0');
+      if (fillRef.current) fillRef.current.style.width = pct + '%';
+      if (progRef.current) progRef.current.textContent = mins + 'min de ' + planejado + 'min';
+      if (pctRef.current) pctRef.current.textContent = Math.round(pct) + '%';
+    };
+    paint();
+    if (!startedAt) return undefined;
+    const id = setInterval(paint, 250);
+    return () => clearInterval(id);
+  }, [startedAt, baseSec, planejado]);
+  return el('div', null,
+    el('div', { ref: clockRef, style: { fontFamily: 'Fraunces,serif', fontSize: 62, fontWeight: 500, letterSpacing: '-.03em', fontVariantNumeric: 'tabular-nums', lineHeight: 1, textAlign: 'center', color: '#E6FF3D', margin: '16px 0 6px' } }, '00:00'),
+    el('div', { style: { height: 7, background: 'rgba(244,241,234,.14)', borderRadius: 999, overflow: 'hidden' } },
+      el('div', { ref: fillRef, style: { height: '100%', borderRadius: 999, background: '#E6FF3D', width: '0%', transition: 'width .3s ease' } })),
+    el('div', { style: { display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(244,241,234,.6)', marginTop: 6 } },
+      el('span', { ref: progRef }, '0min de ' + planejado + 'min'),
+      el('span', { ref: pctRef }, '0%'))
+  );
+}
+
+class Component extends DCLogic {
+  state = {
+    screen: 'home',
+    running: false,
+    sec: 0,
+    startedAt: null,
+    baseSec: 0,
+    activeIdx: 1,
+    timerOpen: false,
+    feitos: [true, false, false],
+    feitoMin: [95, 0, 0],
+    offline: false,
+    syncing: false,
+    synced: true
+  };
+
+  elapsed() {
+    const st = this.state;
+    return (st.baseSec || 0) + (st.startedAt ? Math.max(0, Math.floor((Date.now() - st.startedAt) / 1000)) : 0);
+  }
+  startClock() { this.setState(st => ({ running: true, startedAt: Date.now(), baseSec: st.baseSec || 0 })); }
+  stopClock() { this.setState({ running: false, startedAt: null, baseSec: this.elapsed() }); }
+
+  base() {
+    return [
+      { hora: '06:30—08:00', nome: 'Clínica Médica', min: 90, rev: false, motivo: 'Cardiologia · insuficiência cardíaca' },
+      { hora: '14:00—14:40', nome: 'Pediatria', min: 40, rev: true, motivo: 'revisão espaçada · 7 dias' },
+      { hora: '19:00—20:30', nome: 'Cirurgia', min: 90, rev: false, motivo: 'Abdome agudo · questões' }
+    ];
+  }
+
+  minutosHoje() {
+    return this.state.feitoMin.reduce((a, b) => a + b, 0) + (this.state.timerOpen ? Math.floor(this.state.sec / 60) : 0);
+  }
+
+  fmt(m) { return { h: Math.floor(m / 60), m: 'h' + String(m % 60).padStart(2, '0') }; }
+
+  renderVals() {
+    const p = this.props;
+    const nome = p.nome ?? 'Sarah';
+    const diasProva = p.diasProva ?? 132;
+    const provaNome = p.provaNome ?? 'ENAMED 2026';
+    const offline = this.state.offline || (p.offline ?? false);
+    const s = this.state;
+    const base = this.base();
+    const idx = s.activeIdx;
+    const planejado = base[idx] ? base[idx].min : 40;
+    const elapsedMin = Math.floor(this.elapsed() / 60);
+    const totHoje = this.minutosHoje();
+    const f = this.fmt(totHoje);
+
+    const sessoes = base.map((b, i) => {
+      const done = s.feitos[i];
+      const feito = done ? s.feitoMin[i] : (i === idx && s.timerOpen ? elapsedMin : 0);
+      const pct = Math.min(100, Math.round(feito / b.min * 100));
+      const over = feito > b.min;
+      return {
+        hora: b.hora,
+        nome: b.nome,
+        tag: b.rev ? '⟳ ' : '',
+        motivo: done ? (over ? 'concluída · +' + (feito - b.min) + 'min além do planejado' : 'concluída') : b.motivo,
+        bg: done ? '#E8F5E9' : (b.rev ? '#FFF8EE' : '#F4F1EA'),
+        bc: done ? '#43A047' : (b.rev ? '#FB8C00' : '#1E3AE8'),
+        op: done ? '0.72' : '1',
+        strike: done ? 'line-through' : 'none',
+        minColor: done ? '#2E7D32' : (b.rev ? '#B26A00' : '#1E3AE8'),
+        minsLbl: (feito || b.min) >= 60 ? Math.floor((feito || b.min) / 60) + 'h' + String((feito || b.min) % 60).padStart(2, '0') : (feito || b.min) + 'min',
+        fill: done ? '#43A047' : GRAD,
+        w: pct + '%',
+        progLbl: feito + 'min de ' + b.min + 'min planejados',
+        progPct: pct + '%',
+        btnBg: done ? 'transparent' : GRAD,
+        btnColor: done ? '#43A047' : '#fff',
+        btnShadow: done ? 'none' : '0 8px 22px rgba(30,58,232,.34)',
+        btnIcon: done ? '✓' : '▶',
+        onPlay: () => this.play(i)
+      };
+    });
+
+    const disciplinas = [
+      { nome: 'Clínica Médica', pct: 78 }, { nome: 'Cirurgia', pct: 54 },
+      { nome: 'Pediatria', pct: 112 }, { nome: 'Ginecologia e Obst.', pct: 41 },
+      { nome: 'Preventiva', pct: 26 }
+    ].map(d => ({
+      nome: d.nome,
+      pct: d.pct + '%',
+      w: Math.min(100, d.pct) + '%',
+      fill: d.pct > 100 ? '#43A047' : GRAD
+    }));
+
+    const navNomes = ['Home', 'Planos', 'Disciplinas', 'Planejamento', 'Revisões', 'Histórico', 'Gráficos', 'Dashboard', 'Simulados', 'Córtex'];
+    const navItens = navNomes.map(n => ({
+      nome: n,
+      color: n === 'Dashboard' ? '#F4F1EA' : 'rgba(244,241,234,0.7)',
+      bg: n === 'Dashboard' ? GRAD : 'transparent',
+      dot: n === 'Dashboard' ? '#E6FF3D' : 'transparent'
+    }));
+
+    return {
+      nome, provaNome, diasProva,
+      provaData: 'domingo, 06 de dezembro de 2026',
+      saudacao: 'Bom dia, ' + nome + ' —',
+      isHome: s.screen === 'home', isDash: s.screen === 'dash', isHist: s.screen === 'hist', isSync: s.screen === 'sync',
+      offline,
+      netLabel: offline ? '✈︎ Offline' : '⌁ Wi-Fi',
+      hojeH: f.h, hojeM: f.m,
+      hojeSub: s.feitos.filter(Boolean).length + ' de 3 sessões · ' + Math.round(totHoje / 220 * 100) + '% da meta',
+      sessoes, disciplinas, navItens,
+      atalhos: [
+        { n: '03', t: 'Planejamento', s: 'grade semanal' },
+        { n: '04', t: 'Revisões', s: 'SRS automático' },
+        { n: '05', t: 'Disciplinas', s: 'matérias e aulas' },
+        { n: '06', t: 'Gráficos', s: 'estatísticas' },
+        { n: '07', t: 'Planos', s: 'longo prazo' },
+        { n: '08', t: 'Simulados', s: 'por banca' },
+        { n: '09', t: 'Córtex', s: 'curva por tema' }
+      ],
+      erros: [
+        { disc: 'Clínica Médica', assunto: 'Escore CHA₂DS₂-VASc', porQue: 'Confundi a pontuação do sexo feminino com idade — só conta acima de 65 anos.' },
+        { disc: 'Pediatria', assunto: 'Calendário vacinal · rotavírus', porQue: 'Errei o limite de idade para a primeira dose.' }
+      ],
+      dias7: [
+        { dia: 'seg · hoje', tot: f.h + f.m, w: Math.min(100, totHoje / 240 * 100) + '%' },
+        { dia: 'dom', tot: '2h10', w: '54%' }, { dia: 'sáb', tot: '3h40', w: '92%' },
+        { dia: 'sex', tot: '1h20', w: '33%' }, { dia: 'qui', tot: '2h50', w: '71%' },
+        { dia: 'qua', tot: '0h40', w: '17%' }, { dia: 'ter', tot: '3h00', w: '75%' }
+      ],
+      aparelhos: [
+        { ico: '💻', nome: 'Computador · Chrome', quando: 'sincronizado agora mesmo', tag: 'origem', tagBg: '#E8EDFF', tagColor: '#1E3AE8' },
+        { ico: '📱', nome: 'iPhone · este aparelho', quando: offline ? '3 alterações aguardando conexão' : 'sincronizado agora mesmo', tag: offline ? 'pendente' : 'em dia', tagBg: offline ? '#FFF8E1' : '#E8F5E9', tagColor: offline ? '#8D5A00' : '#1B5E20' },
+        { ico: '📟', nome: 'iPad', quando: 'há 2 horas', tag: 'em dia', tagBg: '#E8F5E9', tagColor: '#1B5E20' }
+      ],
+      notifs: [
+        { quando: 'agora', titulo: '3 revisões vencem hoje', corpo: 'Pediatria, Cirurgia e Preventiva esperando por você.' },
+        { quando: '06:30', titulo: 'Hora de estudar', corpo: 'Clínica Médica · 1h30 planejadas até as 08:00.' },
+        { quando: 'ontem', titulo: 'Faltam ' + diasProva + ' dias para ' + provaNome, corpo: 'Você está 67% do plano desta semana.' }
+      ],
+      syncStatus: this.state.syncing ? 'sincronizando…' : (offline ? 'offline · 3 alterações aguardando' : 'tudo sincronizado · agora mesmo'),
+      syncBtn: this.state.syncing ? 'Sincronizando…' : (offline ? 'Tentar sincronizar' : 'Sincronizar agora'),
+      timerOpen: s.timerOpen,
+      fabVisible: !s.timerOpen,
+      timerDisplay: el(TimerDisplay, { startedAt: s.startedAt, baseSec: s.baseSec || 0, planejado }),
+      timerLabel: s.running ? 'Foco ativo' : 'Foco pausado',
+      timerDisc: base[idx] ? base[idx].nome + ' · ' + base[idx].motivo : 'Estudo extra',
+      timerW: Math.min(100, elapsedMin / planejado * 100) + '%',
+      timerProg: elapsedMin + 'min de ' + planejado + 'min',
+      timerPct: Math.round(Math.min(100, elapsedMin / planejado * 100)) + '%',
+      playLabel: s.running ? 'Pausar' : 'Iniciar',
+      proximaLbl: base[idx] ? base[idx].nome : 'estudo extra',
+      goHome: () => this.setState({ screen: 'home' }),
+      goDash: () => this.setState({ screen: 'dash' }),
+      goHist: () => this.setState({ screen: 'hist' }),
+      goSync: () => this.setState({ screen: 'sync' }),
+      toggleOnline: () => this.setState(st => ({ offline: !st.offline })),
+      doSync: () => { this.setState({ syncing: true }); setTimeout(() => this.setState({ syncing: false, offline: false }), 1400); },
+      estudarAgora: () => this.setState({ screen: 'hist', timerOpen: true, running: true, startedAt: Date.now(), baseSec: 0, sec: 0 }),
+      toggleTimer: () => { if (this.state.running) this.stopClock(); else this.startClock(); },
+      resetTimer: () => this.setState({ sec: 0, baseSec: 0, running: false, startedAt: null }),
+      closeTimer: () => this.setState({ timerOpen: false, running: false, startedAt: null, baseSec: 0, sec: 0 }),
+      finishTimer: () => this.finish(),
+      s: null
+    };
+  }
+
+  play(i) {
+    if (this.state.feitos[i]) {
+      const feitos = this.state.feitos.slice(); feitos[i] = false;
+      const fm = this.state.feitoMin.slice(); fm[i] = 0;
+      this.setState({ feitos, feitoMin: fm });
+      return;
+    }
+    this.setState({ activeIdx: i, timerOpen: true, sec: 0, baseSec: 0, running: true, startedAt: Date.now() });
+  }
+
+  finish() {
+    const i = this.state.activeIdx;
+    const feitos = this.state.feitos.slice(); feitos[i] = true;
+    const fm = this.state.feitoMin.slice();
+    fm[i] = Math.max(1, Math.floor(this.elapsed() / 60));
+    this.setState({ feitos, feitoMin: fm, timerOpen: false, running: false, startedAt: null, sec: 0, baseSec: 0, synced: false });
+  }
+}
+
+</script>
+</body>
+</html>
