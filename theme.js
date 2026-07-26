@@ -345,12 +345,13 @@
   var MAT_KEY = 'trackermed.materiais.v1';
 
   var MAT_TIPOS = {
-    livro:  { label: 'Capítulo de livro', icon: '📖' },
-    artigo: { label: 'Artigo',            icon: '📄' },
-    resumo: { label: 'Resumo',            icon: '📝' },
-    video:  { label: 'Videoaula',         icon: '🎬' },
-    audio:  { label: 'Áudio / Podcast',   icon: '🎧' },
-    outro:  { label: 'Outro material',    icon: '📚' }
+    livro:    { label: 'Livro / capítulo',  icon: '📖' },
+    artigo:   { label: 'Artigo científico', icon: '📄' },
+    resumo:   { label: 'Resumo / apostila', icon: '📝' },
+    video:    { label: 'Videoaula',         icon: '🎬' },
+    gravacao: { label: 'Gravação de aula',  icon: '🎥' },
+    audio:    { label: 'Podcast / áudio',   icon: '🎧' },
+    outro:    { label: 'Outros materiais',  icon: '📚' }
   };
   var MAT_UNIDADES = {
     paginas:    { sing: 'página',  plural: 'páginas',  abbr: 'págs',    verbo: 'lidas' },
@@ -358,6 +359,7 @@
     capitulos:  { sing: 'capítulo', plural: 'capítulos', abbr: 'caps',  verbo: 'concluídos' },
     aulas:      { sing: 'aula',    plural: 'aulas',    abbr: 'aulas',   verbo: 'concluídas' },
     questoes:   { sing: 'questão', plural: 'questões', abbr: 'questões', verbo: 'feitas' },
+    itens:      { sing: 'item',    plural: 'itens',    abbr: 'itens',   verbo: 'concluídos' },
     percentual: { sing: '%',       plural: '%',        abbr: '%',       verbo: 'concluído' }
   };
 
@@ -424,12 +426,18 @@
 
   // Registra um avanço (qtd > 0) na data dada (default: hoje em Cuiabá).
   // Soma ao progresso; marca concluído automaticamente ao atingir o total.
-  function matAddAvanco(id, qtd, dataKey) {
+  // meta (opcional): campos extras gravados no lançamento — ex. { de, ate,
+  // blocoId } pra amarrar o avanço à sessão de estudo que o originou.
+  function matAddAvanco(id, qtd, dataKey, meta) {
     var m = matGet(id);
     var v = matNum(qtd);
     if (!m || v <= 0) return null;
     if (!Array.isArray(m.log)) m.log = [];
-    m.log.push({ data: dataKey || tzTodayKey(), qtd: v, ts: Date.now() });
+    var entry = { data: dataKey || tzTodayKey(), qtd: v, ts: Date.now() };
+    if (meta && typeof meta === 'object') {
+      for (var k in meta) { if (meta[k] != null && entry[k] === undefined) entry[k] = meta[k]; }
+    }
+    m.log.push(entry);
     var st = matStats(m);
     if (st.restante <= 0 && !m.concluido) {
       m.concluido = true;

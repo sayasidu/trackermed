@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=2"></script>
+<script src="theme.js?v=3"></script>
 <style>
 .disc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; }
 .disc-card { background: var(--card); border: 1px solid var(--line); padding: 22px; display: flex; flex-direction: column; gap: 10px; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); position: relative; cursor: pointer; }
@@ -299,12 +299,13 @@
 
     <div class="mfield row2">
       <div><label>Tipo de material</label><select id="mTipo">
-        <option value="livro">📖 Capítulo de livro</option>
-        <option value="artigo">📄 Artigo</option>
-        <option value="resumo">📝 Resumo</option>
+        <option value="livro">📖 Livro / capítulo</option>
+        <option value="artigo">📄 Artigo científico</option>
+        <option value="resumo">📝 Resumo / apostila</option>
         <option value="video">🎬 Videoaula</option>
-        <option value="audio">🎧 Áudio / Podcast</option>
-        <option value="outro">📚 Outro material</option>
+        <option value="gravacao">🎥 Gravação de aula</option>
+        <option value="audio">🎧 Podcast / áudio</option>
+        <option value="outro">📚 Outros materiais</option>
       </select></div>
       <div><label>Vincular a conteúdo (opcional)</label><select id="mConteudo"><option value="">— nenhum —</option></select></div>
     </div>
@@ -319,6 +320,7 @@
         <option value="capitulos">Capítulos</option>
         <option value="aulas">Aulas</option>
         <option value="questoes">Questões</option>
+        <option value="itens">Itens / unidades</option>
         <option value="percentual">Percentual (%)</option>
       </select></div>
       <div><label id="mTotalLbl">Quantidade total</label><input type="number" id="mTotal" min="0" step="any" placeholder="Ex: 221"></div>
