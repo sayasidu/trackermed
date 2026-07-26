@@ -499,19 +499,19 @@ html[data-theme="dark"] .ma-tipo-btn.active { background: var(--cobalt); color: 
   </div>
 </div>
 
-<!-- Modal: conteúdo concluído? (após finalizar o cronômetro de um estudo) -->
+<!-- Modal: conteúdo concluído? (após confirmar a conclusão da sessão) -->
 <div class="modal-backdrop" id="conclusaoContModal" onclick="if(event.target===this) responderConclusaoConteudo(false)">
   <div class="modal-box" style="width:460px">
     <button class="mbtn-close" onclick="responderConclusaoConteudo(false)">×</button>
-    <h2>Sessão <i>finalizada</i></h2>
-    <div class="modal-sub">Confira os dados da sessão e diga se o conteúdo foi concluído.</div>
+    <h2>Sessão <i>concluída</i></h2>
+    <div class="modal-sub">Sessão registrada e marcada como concluída. Agora diga se o conteúdo estudado também foi finalizado.</div>
     <div class="conc-resumo">
       <div class="conc-linha"><span class="conc-lbl">Matéria estudada</span><span class="conc-val" id="concMateria">—</span></div>
       <div class="conc-linha"><span class="conc-lbl">Tempo de estudo</span><span class="conc-val" id="concTempo">—</span></div>
       <div class="conc-linha" id="concConteudoWrap"><span class="conc-lbl">Conteúdo estudado</span><span class="conc-val" id="concConteudo">—</span></div>
     </div>
     <div class="conc-pergunta">Você concluiu este conteúdo?</div>
-    <div class="conc-help" id="concHelp">“Sim” marca a tarefa como <b>concluída</b> e a envia para as <b>revisões</b>. “Não” mantém o <b>progresso parcial</b> registrado. Em seguida, você registra o <b>recurso utilizado</b> na sessão.</div>
+    <div class="conc-help" id="concHelp">“Sim” envia o conteúdo para as <b>revisões</b> espaçadas. “Não” o mantém apenas no <b>histórico</b> — a sessão continua concluída e o tempo estudado registrado.</div>
     <div class="mactions" style="justify-content:space-between">
       <button type="button" class="mbtn-cancel conc-btn" onclick="responderConclusaoConteudo(false)">Não</button>
       <button type="button" class="mbtn-save conc-btn" onclick="responderConclusaoConteudo(true)">Sim, concluí</button>
@@ -577,7 +577,7 @@ html[data-theme="dark"] .ma-tipo-btn.active { background: var(--cobalt); color: 
     </div>
     <div class="live-preview" id="maPreviewBox">Informe quanto você avançou nesta sessão.</div>
     <div class="mactions" style="justify-content:space-between">
-      <button type="button" class="mbtn-cancel" onclick="fecharMatAvanco()">Pular</button>
+      <button type="button" class="mbtn-cancel" id="maPularBtn" onclick="fecharMatAvanco()">Pular</button>
       <div style="display:flex;gap:10px">
         <button type="button" class="mbtn-timer" onclick="concluirMatAvanco()" title="Marca o material inteiro como finalizado">✓ Concluí o material</button>
         <button type="button" class="mbtn-save" onclick="salvarMatAvanco()">Salvar avanço</button>
@@ -1100,9 +1100,9 @@ function timerFinish(auto) {
     totalPlannedSec = timerState.focusSec * timerState.sections;
   }
   if (studied < 1) { timerClose(); return; }
-  // Terminar o cronômetro NÃO conclui a tarefa por si só: uma tarefa planejada só
-  // é marcada como concluída quando o tempo estudado atinge o tempo planejado ou
-  // quando o aluno confirma manualmente (botão ✓ ou "Sim, concluí" no modal).
+  // Terminar o cronômetro NÃO conclui a tarefa por si só: o tempo estudado é
+  // registrado como progresso e a conclusão da sessão só é confirmada quando o
+  // aluno salva o modal "recurso utilizado" (material + progressão) logo a seguir.
   const isRevisaoSession = !!timerState.revHistId;
   const sessaoRevHistId = timerState.revHistId;
   const sessaoMateria = timerState.discNome;
@@ -1144,19 +1144,17 @@ function timerFinish(auto) {
         });
       });
     } else {
-      // Estudo planejado: acumula o tempo estudado e só marca "concluído" quando
-      // o total estudado alcança o tempo PLANEJADO. Uma sessão curta (ex.: 5 de
-      // 60 min) fica como progresso parcial; a conclusão manual acontece no modal
-      // "conteúdo concluído?" ou no botão ✓ da lista. Terminar o cronômetro por
-      // si só NÃO conclui a tarefa. Percorre todas as semanas porque o bloco pode
-      // estar guardado em outra weekKey.
+      // Estudo planejado: acumula o tempo estudado como progresso, mas NÃO marca
+      // "concluído" — nem quando o total alcança o tempo planejado. A conclusão
+      // da sessão só é confirmada quando o aluno salva o modal "recurso
+      // utilizado" que abre a seguir (confirmarConclusaoSessao). Percorre todas
+      // as semanas porque o bloco pode estar guardado em outra weekKey.
       Object.keys(plan).forEach(wk => {
         plan[wk] = (plan[wk]||[]).map(b => {
           if (b.id !== blocoIdAlvo) return b;
           const plannedMin = b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60);
           const studiedAcum = (b.minutosFeitos || 0) + studied;
-          const feito = !!b.feito || (plannedMin > 0 && studiedAcum >= plannedMin);
-          const updated = { ...b, feito, minutos: plannedMin, minutosFeitos: studiedAcum, data: todayKey() };
+          const updated = { ...b, feito: !!b.feito, minutos: plannedMin, minutosFeitos: studiedAcum, data: todayKey() };
           if (sessaoConteudo) { updated.conteudo = sessaoConteudo; updated.conteudoId = sessaoConteudoId; updated.topicoId = sessaoTopicoId; }
           estudoBlocoRef = { wk, id: b.id };
           return updated;
@@ -1186,21 +1184,22 @@ function timerFinish(auto) {
     });
     savePlan(plan);
   } else {
-    // Novo bloco (apenas para estudos avulsos).
+    // Novo bloco (apenas para estudos avulsos). O tempo estudado entra como
+    // progresso (minutosFeitos); a conclusão fica aguardando a confirmação no
+    // modal "recurso utilizado" que abre a seguir.
     const plan = loadPlan();
     const wk = weekKey(nowCuiaba());
     if (!plan[wk]) plan[wk] = [];
     const now = nowCuiaba();
     const endH = now.getHours() + now.getMinutes()/60;
     const startH = Math.max(0, endH - studied/60);
-    const bloco = { id: uid(), tipo:'estudo', discId: timerState.discId, matNome: timerState.discNome, conteudo: timerState.conteudo || '', conteudoId: sessaoConteudoId, topicoId: sessaoTopicoId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: true, fromTimer: true, minutos: studied, extra: true, data: todayKey(), revisar: timerState.revisar };
-    // Estudo extra com tempo máximo planejado: guarda plano x realizado e só
-    // marca "feito" quando o tempo estudado alcança o total planejado.
+    const bloco = { id: uid(), tipo:'estudo', discId: timerState.discId, matNome: timerState.discNome, conteudo: timerState.conteudo || '', conteudoId: sessaoConteudoId, topicoId: sessaoTopicoId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: false, fromTimer: true, minutos: studied, minutosFeitos: studied, extra: true, data: todayKey(), revisar: timerState.revisar };
+    // Estudo extra com tempo máximo planejado: guarda plano x realizado (o
+    // "feito" também espera a confirmação do modal).
     if (timerState.extraFlow && timerState.plannedTotalMin > 0) {
       bloco.planoMin = timerState.plannedTotalMin;
       bloco.minutos = timerState.plannedTotalMin;
       bloco.minutosFeitos = studied;
-      bloco.feito = studied >= timerState.plannedTotalMin;
     }
     plan[wk].push(bloco);
     savePlan(plan);
@@ -1224,21 +1223,26 @@ function timerFinish(auto) {
     return;
   }
 
-  // Estudo comum: a sessão já foi salva no histórico (bloco do planner acima).
-  // Antes de alimentar o feed de revisões, pergunta se o conteúdo foi concluído —
-  // apenas conteúdos confirmados como concluídos entram em revisoes.html.
-  const resumoConclusao = {
-    materia: sessaoMateria || 'Estudo',
+  // Estudo comum: o tempo da sessão já está salvo no bloco acima, mas a sessão
+  // ainda NÃO está marcada como concluída. Abre o modal "recurso utilizado": o
+  // aluno informa o material usado e a progressão (páginas, minutos de vídeo/
+  // áudio, capítulos…) e, só ao salvar, a tarefa é concluída e o check ✓
+  // aparece — fechar ou cancelar mantém o tempo registrado sem confirmar.
+  const sessaoCtx = {
+    discId: sessaoDiscId,
+    discNome: sessaoMateria || 'Estudo',
     conteudo: sessaoConteudo,
     conteudoId: sessaoConteudoId,
     topicoId: sessaoTopicoId,
     minutos: studied,
+    histId: null,
+    blocoId: estudoBlocoRef ? estudoBlocoRef.id : null,
     bloco: estudoBlocoRef,
-    discId: sessaoDiscId
+    pendenteConclusao: true
   };
   timerClose();
   render();
-  abrirConclusaoConteudo(resumoConclusao);
+  abrirMatAvancoAposSessao(sessaoCtx);
 }
 
 // ===== Estudo extra: continuar ou encerrar após cada sessão de Pomodoro =====
@@ -1306,11 +1310,11 @@ function encerrarExtra() {
 }
 
 // ===== Modal: conteúdo concluído? =====
-// Ao finalizar o cronômetro de um estudo comum, pergunta se o conteúdo foi
-// concluído. A sessão já está registrada no histórico (bloco do planner); aqui
-// só decidimos se o conteúdo deve alimentar o feed de revisões (revisoes.html).
-// "Não" => fica apenas no histórico. "Sim" => histórico + revisão pendente.
-let conclusaoCtx = null;
+// Abre DEPOIS que a conclusão da sessão foi confirmada (modal de recurso
+// salvo). A resposta decide apenas o destino do conteúdo: "Sim" o envia para
+// as revisões espaçadas (revisar:true no feed → revisoes.html); "Não" o
+// mantém apenas no histórico. A sessão e o tempo estudado não mudam aqui.
+let conclusaoCtx = null;   // { histId, materia, conteudo, minutos }
 function abrirConclusaoConteudo(ctx) {
   conclusaoCtx = ctx;
   document.getElementById('concMateria').textContent = ctx.materia || 'Estudo';
@@ -1324,55 +1328,65 @@ function responderConclusaoConteudo(concluiu) {
   const ctx = conclusaoCtx;
   conclusaoCtx = null;
   document.getElementById('conclusaoContModal').classList.remove('open');
+  if (!ctx || !ctx.histId) return;
+  // O conteúdo entra como base aguardando o aluno configurar as revisões
+  // espaçadas (revConfigured:false) — não como "revisão pendente". Fechar o
+  // modal equivale a "Não": a entrada permanece só no histórico.
+  if (concluiu) {
+    const arr = loadHist().map(r => (r && r.id === ctx.histId) ? { ...r, revisar: true } : r);
+    saveHist(arr);
+    render();
+  }
+}
+
+// ===== Conclusão da sessão (confirmada pelo modal de recurso) ==============
+// Entrada da sessão no feed do histórico. `revisar` nasce false — quem decide
+// se o conteúdo vai pras revisões é o modal "conteúdo concluído?" na sequência.
+function criarHistSessao(ctx) {
+  const histId = uid();
+  pushHist({
+    id: histId,
+    data: fmtDataBR(nowCuiaba()),
+    materia: ctx.discNome || 'Estudo',
+    conteudo: ctx.conteudo || '',
+    conteudoId: ctx.conteudoId || null,
+    topicoId: ctx.topicoId || null,
+    minutos: ctx.minutos || 0,
+    concluido: false,
+    revisar: false,
+    revConfigured: false,
+    auto: true
+  });
+  return histId;
+}
+// Confirma a conclusão da SESSÃO — chamada quando o aluno SALVA o modal de
+// recurso utilizado (ou direto, no fallback sem o motor de materiais). Marca o
+// bloco como feito (o check ✓ aparece), garante a entrada no feed e pergunta
+// se o CONTEÚDO também foi concluído. Fechar o modal de recurso sem salvar não
+// passa por aqui: o tempo estudado permanece, mas a sessão segue pendente.
+function confirmarConclusaoSessao(ctx) {
   if (!ctx) return;
-  // Conclusão MANUAL do conteúdo: se o aluno confirma que terminou, o bloco de
-  // estudo correspondente é marcado como concluído mesmo que o tempo estudado
-  // ainda não tenha alcançado o planejado (essa é a via manual prevista). Ao
-  // responder "Não", o bloco continua com o progresso parcial que já tem.
-  if (concluiu && ctx.bloco && ctx.bloco.id) {
+  const alvoId = (ctx.bloco && ctx.bloco.id) || ctx.blocoId;
+  if (alvoId) {
     const plan = loadPlan();
-    const wksBusca = ctx.bloco.wk ? [ctx.bloco.wk] : Object.keys(plan);
+    const wksBusca = (ctx.bloco && ctx.bloco.wk) ? [ctx.bloco.wk] : Object.keys(plan);
     let salvar = false;
     wksBusca.forEach(wk => {
       plan[wk] = (plan[wk]||[]).map(b => {
-        if (b.id !== ctx.bloco.id || b.feito) return b;
+        if (!b || b.id !== alvoId || b.feito) return b;
         salvar = true;
         return { ...b, feito: true, data: b.data || todayKey() };
       });
     });
     if (salvar) savePlan(plan);
   }
-  // Registra no feed. `revisar` só é true quando o aluno confirma "Sim" — é isso
-  // que faz o conteúdo aparecer em revisoes.html. O ESTUDO já está concluído; o
-  // conteúdo entra como base aguardando o aluno configurar as revisões espaçadas
-  // (revConfigured:false) — não como "revisão pendente".
-  const histId = uid();
-  pushHist({
-    id: histId,
-    data: fmtDataBR(nowCuiaba()),
-    materia: ctx.materia || 'Estudo',
-    conteudo: ctx.conteudo || '',
-    conteudoId: ctx.conteudoId || null,
-    topicoId: ctx.topicoId || null,
-    minutos: ctx.minutos || 0,
-    concluido: false,
-    revisar: !!concluiu,
-    revConfigured: false,
-    auto: true
-  });
+  if (!ctx.histId) ctx.histId = criarHistSessao(ctx);
   render();
-  // Depois de encerrar o tempo estudado, pergunta qual recurso/material foi
-  // utilizado e quanto o aluno avançou — sem precisar concluir o material.
-  // O registro fica amarrado à tarefa (bloco) e ao conteúdo da sessão.
-  abrirMatAvancoAposSessao({
-    discId: ctx.discId || null,
-    discNome: ctx.materia || '',
+  abrirConclusaoConteudo({
+    histId: ctx.histId,
+    materia: ctx.discNome || 'Estudo',
     conteudo: ctx.conteudo || '',
-    conteudoId: ctx.conteudoId || null,
-    minutos: ctx.minutos || 0,
-    histId,
-    blocoId: (ctx.bloco && ctx.bloco.id) || null,
-    concluded: !!concluiu
+    minutos: ctx.minutos || 0
   });
 }
 
@@ -1494,6 +1508,32 @@ function registrarSimuladoDeRevisao(questoes, acertos, minutos) {
 
 function toggleFeito(wk, blocoId) {
   const plan = loadPlan();
+  const atual = (plan[wk]||[]).find(b => b.id === blocoId);
+  if (!atual) return;
+  const isRevAtual = atual.tipo === 'revisao' || atual.revisao;
+  // Concluir um ESTUDO manualmente (bolinha ○ / check) passa pelo mesmo modal
+  // do cronômetro: o aluno registra o material utilizado e a progressão da
+  // sessão e, só ao salvar, o bloco é marcado como concluído
+  // (confirmarConclusaoSessao). Fechar/cancelar o modal mantém o progresso
+  // como está, sem concluir. Desmarcar (✓→○) e blocos de revisão seguem o
+  // caminho direto de sempre.
+  if (!isRevAtual && !atual.feito) {
+    const d = atual.discId ? loadDisc().find(x => x.id === atual.discId) : null;
+    const studiedMin = getStudiedMin(atual);
+    abrirMatAvancoAposSessao({
+      discId: atual.discId || null,
+      discNome: (d && d.nome) || atual.matNome || 'Estudo',
+      conteudo: atual.conteudo || '',
+      conteudoId: atual.conteudoId || null,
+      topicoId: atual.topicoId || null,
+      minutos: studiedMin > 0 ? studiedMin : getPlannedMin(atual),
+      histId: null,
+      blocoId,
+      bloco: { wk, id: blocoId },
+      pendenteConclusao: true
+    });
+    return;
+  }
   let alvo = null;
   plan[wk] = (plan[wk]||[]).map(b => {
     if (b.id !== blocoId) return b;
@@ -2125,11 +2165,17 @@ function renderMateriaisHoje() {
 // Após encerrar uma sessão de estudo: pergunta qual recurso/material foi
 // utilizado e quanto o aluno avançou. ctx amarra o registro à tarefa (bloco),
 // ao conteúdo e à entrada do histórico da sessão.
-let maCtx = null;        // { discId, discNome, conteudo, conteudoId, histId, blocoId, concluded }
+let maCtx = null;        // { discId, discNome, conteudo, conteudoId, topicoId, minutos, histId, blocoId, bloco, concluded, pendenteConclusao }
 let maNovoTipo = 'livro';
 function abrirMatAvancoAposSessao(ctx) {
-  if (!MAT) return;
   ctx = ctx || {};
+  if (!MAT) {
+    // Fallback (theme.js desatualizado no cache do navegador, sem o motor de
+    // materiais): o modal de recurso não existe — conclui a sessão direto pra
+    // tarefa não ficar presa sem check.
+    if (ctx.pendenteConclusao) confirmarConclusaoSessao(ctx);
+    return;
+  }
   abrirMatAvanco({ discId: ctx.discId || null, sessao: ctx });
 }
 
@@ -2151,10 +2197,16 @@ function abrirMatAvanco(opts) {
   });
   opcoes.push(`<option value="${MA_NOVO}"${selId === MA_NOVO ? ' selected' : ''}>➕ Registrar novo recurso…</option>`);
   document.getElementById('maMaterial').innerHTML = opcoes.join('');
-  // Título e subtítulo conforme o desfecho da sessão: diferencia a conclusão
-  // da SESSÃO (tempo cumprido, material segue) da conclusão do CONTEÚDO.
+  // Título e subtítulo conforme o papel do modal: quando a conclusão da sessão
+  // depende dele (pendenteConclusao), salvar é o que confirma a conclusão e faz
+  // o check ✓ aparecer; fechar mantém o tempo registrado sem concluir.
   const sub = document.getElementById('maSub');
-  if (maCtx && maCtx.concluded) {
+  const pularBtn = document.getElementById('maPularBtn');
+  if (pularBtn) pularBtn.textContent = (maCtx && maCtx.pendenteConclusao) ? 'Pular sem concluir' : 'Pular';
+  if (maCtx && maCtx.pendenteConclusao) {
+    document.getElementById('maTitulo').innerHTML = 'Sessão <i>finalizada</i>';
+    sub.innerHTML = 'Registre o material utilizado e a progressão da sessão (páginas, minutos de vídeo/áudio, capítulos…). <b>Salvar confirma a conclusão da sessão</b>; fechar mantém o tempo registrado sem concluir.';
+  } else if (maCtx && maCtx.concluded) {
     document.getElementById('maTitulo').innerHTML = 'Recurso <i>utilizado</i>';
     sub.innerHTML = 'Conteúdo concluído! Registre o material usado na sessão — se ele também foi finalizado, use <b>✓ Concluí o material</b>.';
   } else if (maCtx) {
@@ -2355,10 +2407,16 @@ function salvarMatAvanco() {
   if (!av) return;
   if (g && g.ini && total > 0 && av.ate > total) { alert(`${g.fim} não pode passar de ${g.tot.toLowerCase()} (${total}).`); return; }
   if (novo) m = maCriarMaterial(g, total);
+  // Sessão aguardando conclusão: cria a entrada do feed ANTES de amarrar o
+  // recurso, pra que o material salvo fique gravado nessa mesma entrada.
+  const pendente = (maCtx && maCtx.pendenteConclusao) ? maCtx : null;
+  if (pendente && !pendente.histId) pendente.histId = criarHistSessao(pendente);
   MAT.addAvanco(m.id, av.qtd, undefined, maMetaAvanco(av));
   maRegistrarRecursoNaSessao(m, av, false);
   fecharMatAvanco();
-  render();
+  // Salvar é o que confirma a conclusão da sessão (marca o check ✓).
+  if (pendente) confirmarConclusaoSessao(pendente);
+  else render();
 }
 function concluirMatAvanco() {
   if (!MAT) { fecharMatAvanco(); return; }
@@ -2376,11 +2434,15 @@ function concluirMatAvanco() {
     if (!(total > 0)) { alert(`${g.tot}: informe o total pra registrar o material.`); return; }
     m = maCriarMaterial(g, total);
   }
+  const pendente = (maCtx && maCtx.pendenteConclusao) ? maCtx : null;
+  if (pendente && !pendente.histId) pendente.histId = criarHistSessao(pendente);
   if (av && av.qtd > 0) MAT.addAvanco(m.id, av.qtd, undefined, maMetaAvanco(av));
   MAT.concluir(m.id);
   maRegistrarRecursoNaSessao(m, av, true);
   fecharMatAvanco();
-  render();
+  // Concluir o material também confirma a conclusão da sessão.
+  if (pendente) confirmarConclusaoSessao(pendente);
+  else render();
 }
 function fecharMatAvanco() { document.getElementById('matAvancoModal').classList.remove('open'); maCtx = null; }
 
