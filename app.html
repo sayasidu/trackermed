@@ -1,0 +1,913 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<link rel="icon" type="image/png" href="favicon.png">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>TrackerMed · App</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="TrackerMed">
+<meta name="theme-color" content="#F4F1EA">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Paleta fixa clara do app (a versão escura é o próximo passo, como na proposta). */
+  :root {
+    --ink: #0A1330; --ink2: #2A3356; --paper: #F4F1EA; --line: #E4DFD2;
+    --cobalt: #1E3AE8; --acid: #E6FF3D; --muted: #6B6A5F;
+    --grad: linear-gradient(120deg, #1E3AE8 0%, #4361FF 46%, #7C5CFC 100%);
+    --navy: linear-gradient(150deg, #13224E 0%, #0A1330 68%);
+    --acid-grad: linear-gradient(135deg, #ECFF6B, #E6FF3D 60%, #D4F52E);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: #F4F1EA; }
+  body {
+    background: #F4F1EA; color: var(--ink);
+    font-family: 'Inter Tight', -apple-system, sans-serif; font-size: 14px; line-height: 1.5;
+    min-height: 100dvh;
+    -webkit-tap-highlight-color: transparent;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; }
+
+  .shell { max-width: 520px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; position: relative; }
+
+  /* Cabeçalho */
+  .top {
+    flex: none; padding: calc(14px + env(safe-area-inset-top)) 20px 0;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .logo { display: flex; align-items: center; gap: 7px; }
+  .logo b { font-family: 'Fraunces', serif; font-size: 23px; font-weight: 600; letter-spacing: -0.04em; }
+  .logo b em { font-style: italic; color: var(--cobalt); }
+  .logo .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--acid); box-shadow: 0 0 0 3px rgba(230,255,61,0.35); }
+  .top-actions { display: flex; align-items: center; gap: 8px; }
+  .net-pill {
+    min-height: 34px; display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 7px 12px;
+    font: 600 10px 'Inter Tight', sans-serif; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink);
+  }
+  .net-pill.off { border-color: #F4A72F; background: #FFF8E1; color: #8D5A00; }
+  .sync-btn { width: 38px; height: 38px; border-radius: 999px; border: 1px solid var(--line); background: #fff; font-size: 15px; color: var(--ink); }
+
+  /* Aviso offline */
+  .offline-banner {
+    display: none; margin: 12px 16px 0; align-items: center; gap: 10px;
+    background: #FFF8E1; border: 1px solid #F4A72F; border-left: 4px solid #FB8C00;
+    border-radius: 0 10px 10px 0; padding: 11px 14px;
+  }
+  body.offline .offline-banner { display: flex; }
+  .offline-banner .ic { font-size: 16px; line-height: 1; }
+  .offline-banner .tx { font-size: 12px; line-height: 1.45; color: #8D5A00; }
+
+  /* Área rolável */
+  .scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 16px calc(128px + env(safe-area-inset-bottom)); }
+
+  .kicker { font: 700 10px/1 'Inter Tight', sans-serif; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+  h1.big { font-family: 'Fraunces', serif; font-size: 34px; font-weight: 500; letter-spacing: -0.035em; line-height: 1.02; margin: 8px 0 0; }
+  h1.big i, h1.mid i { font-style: italic; color: var(--cobalt); }
+  h1.mid { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 500; letter-spacing: -0.035em; line-height: 1.02; margin: 6px 0 0; }
+  .lede { font-size: 13px; color: var(--ink2); margin: 10px 0 0; }
+  .back {
+    min-height: 44px; display: inline-flex; align-items: center; gap: 6px; background: transparent; border: none;
+    padding: 14px 4px 4px; font: 600 12px 'Inter Tight', sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+  }
+
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-top: 12px; }
+  .card.lg { border-radius: 14px; padding: 18px 20px; }
+  .card-title { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
+  .card-title i { font-style: italic; color: var(--cobalt); }
+  .card-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .card-navy {
+    background: var(--navy); border-left: 5px solid var(--acid); border-radius: 12px;
+    padding: 18px 20px; color: var(--paper); position: relative; overflow: hidden; margin-top: 12px;
+  }
+  .card-navy .glow { position: absolute; top: -30%; right: -12%; width: 46%; height: 160%; background: radial-gradient(circle, rgba(124,92,252,0.34), transparent 70%); pointer-events: none; }
+  .card-navy .kicker { color: var(--acid); }
+
+  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .kpi { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+  .kpi .num { font-family: 'Fraunces', serif; font-size: 40px; font-weight: 400; letter-spacing: -0.04em; line-height: 1; margin-top: 10px; color: var(--cobalt); }
+  .kpi .num span { font-size: 16px; color: var(--muted); }
+  .kpi .sub { font-size: 12px; color: var(--ink2); margin-top: 8px; }
+  .kpi.dark { background: linear-gradient(150deg, #12204A, #0A1330 72%); border-color: var(--ink); color: var(--paper); }
+  .kpi.dark .kicker { color: var(--acid); }
+  .kpi.dark .num { color: var(--acid); }
+  .kpi.dark .sub { color: rgba(244,241,234,0.6); }
+  .kpi.acid { background: var(--acid-grad); border-color: var(--acid); }
+  .kpi.acid .kicker, .kpi.acid .num { color: var(--ink); }
+  .kpi.acid .num { font-style: italic; }
+  .kpi.acid .sub { color: var(--ink2); }
+
+  .quote { display: flex; align-items: flex-start; gap: 12px; }
+  .quote .mark { font-family: 'Fraunces', serif; font-size: 28px; line-height: 1; color: var(--cobalt); flex: none; }
+  .quote .tx { font-family: 'Fraunces', serif; font-size: 15px; font-style: italic; color: var(--ink2); line-height: 1.5; }
+
+  /* Atalhos */
+  .atalhos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .atalho {
+    text-align: left; min-height: 106px; display: flex; flex-direction: column; gap: 6px;
+    background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px; color: var(--ink);
+  }
+  .atalho .n { font-family: 'Fraunces', serif; font-size: 14px; font-style: italic; color: var(--cobalt); }
+  .atalho .t { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 500; letter-spacing: -0.02em; }
+  .atalho .s { font-size: 11.5px; color: var(--muted); margin-top: auto; }
+  .atalho.dark { background: linear-gradient(150deg, #12204A, #0A1330 72%); border-color: var(--ink); color: var(--paper); }
+  .atalho.dark .n { color: var(--acid); }
+  .atalho.dark .s { color: rgba(244,241,234,0.6); }
+  .atalho.acid { background: var(--acid-grad); border-color: var(--acid); color: var(--ink); }
+  .atalho.acid .n { color: var(--ink); }
+  .atalho.acid .s { color: var(--ink2); }
+
+  .foot { text-align: center; font: 600 10px/1 'Inter Tight', sans-serif; letter-spacing: 0.14em; text-transform: uppercase; color: #9e9c92; padding: 22px 0 8px; }
+
+  /* Barras de progresso */
+  .bar { height: 6px; background: var(--paper); border-radius: 999px; overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 999px; background: var(--grad); font-style: normal; }
+  .bar i.ok { background: #43A047; }
+
+  .disc-row { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+  .disc-row:last-child { border-bottom: none; }
+  .disc-row .nm { font-weight: 600; font-size: 13px; min-width: 112px; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .disc-row .bar { flex: 1; }
+  .disc-row .pct { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 46px; text-align: right; }
+  .disc-row .pct.over { color: #2E7D32; font-weight: 700; }
+
+  .erro-box { border-left: 3px solid #FF5B5B; background: var(--paper); border-radius: 0 8px 8px 0; padding: 11px 14px; margin-bottom: 10px; }
+  .erro-box:last-child { margin-bottom: 0; }
+  .erro-box .disc { font: 700 10px/1 'Inter Tight', sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: #FF5B5B; }
+  .erro-box .assunto { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 500; margin-top: 3px; }
+  .erro-box .por-que { font-size: 12px; color: var(--ink2); margin-top: 4px; line-height: 1.5; }
+
+  /* Sessões de hoje */
+  .sess {
+    display: grid; grid-template-columns: 1fr auto; gap: 10px 12px; align-items: center;
+    padding: 12px 14px; margin-bottom: 8px; border-radius: 0 10px 10px 0;
+    border-left: 3px solid var(--cobalt); background: var(--paper);
+  }
+  .sess:last-child { margin-bottom: 0; }
+  .sess.rev { border-left-color: #FB8C00; background: #FFF8EE; }
+  .sess.done { border-left-color: #43A047; background: #E8F5E9; opacity: 0.72; }
+  .sess .hora { font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 600; color: var(--ink2); }
+  .sess .nome { font-weight: 600; font-size: 14px; margin-top: 2px; }
+  .sess.done .nome { text-decoration: line-through; }
+  .sess .motivo { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .sess .right { display: flex; align-items: center; gap: 8px; }
+  .sess .mins { font-family: 'Fraunces', serif; font-style: italic; font-size: 19px; font-variant-numeric: tabular-nums; color: var(--cobalt); }
+  .sess.rev .mins { color: #B26A00; }
+  .sess.done .mins { color: #2E7D32; }
+  .sess .play {
+    width: 44px; height: 44px; border-radius: 10px; border: none; background: var(--grad); color: #fff;
+    font-size: 14px; box-shadow: 0 8px 22px rgba(30,58,232,0.34);
+  }
+  .sess.done .play { background: transparent; color: #43A047; box-shadow: none; font-size: 18px; }
+  .sess .prog { grid-column: 1 / -1; }
+  .sess .prog .bar { height: 7px; background: rgba(10,19,48,0.1); }
+  .sess .prog .lbl { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); margin-top: 4px; }
+
+  .dia7 { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid #F1F1F1; }
+  .dia7:last-child { border-bottom: none; }
+  .dia7 .dia { display: block; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 500; }
+  .dia7 .bar { height: 8px; background: #F1F1F1; margin-top: 6px; max-width: 180px; }
+  .dia7 .tot { font-family: 'Fraunces', serif; font-size: 18px; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+  .empty { font-size: 12.5px; color: var(--muted); padding: 8px 0; line-height: 1.5; }
+  .empty a { color: var(--cobalt); font-weight: 600; }
+
+  /* Conta / sincronização */
+  .devices .dev { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+  .devices .dev:last-child { border-bottom: none; }
+  .btn-acid { width: 100%; min-height: 46px; margin-top: 16px; border: none; border-radius: 10px; background: var(--acid); color: var(--ink); font: 700 13px 'Inter Tight', sans-serif; letter-spacing: 0.03em; }
+  .btn-row { display: flex; gap: 10px; margin-top: 14px; }
+  .btn-grad { flex: 1; min-height: 46px; border-radius: 10px; border: none; background: var(--grad); color: #fff; font: 600 13px 'Inter Tight', sans-serif; }
+  .btn-ghost { flex: 1; min-height: 46px; border-radius: 10px; border: 1px solid var(--ink); background: transparent; color: var(--ink); font: 600 13px 'Inter Tight', sans-serif; }
+
+  /* Botão fixo Estudar agora */
+  .fab {
+    position: fixed; left: 16px; right: 16px; bottom: calc(18px + env(safe-area-inset-bottom)); z-index: 70;
+    max-width: 488px; margin: 0 auto;
+    min-height: 56px; border: none; border-radius: 14px; background: var(--grad); color: #fff;
+    font: 600 15px 'Inter Tight', sans-serif; letter-spacing: 0.01em;
+    box-shadow: 0 10px 30px rgba(30,58,232,0.42);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  body.timer-open .fab { display: none; }
+
+  /* Cronômetro (folha inferior) */
+  .sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 80;
+    max-width: 520px; margin: 0 auto;
+    background: var(--navy); border-top-left-radius: 22px; border-top-right-radius: 22px;
+    border-top: 1px solid rgba(244,241,234,0.12); border-left: 5px solid var(--acid);
+    padding: 20px 22px calc(24px + env(safe-area-inset-bottom)); color: var(--paper);
+    box-shadow: 0 -18px 44px rgba(10,19,48,0.4);
+    display: none;
+  }
+  body.timer-open .sheet { display: block; }
+  .sheet .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .sheet .kicker { color: var(--acid); }
+  .sheet .disc { font-size: 15px; font-weight: 600; margin-top: 5px; }
+  .sheet .close { width: 40px; height: 40px; border-radius: 999px; background: rgba(244,241,234,0.08); border: 1px solid rgba(244,241,234,0.15); color: rgba(244,241,234,0.7); font-size: 18px; }
+  .sheet .clock { font-family: 'Fraunces', serif; font-size: 62px; font-weight: 500; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; text-align: center; color: var(--acid); margin: 16px 0 6px; }
+  .sheet .bar { height: 7px; background: rgba(244,241,234,0.14); }
+  .sheet .bar i { background: var(--acid); transition: width 0.3s ease; }
+  .sheet .lbl { display: flex; justify-content: space-between; font-size: 11px; color: rgba(244,241,234,0.6); margin-top: 6px; }
+  .sheet .btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 16px; }
+  .sheet .btns button { min-height: 48px; border-radius: 10px; background: rgba(244,241,234,0.08); border: 1px solid rgba(244,241,234,0.15); color: var(--paper); font: 600 11px 'Inter Tight', sans-serif; letter-spacing: 0.06em; text-transform: uppercase; }
+  .sheet .btns .go { background: var(--acid); border-color: var(--acid); color: var(--ink); font-weight: 700; }
+</style>
+<script defer src="theme.js"></script>
+<script defer src="pwa.js"></script>
+</head>
+<body>
+<div class="shell">
+
+  <div class="top">
+    <div class="logo"><b>Tracker<em>Med</em></b><span class="dot"></span></div>
+    <div class="top-actions">
+      <span class="net-pill" id="netPill">⌁ Wi-Fi</span>
+      <button type="button" class="sync-btn" onclick="location.hash='#/sync'" aria-label="Conta e sincronização">↻</button>
+    </div>
+  </div>
+
+  <div class="offline-banner">
+    <span class="ic">⚠︎</span>
+    <div class="tx"><b style="font-weight:700">Sem internet.</b> Tudo que você marcar fica salvo no aparelho e sincroniza quando a conexão voltar.</div>
+  </div>
+
+  <main class="scroll" id="scrollArea">
+    <div id="screen"></div>
+  </main>
+
+  <button type="button" class="fab" id="fab" onclick="estudarAgora()">▶ Estudar agora</button>
+
+  <div class="sheet" id="sheet">
+    <div class="head">
+      <div>
+        <div class="kicker" id="tLabel">Foco ativo</div>
+        <div class="disc" id="tDisc">Estudo</div>
+      </div>
+      <button type="button" class="close" onclick="closeTimer()" aria-label="Fechar cronômetro">×</button>
+    </div>
+    <div class="clock" id="tClock">00:00</div>
+    <div class="bar"><i id="tFill" style="width:0%"></i></div>
+    <div class="lbl"><span id="tProg">0min</span><span id="tPct"></span></div>
+    <div class="btns">
+      <button type="button" id="tPlay" onclick="toggleTimer()">Pausar</button>
+      <button type="button" onclick="resetTimer()">Resetar</button>
+      <button type="button" class="go" onclick="finishTimer()">Concluir</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ===== Chaves e helpers — mesmas convenções do site (dashboard.html) =========
+const NOME_KEY = 'trackermed.nome.v1';
+const PROVA_KEY = 'trackermed.prova.v1';
+const DISC_KEY = 'trackermed.disciplinas.v1';
+const PLAN_KEY = 'trackermed.plan.v1';
+const ERR_KEY = 'trackermed.erros.v1';
+const HIST_KEY = 'trackermed.planner.historico.v1';
+const TIMER_KEY = 'trackermed.app.timer.v1';
+const BACKUP_EXTRA_KEYS = ['planejamento.disponibilidade'];
+
+function loadJSON(k, d) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(d)); } catch { return d; } }
+function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+function parseTime(t) { const [h, m] = String(t || '0:0').split(':').map(Number); return (h || 0) + (m || 0) / 60; }
+function startOfWeek(d) { const x = new Date(d); x.setHours(0,0,0,0); const w = (x.getDay()+6)%7; x.setDate(x.getDate()-w); return x; }
+function nowCuiaba() { return (window.TrackerMedTime && window.TrackerMedTime.now()) || new Date(); }
+function dateKey(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayKey() { return dateKey(nowCuiaba()); }
+function weekKey(d) { return dateKey(startOfWeek(d)); }
+function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate()+n); return x; }
+function esc(s) { return String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function getPlannedMin(b) { return b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60) || 0; }
+function getStudiedMin(b) { if (b.minutosFeitos != null) return b.minutosFeitos; return b.feito ? getPlannedMin(b) : 0; }
+function fmtHM(m) { return Math.floor(m/60)+'h'+String(m%60).padStart(2,'0'); }
+function fmtRange(m) { const h = Math.floor(m/60), mm = m%60; return h > 0 ? h+'h'+String(mm).padStart(2,'0') : mm+'min'; }
+function kpiNum(m) { return Math.floor(m/60)+'<span>h'+String(m%60).padStart(2,'0')+'</span>'; }
+function saudacaoHora() {
+  const h = nowCuiaba().getHours();
+  if (h < 6) return 'Boa madrugada'; if (h < 12) return 'Bom dia'; if (h < 18) return 'Boa tarde'; return 'Boa noite';
+}
+function uid() { return 'b-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7); }
+function toHHMM(h) { const hh = Math.max(0, Math.min(23, Math.floor(h))); const mm = Math.round((h-hh)*60)%60; return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0'); }
+
+const FRASES = [
+  'Você está aqui. Isso já é mais do que a maioria fez hoje.',
+  'O edital não vai estudar sozinho. Infelizmente.',
+  'Milagre acadêmico detectado: consistência.',
+  'Seu futuro eu agradece. O atual continua cansado.',
+  'A procrastinação perdeu a batalha de hoje. Mas ela volta amanhã.',
+  'Respira fundo. Abre o resumo. Finge que tá tudo bem.',
+  'Seu cronograma te olha com esperança. Não o decepcione de novo.',
+  'A medicina é linda. O caminho até ela, nem tanto.',
+  'Pelo menos você não tá no TikTok. Ou tá?',
+  'Você versus o edital. Spoiler: o edital não dorme.'
+];
+function fraseDoDia() {
+  let h = 0; const s = todayKey();
+  for (let i = 0; i < s.length; i++) h = (h*31 + s.charCodeAt(i)) >>> 0;
+  return FRASES[h % FRASES.length];
+}
+
+// ===== Dados derivados ========================================================
+function blocosDeHoje() {
+  const plan = loadJSON(PLAN_KEY, {});
+  const hoje = nowCuiaba();
+  const wk = weekKey(hoje);
+  return { wk, blocos: (plan[wk] || []).filter(b => b.dia === hoje.getDay()) };
+}
+function resumoHoje() {
+  const { blocos } = blocosDeHoje();
+  const feitoMin = blocos.reduce((s, b) => s + getStudiedMin(b), 0);
+  const planMin = blocos.reduce((s, b) => s + getPlannedMin(b), 0);
+  return { blocos, feitoMin, planMin, feitas: blocos.filter(b => b.feito).length };
+}
+function calcStreak() {
+  const plan = loadJSON(PLAN_KEY, {});
+  const dias = new Set();
+  Object.entries(plan).forEach(([wkS, blocos]) => {
+    const inicio = new Date(wkS + 'T00:00');
+    (blocos || []).filter(b => b.feito || getStudiedMin(b) > 0).forEach(b => {
+      dias.add(dateKey(addDays(inicio, (b.dia+6)%7)));
+    });
+  });
+  const hoje = nowCuiaba();
+  let streak = 0;
+  for (let i = 0; i < 365; i++) {
+    if (dias.has(dateKey(addDays(hoje, -i)))) streak++;
+    else if (i > 0) break;
+  }
+  return streak;
+}
+function minutosPorDia() {
+  const plan = loadJSON(PLAN_KEY, {});
+  const mapa = {};
+  Object.entries(plan).forEach(([wkS, blocos]) => {
+    const inicio = new Date(wkS + 'T00:00');
+    (blocos || []).forEach(b => {
+      const m = getStudiedMin(b);
+      if (m <= 0) return;
+      const k = dateKey(addDays(inicio, (b.dia+6)%7));
+      mapa[k] = (mapa[k] || 0) + m;
+    });
+  });
+  return mapa;
+}
+function nomeBloco(b, discById) {
+  const d = b.discId ? discById[b.discId] : null;
+  return (d && d.nome) || b.matNome || 'Estudo';
+}
+function motivoBloco(b) {
+  const isRev = b.tipo === 'revisao' || b.revisao;
+  if (isRev) return 'revisão espaçada' + (b.revisaoOrdem ? ' · '+b.revisaoOrdem+'/'+(b.revisaoTotal || '?') : '');
+  return b.conteudo || '';
+}
+
+// ===== Telas ==================================================================
+const screenEl = document.getElementById('screen');
+
+function renderHome() {
+  const nome = localStorage.getItem(NOME_KEY) || '';
+  const prova = loadJSON(PROVA_KEY, {});
+  const { feitoMin, planMin, blocos, feitas } = resumoHoje();
+  const streak = calcStreak();
+
+  let provaHTML;
+  if (prova.nome && prova.data) {
+    const [py, pm, pd] = prova.data.split('-').map(Number);
+    const examDate = new Date(py, pm-1, pd);
+    const hoje = nowCuiaba();
+    const diff = Math.max(0, Math.round((examDate - new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) / 86400000));
+    provaHTML = `
+      <div style="position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:14px">
+        <div>
+          <div class="kicker">Próxima prova</div>
+          <div style="font-family:Fraunces,serif;font-size:18px;font-weight:500;margin-top:5px">${esc(prova.nome)}</div>
+          <div style="font-size:11px;color:rgba(244,241,234,0.6);margin-top:5px;letter-spacing:0.04em">${examDate.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}</div>
+        </div>
+        <div style="text-align:right;line-height:1;flex:none">
+          <span style="font-family:Fraunces,serif;font-size:62px;font-weight:500;color:var(--acid);letter-spacing:-0.04em;text-shadow:0 6px 30px rgba(230,255,61,0.25)">${diff}</span>
+          <span style="font-family:Fraunces,serif;font-size:15px;font-style:italic;color:rgba(244,241,234,0.6);margin-left:4px">${diff === 1 ? 'dia' : 'dias'}</span>
+        </div>
+      </div>`;
+  } else {
+    provaHTML = `
+      <div style="position:relative">
+        <div class="kicker">Próxima prova</div>
+        <div style="font-family:Fraunces,serif;font-size:18px;font-weight:500;margin-top:5px">Nenhuma prova cadastrada</div>
+        <div style="font-size:11px;color:rgba(244,241,234,0.6);margin-top:5px">Cadastra no <a href="dashboard.html" style="color:var(--acid)">Dashboard</a> pra ver a contagem aqui.</div>
+      </div>`;
+  }
+
+  const hojeSub = blocos.length
+    ? `${feitas} de ${blocos.length} ${blocos.length === 1 ? 'sessão' : 'sessões'} · ${planMin > 0 ? Math.round(feitoMin/planMin*100) : 0}% da meta`
+    : 'nada planejado pra hoje';
+
+  const atalhosExt = [
+    { n: '03', t: 'Planejamento', s: 'grade semanal', href: 'plannerstudy.html' },
+    { n: '04', t: 'Revisões', s: 'SRS automático', href: 'revisoes.html' },
+    { n: '05', t: 'Disciplinas', s: 'matérias e aulas', href: 'disciplinas.html' },
+    { n: '06', t: 'Gráficos', s: 'estatísticas', href: 'graficos.html' },
+    { n: '07', t: 'Planos', s: 'longo prazo', href: 'planos.html' },
+    { n: '08', t: 'Simulados', s: 'por banca', href: 'simulados.html' },
+    { n: '09', t: 'Córtex', s: 'curva por tema', href: 'cortex-simulados.html' }
+  ];
+
+  screenEl.innerHTML = `
+    <div style="padding:18px 4px 0">
+      <div class="kicker">${saudacaoHora()}${nome ? ', '+esc(nome) : ''} —</div>
+      <h1 class="big">Seu <i>resumo</i> de hoje.</h1>
+    </div>
+
+    <div class="card-navy"><div class="glow"></div>${provaHTML}</div>
+
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kicker">Estudado hoje</div>
+        <div class="num">${kpiNum(feitoMin)}</div>
+        <div class="sub">${hojeSub}</div>
+      </div>
+      <div class="kpi dark">
+        <div class="kicker">Streak</div>
+        <div class="num">${streak}</div>
+        <div class="sub">${streak === 1 ? 'dia seguido' : 'dias seguidos'}</div>
+      </div>
+    </div>
+
+    <div class="card quote">
+      <div class="mark">“</div>
+      <div class="tx">${esc(fraseDoDia())}</div>
+    </div>
+
+    <div class="kicker" style="margin:26px 4px 12px">Atalhos</div>
+    <div class="atalhos">
+      <a class="atalho dark" href="#/dash">
+        <span class="n">01</span><span class="t">Dashboard</span><span class="s">progresso e metas</span>
+      </a>
+      <a class="atalho acid" href="#/hist">
+        <span class="n">02</span><span class="t">Histórico</span><span class="s">hoje + cronômetro</span>
+      </a>
+      ${atalhosExt.map(a => `
+        <a class="atalho" href="${a.href}">
+          <span class="n">${a.n}</span><span class="t">${a.t}</span><span class="s">${a.s}</span>
+        </a>`).join('')}
+    </div>
+    <div class="foot">v0.1 · pessoal</div>`;
+}
+
+function renderDash() {
+  const disc = loadJSON(DISC_KEY, []);
+  const plan = loadJSON(PLAN_KEY, {});
+  const erros = loadJSON(ERR_KEY, []);
+  const hoje = nowCuiaba();
+  const wk = weekKey(hoje);
+  const discById = Object.fromEntries(disc.map(d => [d.id, d]));
+
+  // Mesmo cálculo do dashboard do site: minutos feitos na semana × meta semanal.
+  const minsPorDisc = {};
+  (plan[wk] || []).filter(b => b.discId).forEach(b => {
+    const m = getStudiedMin(b);
+    if (m > 0) minsPorDisc[b.discId] = (minsPorDisc[b.discId] || 0) + m;
+  });
+  const discHTML = disc.length === 0
+    ? `<div class="empty">Nenhuma disciplina cadastrada. <a href="disciplinas.html">Cadastrar agora →</a></div>`
+    : disc.map(d => {
+        const metaMin = (d.metaHorasSemana || 0) * 60;
+        const feito = minsPorDisc[d.id] || 0;
+        const pctReal = metaMin > 0 ? Math.round(feito/metaMin*100) : 0;
+        const over = metaMin > 0 && feito > metaMin;
+        const lbl = metaMin > 0 ? (over ? pctReal+'% · +'+fmtRange(feito-metaMin) : pctReal+'%') : '—';
+        return `<div class="disc-row">
+          <div class="nm">${esc(d.nome)}</div>
+          <div class="bar"><i class="${over ? 'ok' : ''}" style="width:${Math.min(100, pctReal)}%"></i></div>
+          <div class="pct ${over ? 'over' : ''}">${lbl}</div>
+        </div>`;
+      }).join('');
+
+  const semanaMin = (plan[wk] || []).reduce((s, b) => s + getStudiedMin(b), 0);
+  const semanaPlan = (plan[wk] || []).reduce((s, b) => s + getPlannedMin(b), 0);
+  const semanaSub = semanaPlan > 0 ? Math.round(semanaMin/semanaPlan*100)+'% do plano da semana' : 'sem meta semanal';
+
+  const pend = erros.filter(e => !e.revisado).length;
+  const recentes = erros.filter(e => !e.revisado).slice(0, 3);
+  const errosHTML = recentes.length === 0
+    ? `<div class="empty">${erros.length ? 'Nenhum erro pendente — tudo revisado 🎯' : 'Nenhum erro registrado.'}</div>`
+    : recentes.map(e => {
+        const d = e.discId ? discById[e.discId] : null;
+        return `<div class="erro-box">
+          <div class="disc">${esc(d ? d.nome : '?')}</div>
+          <div class="assunto">${esc(e.assunto)}</div>
+          <div class="por-que">${esc(e.porQue)}</div>
+        </div>`;
+      }).join('');
+
+  screenEl.innerHTML = `
+    <button type="button" class="back" onclick="location.hash='#/home'">‹ Início</button>
+    <h1 class="mid">Progresso por <i>disciplina</i>.</h1>
+    <p class="lede">Cobertura da meta semanal por matéria nesta semana.</p>
+
+    <div class="card lg" style="margin-top:16px">${discHTML}</div>
+
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kicker">Semana</div>
+        <div class="num">${kpiNum(semanaMin)}</div>
+        <div class="sub">${semanaSub}</div>
+      </div>
+      <div class="kpi acid">
+        <div class="kicker">Erros pendentes</div>
+        <div class="num">${pend}</div>
+        <div class="sub">${erros.length ? 'de '+erros.length+' registrado'+(erros.length !== 1 ? 's' : '') : 'nenhum registro'}</div>
+      </div>
+    </div>
+
+    <div class="card lg">
+      <div class="card-title">Erros <i>recentes</i></div>
+      <div class="card-sub" style="margin-bottom:14px">Últimos registros do seu caderno de erros.</div>
+      ${errosHTML}
+    </div>`;
+}
+
+function renderHist() {
+  const disc = loadJSON(DISC_KEY, []);
+  const discById = Object.fromEntries(disc.map(d => [d.id, d]));
+  const { wk, blocos } = blocosDeHoje();
+  const feitoMin = blocos.reduce((s, b) => s + getStudiedMin(b), 0);
+  const planMin = blocos.reduce((s, b) => s + getPlannedMin(b), 0);
+
+  const sessHTML = blocos.length === 0
+    ? `<div class="empty">Nada planejado pra hoje. <a href="plannerstudy.html">Planejar →</a><br>O botão <b>Estudar agora</b> abre um cronômetro de estudo extra.</div>`
+    : blocos.slice().sort((a, b) => parseTime(a.ini)-parseTime(b.ini)).map(b => {
+        const isRev = b.tipo === 'revisao' || b.revisao;
+        const planned = getPlannedMin(b);
+        const studied = getStudiedMin(b);
+        const mins = b.feito || studied > 0 ? studied : planned;
+        const pct = planned > 0 ? Math.min(100, Math.round(studied/planned*100)) : (b.feito ? 100 : 0);
+        const over = b.feito && studied > planned;
+        const motivo = b.feito
+          ? (over ? 'concluída · +'+fmtRange(studied-planned)+' além do planejado' : 'concluída')
+          : motivoBloco(b);
+        return `<div class="sess ${isRev ? 'rev' : ''} ${b.feito ? 'done' : ''}">
+          <div style="min-width:0">
+            <div class="hora">${esc(b.ini || '')}${b.fim ? '—'+esc(b.fim) : ''}</div>
+            <div class="nome">${isRev ? '⟳ ' : ''}${esc(nomeBloco(b, discById))}</div>
+            <div class="motivo">${esc(motivo)}</div>
+          </div>
+          <div class="right">
+            <span class="mins">${mins >= 60 ? fmtHM(mins) : mins+'min'}</span>
+            ${b.feito
+              ? `<button type="button" class="play" onclick="desmarcar('${wk}','${b.id}')" aria-label="Desmarcar sessão">✓</button>`
+              : `<button type="button" class="play" onclick="startBloco('${wk}','${b.id}')" aria-label="Iniciar cronômetro">▶</button>`}
+          </div>
+          <div class="prog">
+            <div class="bar"><i class="${b.feito ? 'ok' : ''}" style="width:${pct}%"></i></div>
+            <div class="lbl"><span>${studied}min de ${planned}min planejados</span><span>${pct}%</span></div>
+          </div>
+        </div>`;
+      }).join('');
+
+  const mapa = minutosPorDia();
+  const hoje = nowCuiaba();
+  const dias = [];
+  let maxMin = 60;
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(hoje, -i);
+    const m = mapa[dateKey(d)] || 0;
+    if (m > maxMin) maxMin = m;
+    dias.push({ d, m, i });
+  }
+  const dias7HTML = dias.map(({ d, m, i }) => {
+    const nome = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+    return `<div class="dia7">
+      <div>
+        <b class="dia">${nome}${i === 0 ? ' · hoje' : ''}</b>
+        <div class="bar"><i style="width:${Math.round(m/maxMin*100)}%"></i></div>
+      </div>
+      <div class="tot">${fmtHM(m)}</div>
+    </div>`;
+  }).join('');
+
+  screenEl.innerHTML = `
+    <button type="button" class="back" onclick="location.hash='#/home'">‹ Início</button>
+    <h1 class="mid">Seu <i>estudo</i> de hoje.</h1>
+
+    <div class="kpi-grid" style="margin-top:16px">
+      <div class="kpi" style="padding:15px 16px">
+        <div class="kicker">Estudado</div>
+        <div class="num" style="font-size:32px">${kpiNum(feitoMin)}</div>
+      </div>
+      <div class="kpi" style="padding:15px 16px">
+        <div class="kicker">Planejado</div>
+        <div class="num" style="font-size:32px;color:var(--ink)">${kpiNum(planMin)}</div>
+      </div>
+    </div>
+
+    <div class="card lg">
+      <div class="card-title">Planejado <i>pra hoje</i></div>
+      <div class="card-sub" style="margin-bottom:14px">Toque em ▶ para iniciar o cronômetro.</div>
+      ${sessHTML}
+    </div>
+
+    <div class="card lg">
+      <div class="card-title">Últimos <i>7 dias</i></div>
+      <div class="card-sub" style="margin-bottom:8px">Todo o estudo registrado, marcado ou via cronômetro.</div>
+      ${dias7HTML}
+    </div>`;
+}
+
+function renderSync() {
+  const disc = loadJSON(DISC_KEY, []);
+  const erros = loadJSON(ERR_KEY, []);
+  const { blocos } = blocosDeHoje();
+  const chaves = backupKeys();
+
+  screenEl.innerHTML = `
+    <button type="button" class="back" onclick="location.hash='#/home'">‹ Início</button>
+    <h1 class="mid">Conta e <i>sincronização</i>.</h1>
+    <p class="lede">Seus dados em todos os aparelhos — por enquanto, via arquivo de backup.</p>
+
+    <div class="card-navy" style="margin-top:16px">
+      <div class="glow"></div>
+      <div style="position:relative">
+        <div class="kicker">Este aparelho</div>
+        <div style="font-family:Fraunces,serif;font-size:20px;font-weight:500;margin-top:6px">Dados salvos localmente</div>
+        <div style="font-size:12px;color:rgba(244,241,234,0.6);margin-top:4px">${disc.length} disciplina${disc.length !== 1 ? 's' : ''} · ${blocos.length} sess${blocos.length !== 1 ? 'ões' : 'ão'} hoje · ${erros.length} erro${erros.length !== 1 ? 's' : ''} no caderno · ${chaves.length} chaves de dados</div>
+        <button type="button" class="btn-acid" onclick="exportarBackup()">Exportar backup agora</button>
+      </div>
+    </div>
+
+    <div class="card lg">
+      <div class="kicker">Levar pra outro aparelho</div>
+      <div style="font-size:12.5px;color:var(--ink2);line-height:1.55;margin-top:8px">O backup é um arquivo <b>.json</b> com tudo: plano, disciplinas, sessões, revisões, erros, simulados e prova. Exporta aqui, abre o TrackerMed no outro aparelho e importa — nada é digitado de novo.</div>
+      <div class="btn-row">
+        <button type="button" class="btn-grad" onclick="exportarBackup()">Exportar backup</button>
+        <button type="button" class="btn-ghost" onclick="document.getElementById('importFile').click()">Importar</button>
+      </div>
+      <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importarBackup(this)">
+      <div style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:14px">Importar <b>substitui</b> os dados deste aparelho pelos do arquivo — o app sempre pergunta antes.</div>
+    </div>
+
+    <div class="card lg">
+      <div class="kicker">Conta na nuvem · próximo passo</div>
+      <div style="font-size:12.5px;color:var(--ink2);line-height:1.55;margin-top:8px">A sincronização automática com login ainda não está ligada — precisa de um serviço de banco/autenticação por trás. Quando entrar, ao abrir num aparelho novo o app pergunta se você quer <b>trazer os dados da nuvem</b> ou <b>enviar os deste aparelho</b> — nunca sobrescreve sem perguntar.</div>
+    </div>`;
+}
+
+// ===== Backup: exportar / importar ===========================================
+function backupKeys() {
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && (k.startsWith('trackermed.') || BACKUP_EXTRA_KEYS.includes(k))) keys.push(k);
+  }
+  return keys.sort();
+}
+function exportarBackup() {
+  const dados = {};
+  backupKeys().forEach(k => { dados[k] = localStorage.getItem(k); });
+  const payload = { app: 'trackermed', versao: 1, exportadoEm: new Date().toISOString(), dados };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'trackermed-backup-' + todayKey() + '.json';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+function importarBackup(input) {
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let payload;
+    try { payload = JSON.parse(reader.result); } catch { alert('Arquivo inválido: não é um backup do TrackerMed.'); return; }
+    if (!payload || payload.app !== 'trackermed' || typeof payload.dados !== 'object' || !payload.dados) {
+      alert('Arquivo inválido: não é um backup do TrackerMed.');
+      return;
+    }
+    const qtd = Object.keys(payload.dados).length;
+    const quando = payload.exportadoEm ? new Date(payload.exportadoEm).toLocaleString('pt-BR') : 'data desconhecida';
+    if (!confirm('Substituir os dados deste aparelho pelos do backup?\n\nBackup de ' + quando + ' · ' + qtd + ' chaves.\nEssa ação não pode ser desfeita.')) return;
+    backupKeys().forEach(k => { if (k !== TIMER_KEY) localStorage.removeItem(k); });
+    Object.entries(payload.dados).forEach(([k, v]) => {
+      if ((k.startsWith('trackermed.') || BACKUP_EXTRA_KEYS.includes(k)) && typeof v === 'string') localStorage.setItem(k, v);
+    });
+    alert('Backup importado. O app vai recarregar.');
+    location.reload();
+  };
+  reader.readAsText(file);
+}
+
+// ===== Cronômetro =============================================================
+// O relógio calcula o tempo a partir de startedAt (timestamp) — assim continua
+// certo mesmo se o iOS pausar o JavaScript com o app em segundo plano.
+let timer = loadJSON(TIMER_KEY, null);
+let tickId = null;
+
+function saveTimer() { if (timer) saveJSON(TIMER_KEY, timer); else localStorage.removeItem(TIMER_KEY); }
+function elapsedSec() {
+  if (!timer) return 0;
+  return (timer.baseSec || 0) + (timer.startedAt ? Math.max(0, Math.floor((Date.now()-timer.startedAt)/1000)) : 0);
+}
+function paintTimer() {
+  if (!timer) return;
+  const sec = elapsedSec();
+  const mins = Math.floor(sec/60);
+  document.getElementById('tClock').textContent = String(mins).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');
+  document.getElementById('tLabel').textContent = timer.startedAt ? 'Foco ativo' : 'Foco pausado';
+  document.getElementById('tDisc').textContent = timer.nome + (timer.motivo ? ' · '+timer.motivo : '');
+  document.getElementById('tPlay').textContent = timer.startedAt ? 'Pausar' : 'Iniciar';
+  if (timer.plannedMin > 0) {
+    const pct = Math.min(100, mins/timer.plannedMin*100);
+    document.getElementById('tFill').style.width = pct+'%';
+    document.getElementById('tProg').textContent = mins+'min de '+timer.plannedMin+'min';
+    document.getElementById('tPct').textContent = Math.round(pct)+'%';
+  } else {
+    document.getElementById('tFill').style.width = '100%';
+    document.getElementById('tProg').textContent = mins+'min · estudo livre';
+    document.getElementById('tPct').textContent = '';
+  }
+}
+function openSheet() {
+  document.body.classList.add('timer-open');
+  paintTimer();
+  if (tickId) clearInterval(tickId);
+  tickId = setInterval(paintTimer, 500);
+}
+function hideSheet() {
+  document.body.classList.remove('timer-open');
+  if (tickId) { clearInterval(tickId); tickId = null; }
+}
+function startBloco(wk, blocoId) {
+  if (timer && elapsedSec() > 0 && !confirm('Já tem um cronômetro em andamento. Substituir?')) return;
+  const plan = loadJSON(PLAN_KEY, {});
+  const b = (plan[wk] || []).find(x => x.id === blocoId);
+  if (!b) return;
+  const disc = loadJSON(DISC_KEY, []);
+  const discById = Object.fromEntries(disc.map(d => [d.id, d]));
+  timer = {
+    blocoId, wk,
+    nome: nomeBloco(b, discById),
+    motivo: motivoBloco(b),
+    plannedMin: getPlannedMin(b),
+    startedAt: Date.now(), baseSec: 0
+  };
+  saveTimer();
+  openSheet();
+}
+function startFree() {
+  if (timer && elapsedSec() > 0 && !confirm('Já tem um cronômetro em andamento. Substituir?')) return;
+  timer = { blocoId: null, wk: null, nome: 'Estudo extra', motivo: 'sessão avulsa', plannedMin: 0, startedAt: Date.now(), baseSec: 0 };
+  saveTimer();
+  openSheet();
+}
+function estudarAgora() {
+  const { wk, blocos } = blocosDeHoje();
+  const prox = blocos.filter(b => !b.feito).sort((a, b) => parseTime(a.ini)-parseTime(b.ini))[0];
+  if (location.hash !== '#/hist') location.hash = '#/hist';
+  if (prox) startBloco(wk, prox.id); else startFree();
+}
+function toggleTimer() {
+  if (!timer) return;
+  if (timer.startedAt) { timer.baseSec = elapsedSec(); timer.startedAt = null; }
+  else timer.startedAt = Date.now();
+  saveTimer();
+  paintTimer();
+}
+function resetTimer() {
+  if (!timer) return;
+  if (elapsedSec() >= 60 && !confirm('Zerar o cronômetro? O tempo desta sessão será perdido.')) return;
+  timer.baseSec = 0;
+  timer.startedAt = timer.startedAt ? Date.now() : null;
+  saveTimer();
+  paintTimer();
+}
+function closeTimer() {
+  if (timer && elapsedSec() >= 60 && !confirm('Fechar sem concluir? Os '+Math.floor(elapsedSec()/60)+'min desta sessão serão descartados.')) return;
+  timer = null;
+  saveTimer();
+  hideSheet();
+  route();
+}
+function finishTimer() {
+  if (!timer) return;
+  const studied = Math.max(1, Math.floor(elapsedSec()/60));
+  const plan = loadJSON(PLAN_KEY, {});
+  if (timer.blocoId) {
+    // Sessão planejada: acumula o tempo e marca concluída (mesmo shape que o
+    // Histórico grava: feito + minutosFeitos + data). Procura em todas as
+    // semanas — o bloco pode ter sido movido.
+    let alvo = null;
+    Object.keys(plan).forEach(wk => {
+      plan[wk] = (plan[wk] || []).map(b => {
+        if (b.id !== timer.blocoId) return b;
+        const plannedMin = b.minutos || Math.round((parseTime(b.fim)-parseTime(b.ini))*60) || studied;
+        alvo = { ...b, feito: true, minutos: plannedMin, minutosFeitos: (b.minutosFeitos || 0) + studied, data: todayKey() };
+        return alvo;
+      });
+    });
+    saveJSON(PLAN_KEY, plan);
+    // Bloco de revisão vindo de revisoes.html: sincroniza a entrada do feed
+    // (mesmo patch do cronômetro do Histórico).
+    if (alvo && (alvo.tipo === 'revisao' || alvo.revisao) && alvo.revHistId) {
+      const arr = loadJSON(HIST_KEY, []).map(r => {
+        if (!r || r.id !== alvo.revHistId) return r;
+        return { ...r, concluido: true, minutos: Math.max(parseInt(r.minutos) || 0, studied), revisar: true, finalizadoEm: Date.now() };
+      });
+      saveJSON(HIST_KEY, arr);
+    }
+  } else {
+    // Estudo extra: cria um bloco avulso de hoje, como o cronômetro do
+    // Histórico faz (extra + fromTimer), já concluído.
+    const now = nowCuiaba();
+    const wk = weekKey(now);
+    if (!plan[wk]) plan[wk] = [];
+    const endH = now.getHours() + now.getMinutes()/60;
+    const startH = Math.max(0, endH - studied/60);
+    plan[wk].push({
+      id: uid(), tipo: 'estudo', discId: null, matNome: 'Estudo extra', conteudo: '',
+      dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH),
+      feito: true, fromTimer: true, minutos: studied, minutosFeitos: studied,
+      extra: true, data: todayKey()
+    });
+    saveJSON(PLAN_KEY, plan);
+  }
+  timer = null;
+  saveTimer();
+  hideSheet();
+  route();
+}
+function desmarcar(wk, blocoId) {
+  if (!confirm('Desmarcar esta sessão como concluída?')) return;
+  const plan = loadJSON(PLAN_KEY, {});
+  let alvo = null;
+  plan[wk] = (plan[wk] || []).map(b => {
+    if (b.id !== blocoId) return b;
+    alvo = { ...b, feito: false };
+    return alvo;
+  });
+  saveJSON(PLAN_KEY, plan);
+  // Desfaz também a conclusão no feed de revisões, se for o caso.
+  if (alvo && (alvo.tipo === 'revisao' || alvo.revisao) && alvo.revHistId) {
+    const arr = loadJSON(HIST_KEY, []).map(r => (r && r.id === alvo.revHistId) ? { ...r, concluido: false } : r);
+    saveJSON(HIST_KEY, arr);
+  }
+  route();
+}
+
+// ===== Estado da rede =========================================================
+function paintNet() {
+  const off = !navigator.onLine;
+  document.body.classList.toggle('offline', off);
+  const pill = document.getElementById('netPill');
+  pill.textContent = off ? '✈︎ Offline' : '⌁ Wi-Fi';
+  pill.classList.toggle('off', off);
+}
+window.addEventListener('online', paintNet);
+window.addEventListener('offline', paintNet);
+
+// ===== Roteamento + FAB =======================================================
+function paintFab() {
+  const { blocos } = blocosDeHoje();
+  const prox = blocos.filter(b => !b.feito).sort((a, b) => parseTime(a.ini)-parseTime(b.ini))[0];
+  const disc = loadJSON(DISC_KEY, []);
+  const discById = Object.fromEntries(disc.map(d => [d.id, d]));
+  document.getElementById('fab').textContent = '▶ Estudar agora · ' + (prox ? nomeBloco(prox, discById) : 'estudo extra');
+}
+function route() {
+  const hash = (location.hash || '#/home').replace('#/', '').split('?')[0];
+  if (hash === 'dash') renderDash();
+  else if (hash === 'hist') renderHist();
+  else if (hash === 'sync') renderSync();
+  else renderHome();
+  paintFab();
+  paintNet();
+  document.getElementById('scrollArea').scrollTop = 0;
+}
+window.addEventListener('hashchange', route);
+
+function init() {
+  route();
+  // Cronômetro sobreviveu a um reload/fechamento do app: reabre onde parou.
+  if (timer) openSheet();
+  // Atalho "Estudar agora" do ícone do app (manifest shortcut).
+  if (/play=1/.test(location.hash)) {
+    history.replaceState(null, '', location.pathname + '#/hist');
+    estudarAgora();
+  }
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
+</script>
+</body>
+</html>
