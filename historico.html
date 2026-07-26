@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=3"></script>
+<script src="theme.js?v=4"></script>
 <style>
 .hoje-head { display: grid; grid-template-columns: 1fr auto auto auto; gap: 12px; margin-bottom: 20px; }
 .hoje-head .stat-card { background: #fff; border: 1px solid #E0E0E0; padding: 18px 20px; min-width: 140px; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); }
@@ -1369,6 +1369,7 @@ function responderConclusaoConteudo(concluiu) {
     discNome: ctx.materia || '',
     conteudo: ctx.conteudo || '',
     conteudoId: ctx.conteudoId || null,
+    minutos: ctx.minutos || 0,
     histId,
     blocoId: (ctx.bloco && ctx.bloco.id) || null,
     concluded: !!concluiu
@@ -1686,6 +1687,7 @@ function salvarExtraManual() {
     discNome: mat.nome,
     conteudo: cont.conteudo || '',
     conteudoId: cont.conteudoId || null,
+    minutos: minsAtuais,
     histId,
     blocoId,
     concluded: concluido
@@ -1825,11 +1827,13 @@ function aplicarTempoEstudado() {
   if (isNaN(v) || v < 0) { alert('Informe um número de minutos válido.'); return; }
   const { wk, blocoId, discNome } = durCtx;
   const plan = loadPlan();
-  let alvo = null;
+  let alvo = null, deltaMin = 0;
   plan[wk] = (plan[wk]||[]).map(b => {
     if (b.id !== blocoId) return b;
     const plannedMin = getPlannedMin(b);
     const feito = v >= plannedMin && plannedMin > 0;
+    // O campo substitui o total estudado — a "sessão" de agora é só a diferença.
+    deltaMin = Math.max(0, v - (b.minutosFeitos || 0));
     alvo = { ...b, minutosFeitos: v, feito, data: b.data || todayKey() };
     return alvo;
   });
@@ -1844,6 +1848,7 @@ function aplicarTempoEstudado() {
       discNome: discNome || '',
       conteudo: alvo.conteudo || '',
       conteudoId: alvo.conteudoId || null,
+      minutos: deltaMin,
       histId: null,
       blocoId,
       concluded: !!alvo.feito
@@ -2077,12 +2082,23 @@ function renderMateriaisHoje() {
   if (!emAndamento.length && !concluidosHoje.length) { box.style.display = 'none'; return; }
   box.style.display = '';
   const midAttr = id => JSON.stringify(id).replace(/"/g, '&quot;');
+  const RITMO = window.TrackerMedRitmo;
+  const ritmoSamples = RITMO ? RITMO.samples() : null;
   const rows = emAndamento.map(m => {
     const st = MAT.stats(m);
     const u = q => escHtml(MAT.fmtUnid(q, m.unidade));
     const disc = m.discNome ? `<span class="mi-disc">· ${escHtml(m.discNome)}${m.conteudoNome ? ' — ' + escHtml(m.conteudoNome) : ''}</span>` : '';
     const hojeTxt = st.hoje > 0 ? `Hoje: <b>${u(st.hoje)}</b> · ` : '';
-    const prev = st.estimativaDias != null ? ` · previsão: <b>${st.estimativaDias} dia${st.estimativaDias !== 1 ? 's' : ''}</b>` : '';
+    // Previsão baseada na velocidade REAL (págs/h, min/h) quando há sessões
+    // cronometradas; senão, cai na estimativa por qtd/dia do matStats.
+    let prev = st.estimativaDias != null ? ` · previsão: <b>${st.estimativaDias} dia${st.estimativaDias !== 1 ? 's' : ''}</b>` : '';
+    if (RITMO) {
+      const ri = RITMO.material(m, ritmoSamples);
+      if (ri.vel && ri.restanteMin != null) {
+        prev = ` · ritmo: <b>${escHtml(RITMO.fmtVel(ri.vel.porHora, m.unidade))}</b> · ~<b>${fmtHrange(Math.round(ri.restanteMin))}</b> restantes`;
+        if (ri.dias != null) prev += ` (≈${ri.dias} dia${ri.dias !== 1 ? 's' : ''})`;
+      }
+    }
     const msgs = MAT.mensagens(m).slice(0, 2).map(x => `<div class="mi-msg">${escHtml(x)}</div>`).join('');
     return `<div class="mat-item">
       <div class="mi-top">
@@ -2316,6 +2332,9 @@ function maMetaAvanco(av) {
   if (av && av.de != null) meta.de = av.de;
   if (av && av.ate != null) meta.ate = av.ate;
   if (maCtx && maCtx.blocoId) meta.blocoId = maCtx.blocoId;
+  // Tempo real da sessão: base do cálculo de velocidade (págs/h, min/h…)
+  // usado nas projeções de ritmo em graficos.html.
+  if (maCtx && maCtx.minutos > 0) meta.sessaoMin = Math.round(maCtx.minutos);
   return meta;
 }
 function salvarMatAvanco() {

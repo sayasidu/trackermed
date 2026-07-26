@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=3"></script>
+<script src="theme.js?v=4"></script>
 <style>
 .greet-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-bottom: 36px; align-items: start; }
 .greet .kicker-sm { font-size: 11px; letter-spacing: 0.2em; color: var(--muted); font-weight: 700; text-transform: uppercase; }
@@ -268,6 +268,18 @@
 </div>
 
 <div id="metaBanner" class="meme-banner" style="display:none"></div>
+
+<div class="box" id="ritmoResumoBox" style="margin-bottom:18px;display:none">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+    <div>
+      <h2>Seu <i>ritmo</i> de estudo</h2>
+      <div class="sub">Velocidade real por tipo de recurso e previsão de conclusão dos materiais em andamento.</div>
+    </div>
+    <a href="graficos.html#ritmoBox" style="font-size:12px;color:var(--cobalt);font-weight:600;text-decoration:none">projeções completas ›</a>
+  </div>
+  <div id="ritmoResumoChips" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"></div>
+  <div id="ritmoResumoMats" style="margin-top:10px;font-size:13px;color:var(--ink2);line-height:1.7"></div>
+</div>
 
 <div class="col2">
   <div class="box">
@@ -1095,8 +1107,44 @@ function loadResumoView() {
   return v === 'planos' ? 'planos' : 'geral';
 }
 
+// ==== Ritmo de estudo (resumo compacto) ====================================
+// Velocidade real por tipo de recurso + previsão dos materiais em andamento.
+// Motor compartilhado em theme.js (TrackerMedRitmo); o detalhamento completo,
+// com cenários e gráficos, fica em graficos.html.
+function renderRitmoResumo() {
+  const box = document.getElementById('ritmoResumoBox');
+  const RITMO = window.TrackerMedRitmo, MATE = window.TrackerMedMateriais;
+  if (!box || !RITMO || !MATE) return;
+  const samples = RITMO.samples();
+  const emAndamento = MATE.emAndamento();
+  if (!samples.length && !emAndamento.length) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  const cats = RITMO.categorias(samples);
+  const chips = ['leitura','visualizacao','escuta','outros'].map(k => {
+    const c = cats[k];
+    if (!c.nSessoes || !c.vel) return '';
+    const prov = c.vel.provisoria ? ' <span style="opacity:.6">· inicial</span>' : '';
+    return `<span style="font-size:12px;font-weight:600;background:var(--surface-soft,#f4f2ec);border:1px solid var(--line);border-radius:999px;padding:6px 13px">${c.icon} ${esc(c.label)}: <b style="color:var(--cobalt)">${esc(RITMO.fmtVel(c.vel.porHora, c.unidade))}</b>${prov}</span>`;
+  }).filter(Boolean);
+  document.getElementById('ritmoResumoChips').innerHTML = chips.length
+    ? chips.join('')
+    : `<span style="font-size:12px;color:var(--muted)">Registre o recurso utilizado ao encerrar sessões no <a href="historico.html" style="color:var(--cobalt);font-weight:600">Histórico</a> pra medir sua velocidade real.</span>`;
+  const linhas = emAndamento
+    .map(m => RITMO.material(m, samples))
+    .filter(ri => ri.restanteMin != null)
+    .sort((a, b) => (a.dias == null ? 1 : 0) - (b.dias == null ? 1 : 0) || (a.dias || 0) - (b.dias || 0))
+    .slice(0, 3)
+    .map(ri => {
+      const m = ri.material;
+      const prev = ri.dataPrevista ? ` · conclusão prevista: <b>${esc(MATE.fmtDataBR(ri.dataPrevista))}</b>` : '';
+      return `${MATE.tipoIcon(m.tipo)} <b>${esc(m.nome)}</b> — ${ri.stats.pct}% · ~${fmtHrange(Math.round(ri.restanteMin))} restantes${prev}`;
+    });
+  document.getElementById('ritmoResumoMats').innerHTML = linhas.join('<br>');
+}
+
 render();
 renderFrase(renderResumo());
+renderRitmoResumo();
 incrementVisit();
 </script>
 </body></html>
