@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js"></script>
+<script src="theme.js?v=2"></script>
 <style>
 .hoje-head { display: grid; grid-template-columns: 1fr auto auto auto; gap: 12px; margin-bottom: 20px; }
 .hoje-head .stat-card { background: #fff; border: 1px solid #E0E0E0; padding: 18px 20px; min-width: 140px; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); }
@@ -1500,8 +1500,29 @@ function apagarBloco(wk, blocoId) {
 // foi cadastrado em disciplinas.html: escolhida a disciplina, o select de
 // conteúdo mostra só os conteúdos dela; escolhido o conteúdo, o de tópico
 // mostra só os tópicos dele. Sem cadastro (ou matéria avulsa), texto livre.
-const durHier = TrackerMedConteudos.ctrl({ sel: 'durConteudoSel', topico: 'durTopicoSel', selWrap: 'durConteudoSelWrap', livreWrap: 'durConteudoLivreWrap', livre: 'durConteudo', hint: 'durConteudoHint' });
-const extraHier = TrackerMedConteudos.ctrl({ sel: 'eConteudoSel', topico: 'eTopicoSel', selWrap: 'eConteudoSelWrap', livreWrap: 'eConteudoLivreWrap', livre: 'eConteudo', hint: 'eConteudoHint' });
+// Fallback: se um theme.js desatualizado (cache do navegador) ainda não expõe
+// TrackerMedConteudos, o campo volta a ser texto livre em vez de derrubar a
+// página inteira — o histórico continua renderizando e os modais abrindo.
+function conteudosEngine() {
+  if (window.TrackerMedConteudos) return window.TrackerMedConteudos;
+  const ctrl = (ids) => {
+    const el = k => ids[k] ? document.getElementById(ids[k]) : null;
+    const mostrar = (elm, on) => { if (elm) elm.style.display = on ? '' : 'none'; };
+    return {
+      conteudos: [], soLivre: true,
+      onConteudoChange() {},
+      montar(discId, pre) {
+        pre = pre || {};
+        mostrar(el('selWrap'), false); mostrar(el('livreWrap'), true); mostrar(el('hint'), false);
+        const lv = el('livre'); if (lv) lv.value = pre.texto || '';
+      },
+      ler() { const lv = el('livre'); return { conteudoId: null, topicoId: null, conteudo: ((lv && lv.value) || '').trim() }; }
+    };
+  };
+  return { OUTRO: '__outro__', daDisciplina: () => [], rotulo: (c, t) => t ? c + ' — ' + t : (c || ''), acharPorTexto: () => null, ctrl };
+}
+const durHier = conteudosEngine().ctrl({ sel: 'durConteudoSel', topico: 'durTopicoSel', selWrap: 'durConteudoSelWrap', livreWrap: 'durConteudoLivreWrap', livre: 'durConteudo', hint: 'durConteudoHint' });
+const extraHier = conteudosEngine().ctrl({ sel: 'eConteudoSel', topico: 'eTopicoSel', selWrap: 'eConteudoSelWrap', livreWrap: 'eConteudoLivreWrap', livre: 'eConteudo', hint: 'eConteudoHint' });
 
 // Modal extra
 let extraSecoes = 2;
