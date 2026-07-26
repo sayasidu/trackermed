@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js"></script>
+<script src="theme.js?v=2"></script>
 <style>
 .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
 .stat-card { background: #fff; border: 1px solid #E0E0E0; padding: 18px 20px; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); }
@@ -1417,7 +1417,28 @@ function popularSelectDisc(selected) {
 }
 
 // Selects dependentes de conteúdo/tópico (motor compartilhado em theme.js).
-const aHier = TrackerMedConteudos.ctrl({ sel: 'aConteudoSel', topico: 'aTopicoSel', selWrap: 'aConteudoSelWrap', livreWrap: 'aConteudoLivreWrap', livre: 'aConteudo', hint: 'aConteudoHint' });
+// Fallback: se um theme.js desatualizado (cache do navegador) ainda não expõe
+// TrackerMedConteudos, o campo volta a ser texto livre em vez de derrubar a
+// página inteira — o planner continua renderizando e salvando normalmente.
+function conteudosEngine() {
+  if (window.TrackerMedConteudos) return window.TrackerMedConteudos;
+  const ctrl = (ids) => {
+    const el = k => ids[k] ? document.getElementById(ids[k]) : null;
+    const mostrar = (elm, on) => { if (elm) elm.style.display = on ? '' : 'none'; };
+    return {
+      conteudos: [], soLivre: true,
+      onConteudoChange() {},
+      montar(discId, pre) {
+        pre = pre || {};
+        mostrar(el('selWrap'), false); mostrar(el('livreWrap'), true); mostrar(el('hint'), false);
+        const lv = el('livre'); if (lv) lv.value = pre.texto || '';
+      },
+      ler() { const lv = el('livre'); return { conteudoId: null, topicoId: null, conteudo: ((lv && lv.value) || '').trim() }; }
+    };
+  };
+  return { OUTRO: '__outro__', daDisciplina: () => [], rotulo: (c, t) => t ? c + ' — ' + t : (c || ''), acharPorTexto: () => null, ctrl };
+}
+const aHier = conteudosEngine().ctrl({ sel: 'aConteudoSel', topico: 'aTopicoSel', selWrap: 'aConteudoSelWrap', livreWrap: 'aConteudoLivreWrap', livre: 'aConteudo', hint: 'aConteudoHint' });
 function aDiscChange() { aHier.montar(document.getElementById('aDisc').value, {}); }
 
 function fecharAdd() { document.getElementById('addModal').classList.remove('open'); editSlot = null; }
@@ -2322,7 +2343,7 @@ function renderCalWeek(acts, marks) {
 // "Calendário geral" mais abaixo reúne TODOS os planos, com seu próprio filtro.)
 function renderSemBanner() {
   const el = document.getElementById('semBanner');
-  if (!el) return;
+  if (!el || !window.TrackerMedContext) return;
   el.innerHTML = window.TrackerMedContext.switcherHTML('Editando o plano');
 }
 
