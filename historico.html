@@ -312,9 +312,16 @@ html[data-theme="dark"] .plano-tag { background: var(--surface-soft); border-col
     <button class="mbtn-close" onclick="fecharDur()">×</button>
     <h2 id="durTitulo">Duração</h2>
     <div class="modal-sub" id="durSub">—</div>
-    <div class="mfield" id="durConteudoWrap" style="display:none">
-      <label>Conteúdo sendo estudado (opcional)</label>
-      <input type="text" id="durConteudo" maxlength="160" placeholder="ex: capítulo 3, sistema cardiovascular, farmacologia…">
+    <div id="durConteudoWrap" style="display:none">
+      <div class="mfield row2" id="durConteudoSelWrap" style="display:none">
+        <div><label>Conteúdo / Área (opcional)</label><select id="durConteudoSel" onchange="durHier.onConteudoChange()"></select></div>
+        <div><label>Tópico (opcional)</label><select id="durTopicoSel"></select></div>
+      </div>
+      <div class="mfield" id="durConteudoLivreWrap">
+        <label>Conteúdo sendo estudado (opcional)</label>
+        <input type="text" id="durConteudo" maxlength="160" placeholder="ex: capítulo 3, sistema cardiovascular, farmacologia…">
+        <div id="durConteudoHint" style="display:none;font-size:11px;color:#70757A;margin-top:6px">Cadastre conteúdos e tópicos em <a href="disciplinas.html" style="color:var(--cobalt);font-weight:600">Disciplinas</a> pra escolher aqui sem digitar.</div>
+      </div>
     </div>
     <div class="dur-grid">
       <button type="button" class="dur-btn" onclick="escolherDur(25)">25min</button>
@@ -373,8 +380,16 @@ html[data-theme="dark"] .plano-tag { background: var(--surface-soft); border-col
       <div class="mfield" id="eDiscOutraWrap" style="display:none"><label>Nome da matéria</label>
         <input type="text" id="eDiscOutra" maxlength="80" placeholder="ex: Inglês, Programação, Direito…">
       </div>
-      <div class="mfield"><label>Conteúdo (opcional)</label>
-        <input type="text" id="eConteudo" maxlength="160" placeholder="ex: capítulo 3, exercícios de fisiologia…">
+      <div id="eConteudoWrap">
+        <div class="mfield row2" id="eConteudoSelWrap" style="display:none">
+          <div><label>Conteúdo / Área (opcional)</label><select id="eConteudoSel" onchange="extraHier.onConteudoChange()"></select></div>
+          <div><label>Tópico (opcional)</label><select id="eTopicoSel"></select></div>
+        </div>
+        <div class="mfield" id="eConteudoLivreWrap">
+          <label>Conteúdo (opcional)</label>
+          <input type="text" id="eConteudo" maxlength="160" placeholder="ex: capítulo 3, exercícios de fisiologia…">
+          <div id="eConteudoHint" style="display:none;font-size:11px;color:#70757A;margin-top:6px">Cadastre conteúdos e tópicos em <a href="disciplinas.html" style="color:var(--cobalt);font-weight:600">Disciplinas</a> pra escolher aqui sem digitar.</div>
+        </div>
       </div>
       <div class="mfield"><label>Duração (Pomodoro)</label>
         <select id="eMins">
@@ -841,7 +856,7 @@ function pickMeme(seed, lista) {
 
 // Timer state
 function makeTimerState() {
-  return { discId: null, discNome: '', conteudo: '', focusSec: 0, pauseSec: 0, sections: 1, currentSection: 1, mode: 'focus', leftSec: 0, running: false, intervalId: null, linkedBlocoId: null, fromModal: false, revisar: false, studiedSec: 0, freeMode: false, elapsedSec: 0, revHistId: null, extraFlow: false, plannedTotalMin: 0, pomodoroMin: 0, accumStudiedMin: 0 };
+  return { discId: null, discNome: '', conteudo: '', conteudoId: null, topicoId: null, focusSec: 0, pauseSec: 0, sections: 1, currentSection: 1, mode: 'focus', leftSec: 0, running: false, intervalId: null, linkedBlocoId: null, fromModal: false, revisar: false, studiedSec: 0, freeMode: false, elapsedSec: 0, revHistId: null, extraFlow: false, plannedTotalMin: 0, pomodoroMin: 0, accumStudiedMin: 0 };
 }
 let timerState = makeTimerState();
 function beep() {
@@ -856,6 +871,7 @@ function timerOpen(discId, discNome, mins, linkedBlocoId, opts) {
   timerState = {
     discId, discNome,
     conteudo: opts.conteudo || '',
+    conteudoId: opts.conteudoId || null, topicoId: opts.topicoId || null,
     focusSec: mins*60, pauseSec: pauseMins*60,
     sections, currentSection: 1, mode: 'focus',
     leftSec: mins*60,
@@ -885,6 +901,7 @@ function timerOpenFree(discId, discNome, linkedBlocoId, opts) {
   timerState = {
     discId, discNome,
     conteudo: opts.conteudo || '',
+    conteudoId: opts.conteudoId || null, topicoId: opts.topicoId || null,
     focusSec: 0, pauseSec: 0,
     sections: 1, currentSection: 1, mode: 'focus',
     leftSec: 0,
@@ -1059,6 +1076,8 @@ function timerFinish(auto) {
   const sessaoRevHistId = timerState.revHistId;
   const sessaoMateria = timerState.discNome;
   const sessaoConteudo = timerState.conteudo || '';
+  const sessaoConteudoId = timerState.conteudoId || null;
+  const sessaoTopicoId = timerState.topicoId || null;
   const sessaoDiscId = timerState.discId;
 
   let novoRevBlocoId = null;
@@ -1107,7 +1126,7 @@ function timerFinish(auto) {
           const studiedAcum = (b.minutosFeitos || 0) + studied;
           const feito = !!b.feito || (plannedMin > 0 && studiedAcum >= plannedMin);
           const updated = { ...b, feito, minutos: plannedMin, minutosFeitos: studiedAcum, data: todayKey() };
-          if (sessaoConteudo) updated.conteudo = sessaoConteudo;
+          if (sessaoConteudo) { updated.conteudo = sessaoConteudo; updated.conteudoId = sessaoConteudoId; updated.topicoId = sessaoTopicoId; }
           estudoBlocoRef = { wk, id: b.id };
           return updated;
         });
@@ -1128,6 +1147,7 @@ function timerFinish(auto) {
       id: novoRevBlocoId, tipo: 'revisao', revisao: true,
       discId: timerState.discId, matNome: timerState.discNome,
       conteudo: timerState.conteudo || '',
+      conteudoId: sessaoConteudoId, topicoId: sessaoTopicoId,
       dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH),
       feito: true, fromTimer: true, minutos: studied, minutosFeitos: studied,
       extra: true, data: todayKey(),
@@ -1142,7 +1162,7 @@ function timerFinish(auto) {
     const now = nowCuiaba();
     const endH = now.getHours() + now.getMinutes()/60;
     const startH = Math.max(0, endH - studied/60);
-    const bloco = { id: uid(), tipo:'estudo', discId: timerState.discId, matNome: timerState.discNome, conteudo: timerState.conteudo || '', dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: true, fromTimer: true, minutos: studied, extra: true, data: todayKey(), revisar: timerState.revisar };
+    const bloco = { id: uid(), tipo:'estudo', discId: timerState.discId, matNome: timerState.discNome, conteudo: timerState.conteudo || '', conteudoId: sessaoConteudoId, topicoId: sessaoTopicoId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: true, fromTimer: true, minutos: studied, extra: true, data: todayKey(), revisar: timerState.revisar };
     // Estudo extra com tempo máximo planejado: guarda plano x realizado e só
     // marca "feito" quando o tempo estudado alcança o total planejado.
     if (timerState.extraFlow && timerState.plannedTotalMin > 0) {
@@ -1179,6 +1199,8 @@ function timerFinish(auto) {
   const resumoConclusao = {
     materia: sessaoMateria || 'Estudo',
     conteudo: sessaoConteudo,
+    conteudoId: sessaoConteudoId,
+    topicoId: sessaoTopicoId,
     minutos: studied,
     bloco: estudoBlocoRef,
     discId: sessaoDiscId
@@ -1297,6 +1319,8 @@ function responderConclusaoConteudo(concluiu) {
     data: fmtDataBR(nowCuiaba()),
     materia: ctx.materia || 'Estudo',
     conteudo: ctx.conteudo || '',
+    conteudoId: ctx.conteudoId || null,
+    topicoId: ctx.topicoId || null,
     minutos: ctx.minutos || 0,
     concluido: false,
     revisar: !!concluiu,
@@ -1471,6 +1495,14 @@ function apagarBloco(wk, blocoId) {
   render();
 }
 
+// ===== Conteúdo hierárquico (Disciplina → Conteúdo/Área → Tópico) ==========
+// Motor compartilhado em theme.js (TrackerMedConteudos). As opções vêm do que
+// foi cadastrado em disciplinas.html: escolhida a disciplina, o select de
+// conteúdo mostra só os conteúdos dela; escolhido o conteúdo, o de tópico
+// mostra só os tópicos dele. Sem cadastro (ou matéria avulsa), texto livre.
+const durHier = TrackerMedConteudos.ctrl({ sel: 'durConteudoSel', topico: 'durTopicoSel', selWrap: 'durConteudoSelWrap', livreWrap: 'durConteudoLivreWrap', livre: 'durConteudo', hint: 'durConteudoHint' });
+const extraHier = TrackerMedConteudos.ctrl({ sel: 'eConteudoSel', topico: 'eTopicoSel', selWrap: 'eConteudoSelWrap', livreWrap: 'eConteudoLivreWrap', livre: 'eConteudo', hint: 'eConteudoHint' });
+
 // Modal extra
 let extraSecoes = 2;
 let extraPausa = 5;
@@ -1502,8 +1534,7 @@ function abrirExtra() {
   opts.push('<option value="__outra__">+ Outra matéria…</option>');
   sel.innerHTML = opts.join('');
   document.getElementById('eDiscOutra').value = '';
-  document.getElementById('eDiscOutraWrap').style.display = 'none';
-  document.getElementById('eConteudo').value = '';
+  onDiscChangeExtra();
   document.getElementById('eMins').value = '25';
   document.getElementById('ePlanoMin').value = '';
   document.getElementById('eConcluido').value = 'sim';
@@ -1515,7 +1546,10 @@ function abrirExtra() {
 }
 function onDiscChangeExtra() {
   const v = document.getElementById('eDisc').value;
-  document.getElementById('eDiscOutraWrap').style.display = v === '__outra__' ? '' : 'none';
+  const outra = v === '__outra__';
+  document.getElementById('eDiscOutraWrap').style.display = outra ? '' : 'none';
+  // Conteúdo/tópico dependem da disciplina escolhida.
+  extraHier.montar(outra ? null : v, {});
 }
 function getMateriaExtra() {
   const v = document.getElementById('eDisc').value;
@@ -1528,8 +1562,9 @@ function getMateriaExtra() {
   if (!disc) { alert('Selecione uma matéria.'); return null; }
   return { discId: disc.id, nome: disc.nome };
 }
+// → { conteudoId, topicoId, conteudo } (conteudo = texto pra exibição).
 function getConteudoExtra() {
-  return (document.getElementById('eConteudo').value || '').trim();
+  return extraHier.ler();
 }
 function fecharExtra() { document.getElementById('extraModal').classList.remove('open'); }
 function getMinsSelected() { return parseInt(document.getElementById('eMins').value); }
@@ -1542,7 +1577,7 @@ function getRevisarSelected() { return document.getElementById('eRevisar').value
 function salvarExtraManual() {
   const mat = getMateriaExtra();
   if (!mat) return;
-  const conteudo = getConteudoExtra();
+  const cont = getConteudoExtra();
   const mins = getMinsSelected();
   const planoMin = getPlanoMinSelected();
   const concluido = getConcluidoSelected();
@@ -1559,14 +1594,16 @@ function salvarExtraManual() {
   const totalRange = Math.max(minsPlanejado, minsAtuais);
   const endH = now.getHours() + now.getMinutes()/60;
   const startH = Math.max(0, endH - totalRange/60);
-  plan[wk].push({ id: uid(), tipo:'estudo', discId: mat.discId, matNome: mat.nome, conteudo, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: concluido, minutos: minsPlanejado, minutosFeitos: minsAtuais, extra: true, data: todayKey(), revisar, planoMin, sessoes: sessoesReg, pausaMin: pausaReg });
+  plan[wk].push({ id: uid(), tipo:'estudo', discId: mat.discId, matNome: mat.nome, conteudo: cont.conteudo, conteudoId: cont.conteudoId, topicoId: cont.topicoId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: concluido, minutos: minsPlanejado, minutosFeitos: minsAtuais, extra: true, data: todayKey(), revisar, planoMin, sessoes: sessoesReg, pausaMin: pausaReg });
   savePlan(plan);
 
   // Feed de revisões
   pushHist({
     data: fmtDataBR(now),
     materia: mat.nome,
-    conteudo,
+    conteudo: cont.conteudo,
+    conteudoId: cont.conteudoId,
+    topicoId: cont.topicoId,
     minutos: minsAtuais,
     minutosPlanejado: minsPlanejado,
     concluido,
@@ -1583,7 +1620,7 @@ function salvarExtraManual() {
 function salvarExtraTimer() {
   const mat = getMateriaExtra();
   if (!mat) return;
-  const conteudo = getConteudoExtra();
+  const cont = getConteudoExtra();
   // "Duração (Pomodoro)" define quanto tempo cada sessão do cronômetro dura.
   // "Tempo máximo planejado" é só o total previsto para o conteúdo — serve
   // para calcular o % concluído, não a duração da sessão.
@@ -1595,17 +1632,17 @@ function salvarExtraTimer() {
   // planejado, mostramos o % concluído e o aluno decide se inicia outra
   // sessão ou encerra — nunca começa a próxima automaticamente.
   timerOpen(mat.discId, mat.nome, pomodoroMin, null, {
-    fromModal: true, revisar, conteudo,
+    fromModal: true, revisar, conteudo: cont.conteudo, conteudoId: cont.conteudoId, topicoId: cont.topicoId,
     extraFlow: true, plannedTotalMin: planoMin || 0, pomodoroMin
   });
 }
 function salvarExtraTimerLivre() {
   const mat = getMateriaExtra();
   if (!mat) return;
-  const conteudo = getConteudoExtra();
+  const cont = getConteudoExtra();
   const revisar = getRevisarSelected();
   fecharExtra();
-  timerOpenFree(mat.discId, mat.nome, null, { fromModal: true, revisar, conteudo });
+  timerOpenFree(mat.discId, mat.nome, null, { fromModal: true, revisar, conteudo: cont.conteudo, conteudoId: cont.conteudoId, topicoId: cont.topicoId });
 }
 
 // Modal duração (escolher antes do play, ou editar duração planejada)
@@ -1635,12 +1672,13 @@ function abrirPlayDuracao(discId, discNome, blocoId) {
   document.getElementById('secOptsWrap').style.display = '';
   document.getElementById('durFreeBtn').style.display = '';
   document.getElementById('durConteudoWrap').style.display = '';
-  // Pre-fill conteudo from the block if it already has one (procura em todas as
-  // semanas — o bloco pode estar guardado em outra weekKey).
+  // Pre-fill conteúdo/tópico do bloco, se já definidos no planejamento ou numa
+  // sessão anterior (procura em todas as semanas — o bloco pode estar guardado
+  // em outra weekKey). Texto livre antigo é casado com o cadastro por nome.
   const plan = loadPlan();
   let bloco = null;
   for (const wk of Object.keys(plan)) { const f = (plan[wk]||[]).find(b => b.id === blocoId); if (f) { bloco = f; break; } }
-  document.getElementById('durConteudo').value = (bloco && bloco.conteudo) || '';
+  durHier.montar(discId, bloco ? { conteudoId: bloco.conteudoId, topicoId: bloco.topicoId, texto: bloco.conteudo || '' } : {});
   setSecoes(1);
   setPausa(5);
   document.getElementById('durModal').classList.add('open');
@@ -1664,9 +1702,9 @@ function abrirEditarDuracao(wk, blocoId, discNome, minsAtual) {
 function fecharDur() { document.getElementById('durModal').classList.remove('open'); durCtx = null; }
 function iniciarPlayCom(mins) {
   const { discId, discNome, blocoId, sections, pauseMins } = durCtx;
-  const conteudo = (document.getElementById('durConteudo').value || '').trim();
+  const cont = durHier.ler();
   fecharDur();
-  timerOpen(discId, discNome, mins, blocoId, { sections, pauseMins, conteudo });
+  timerOpen(discId, discNome, mins, blocoId, { sections, pauseMins, conteudo: cont.conteudo, conteudoId: cont.conteudoId, topicoId: cont.topicoId });
 }
 function escolherDur(mins) {
   if (!durCtx) return;
@@ -1689,9 +1727,9 @@ function escolherDurCustom() {
 function escolherDurLivre() {
   if (!durCtx || durCtx.modo !== 'play') return;
   const { discId, discNome, blocoId } = durCtx;
-  const conteudo = (document.getElementById('durConteudo').value || '').trim();
+  const cont = durHier.ler();
   fecharDur();
-  timerOpenFree(discId, discNome, blocoId, { conteudo });
+  timerOpenFree(discId, discNome, blocoId, { conteudo: cont.conteudo, conteudoId: cont.conteudoId, topicoId: cont.topicoId });
 }
 function aplicarEdicaoDuracao(mins) {
   const { wk, blocoId } = durCtx;
