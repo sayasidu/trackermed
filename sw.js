@@ -4,7 +4,7 @@
  * pro cache sem conexão; fontes do Google ficam em cache de runtime após o
  * primeiro uso. Ao publicar mudanças, subir a versão abaixo troca o cache.
  */
-const VERSION = 'trackermed-v1';
+const VERSION = 'trackermed-v2';
 const CORE = [
   './',
   'index.html',
@@ -21,6 +21,7 @@ const CORE = [
   'app.css',
   'theme.js',
   'pwa.js',
+  'sync.js',
   'favicon.png',
   'manifest.webmanifest',
   'icon-192.png',
@@ -42,16 +43,19 @@ self.addEventListener('activate', e => {
   );
 });
 
-const isFont = url =>
-  url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
+// Fontes do Google e o SDK do Firebase (www.gstatic.com/firebasejs) entram em
+// cache na primeira visita online — assim o app instalado abre offline inteiro.
+const isCachedCdn = url =>
+  url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com' ||
+  (url.hostname === 'www.gstatic.com' && url.pathname.startsWith('/firebasejs/'));
 
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // Fontes: cache-first (imutáveis na prática); guarda na primeira visita online.
-  if (isFont(url)) {
+  // CDNs fixos (fontes, SDK): cache-first; guarda na primeira visita online.
+  if (isCachedCdn(url)) {
     e.respondWith(
       caches.open(VERSION).then(c =>
         c.match(req).then(hit =>
