@@ -224,6 +224,7 @@
 </style>
 <script defer src="theme.js"></script>
 <script defer src="pwa.js"></script>
+<script defer src="sync.js"></script>
 </head>
 <body>
 <div class="shell">
@@ -624,50 +625,148 @@ function renderHist() {
     </div>`;
 }
 
+function syncStatusTxt() {
+  const S = window.TrackerMedSync;
+  if (!S) return 'carregando…';
+  const st = S.state();
+  const last = S.last();
+  const quando = last ? new Date(last).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : null;
+  if (st === 'sincronizando') return 'sincronizando…';
+  if (st === 'offline') return 'offline · alterações aguardando conexão';
+  if (st === 'erro') return 'erro ao sincronizar — vou tentar de novo';
+  if (st === 'aguardando-escolha') return 'aguardando sua escolha abaixo';
+  if (st === 'ok' && quando) return 'tudo sincronizado · ' + quando;
+  return quando ? 'última sincronização · ' + quando : 'conectada';
+}
+
 function renderSync() {
   const disc = loadJSON(DISC_KEY, []);
   const erros = loadJSON(ERR_KEY, []);
   const { blocos } = blocosDeHoje();
   const chaves = backupKeys();
+  const S = window.TrackerMedSync;
+  const st = S ? S.state() : 'carregando';
+  const user = S ? S.user() : null;
+
+  let contaHTML;
+  if (user) {
+    contaHTML = `
+      <div class="card-navy" style="margin-top:16px">
+        <div class="glow"></div>
+        <div style="position:relative">
+          <div class="kicker">Conectada como</div>
+          <div style="font-family:Fraunces,serif;font-size:20px;font-weight:500;margin-top:6px;word-break:break-all">${esc(user.email)}</div>
+          <div style="font-size:12px;color:rgba(244,241,234,0.6);margin-top:4px" id="syncStatus">${esc(syncStatusTxt())}</div>
+          <button type="button" class="btn-acid" onclick="doSyncNow(this)">Sincronizar agora</button>
+          <button type="button" style="width:100%;min-height:44px;margin-top:10px;border:1px solid rgba(244,241,234,0.25);border-radius:10px;background:transparent;color:rgba(244,241,234,0.75);font:600 12px 'Inter Tight',sans-serif;letter-spacing:0.03em" onclick="doLogout()">Sair da conta</button>
+        </div>
+      </div>`;
+  } else if (st === 'indisponivel' || st === 'carregando') {
+    contaHTML = `
+      <div class="card-navy" style="margin-top:16px">
+        <div class="glow"></div>
+        <div style="position:relative">
+          <div class="kicker">Este aparelho</div>
+          <div style="font-family:Fraunces,serif;font-size:20px;font-weight:500;margin-top:6px">Dados salvos localmente</div>
+          <div style="font-size:12px;color:rgba(244,241,234,0.6);margin-top:4px">${st === 'carregando' ? 'carregando a sincronização…' : 'sem internet para carregar a sincronização — o backup por arquivo continua funcionando'}</div>
+          <button type="button" class="btn-acid" onclick="exportarBackup()">Exportar backup agora</button>
+        </div>
+      </div>`;
+  } else {
+    contaHTML = `
+      <div class="card-navy" style="margin-top:16px">
+        <div class="glow"></div>
+        <div style="position:relative">
+          <div class="kicker">Entrar na sua conta</div>
+          <div style="font-size:12.5px;color:rgba(244,241,234,0.75);line-height:1.5;margin-top:8px">Com a conta, seus dados aparecem em todos os aparelhos — o que você marcar aqui sincroniza com o site do computador, e vice-versa.</div>
+          <input type="email" id="loginEmail" placeholder="seu e-mail" autocomplete="email" style="width:100%;min-height:44px;margin-top:14px;border:1px solid rgba(244,241,234,0.25);border-radius:10px;background:rgba(244,241,234,0.08);color:#F4F1EA;padding:0 14px;font:500 14px 'Inter Tight',sans-serif;outline:none">
+          <input type="password" id="loginSenha" placeholder="senha (mín. 6 caracteres)" autocomplete="current-password" style="width:100%;min-height:44px;margin-top:8px;border:1px solid rgba(244,241,234,0.25);border-radius:10px;background:rgba(244,241,234,0.08);color:#F4F1EA;padding:0 14px;font:500 14px 'Inter Tight',sans-serif;outline:none">
+          <div id="loginErro" style="display:none;font-size:12px;color:#FFB4A9;line-height:1.4;margin-top:10px"></div>
+          <button type="button" class="btn-acid" onclick="doLogin('login', this)">Entrar</button>
+          <button type="button" style="width:100%;min-height:44px;margin-top:10px;border:1px solid rgba(244,241,234,0.25);border-radius:10px;background:transparent;color:rgba(244,241,234,0.85);font:600 12px 'Inter Tight',sans-serif;letter-spacing:0.03em" onclick="doLogin('signup', this)">Criar conta nova</button>
+        </div>
+      </div>`;
+  }
 
   screenEl.innerHTML = `
     <button type="button" class="back" onclick="location.hash='#/home'">‹ Início</button>
     <h1 class="mid">Conta e <i>sincronização</i>.</h1>
-    <p class="lede">Seus dados em todos os aparelhos — por enquanto, via arquivo de backup.</p>
+    <p class="lede">Seus dados em todos os aparelhos, com o mesmo login.</p>
 
-    <div class="card-navy" style="margin-top:16px">
-      <div class="glow"></div>
-      <div style="position:relative">
-        <div class="kicker">Este aparelho</div>
-        <div style="font-family:Fraunces,serif;font-size:20px;font-weight:500;margin-top:6px">Dados salvos localmente</div>
-        <div style="font-size:12px;color:rgba(244,241,234,0.6);margin-top:4px">${disc.length} disciplina${disc.length !== 1 ? 's' : ''} · ${blocos.length} sess${blocos.length !== 1 ? 'ões' : 'ão'} hoje · ${erros.length} erro${erros.length !== 1 ? 's' : ''} no caderno · ${chaves.length} chaves de dados</div>
-        <button type="button" class="btn-acid" onclick="exportarBackup()">Exportar backup agora</button>
-      </div>
+    ${contaHTML}
+
+    <div class="card lg">
+      <div class="kicker">Neste aparelho</div>
+      <div style="font-size:12.5px;color:var(--ink2);line-height:1.55;margin-top:8px">${disc.length} disciplina${disc.length !== 1 ? 's' : ''} · ${blocos.length} sess${blocos.length !== 1 ? 'ões' : 'ão'} hoje · ${erros.length} erro${erros.length !== 1 ? 's' : ''} no caderno · ${chaves.length} chaves de dados</div>
     </div>
 
     <div class="card lg">
-      <div class="kicker">Levar pra outro aparelho</div>
-      <div style="font-size:12.5px;color:var(--ink2);line-height:1.55;margin-top:8px">O backup é um arquivo <b>.json</b> com tudo: plano, disciplinas, sessões, revisões, erros, simulados e prova. Exporta aqui, abre o TrackerMed no outro aparelho e importa — nada é digitado de novo.</div>
+      <div class="kicker">Backup por arquivo · plano B</div>
+      <div style="font-size:12.5px;color:var(--ink2);line-height:1.55;margin-top:8px">O backup é um arquivo <b>.json</b> com tudo: plano, disciplinas, sessões, revisões, erros, simulados e prova. Serve pra guardar uma cópia ou levar os dados sem depender da nuvem.</div>
       <div class="btn-row">
         <button type="button" class="btn-grad" onclick="exportarBackup()">Exportar backup</button>
         <button type="button" class="btn-ghost" onclick="document.getElementById('importFile').click()">Importar</button>
       </div>
       <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importarBackup(this)">
       <div style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:14px">Importar <b>substitui</b> os dados deste aparelho pelos do arquivo — o app sempre pergunta antes.</div>
-    </div>
-
-    <div class="card lg">
-      <div class="kicker">Conta na nuvem · próximo passo</div>
-      <div style="font-size:12.5px;color:var(--ink2);line-height:1.55;margin-top:8px">A sincronização automática com login ainda não está ligada — precisa de um serviço de banco/autenticação por trás. Quando entrar, ao abrir num aparelho novo o app pergunta se você quer <b>trazer os dados da nuvem</b> ou <b>enviar os deste aparelho</b> — nunca sobrescreve sem perguntar.</div>
     </div>`;
 }
 
+// ---- Ações da conta ---------------------------------------------------------
+function doLogin(modo, btn) {
+  const S = window.TrackerMedSync;
+  if (!S) return;
+  const email = (document.getElementById('loginEmail').value || '').trim();
+  const senha = document.getElementById('loginSenha').value || '';
+  const erroEl = document.getElementById('loginErro');
+  erroEl.style.display = 'none';
+  btn.disabled = true;
+  const p = modo === 'signup' ? S.signup(email, senha) : S.login(email, senha);
+  p.then(() => { route(); })
+   .catch(e => {
+     btn.disabled = false;
+     erroEl.textContent = e.message || 'Não deu certo. Tenta de novo.';
+     erroEl.style.display = 'block';
+   });
+}
+function doLogout() {
+  if (!confirm('Sair da conta? Os dados continuam salvos neste aparelho; só param de sincronizar.')) return;
+  window.TrackerMedSync.logout().then(() => route());
+}
+function doSyncNow(btn) {
+  btn.disabled = true;
+  window.TrackerMedSync.syncNow().catch(() => {}).then(() => { btn.disabled = false; route(); });
+}
+
+// Primeiro login num aparelho que já tem dados quando a nuvem também tem:
+// pergunta qual lado vale — nunca sobrescreve sem perguntar.
+function escolhaPrimeiraSync() {
+  return new Promise(resolve => {
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:100;background:rgba(10,19,48,0.55);display:flex;align-items:flex-end;justify-content:center';
+    ov.innerHTML = `
+      <div style="max-width:520px;width:100%;background:linear-gradient(150deg,#13224E 0%,#0A1330 68%);border-top-left-radius:22px;border-top-right-radius:22px;border-left:5px solid #E6FF3D;padding:22px 22px calc(28px + env(safe-area-inset-bottom));color:#F4F1EA">
+        <div class="kicker" style="color:#E6FF3D">Primeira sincronização</div>
+        <div style="font-family:Fraunces,serif;font-size:20px;font-weight:500;margin-top:8px">Este aparelho e a nuvem têm dados diferentes.</div>
+        <div style="font-size:13px;color:rgba(244,241,234,0.75);line-height:1.55;margin-top:8px">Escolhe qual lado vale — o outro é substituído. (Na dúvida, exporta um backup antes, na tela de conta.)</div>
+        <button type="button" id="escNuvem" style="width:100%;min-height:50px;margin-top:16px;border:none;border-radius:10px;background:#E6FF3D;color:#0A1330;font:700 13px 'Inter Tight',sans-serif">Trazer os dados da nuvem</button>
+        <button type="button" id="escAparelho" style="width:100%;min-height:50px;margin-top:10px;border:1px solid rgba(244,241,234,0.3);border-radius:10px;background:transparent;color:#F4F1EA;font:600 13px 'Inter Tight',sans-serif">Enviar os deste aparelho</button>
+      </div>`;
+    document.body.appendChild(ov);
+    ov.querySelector('#escNuvem').onclick = () => { ov.remove(); resolve('nuvem'); };
+    ov.querySelector('#escAparelho').onclick = () => { ov.remove(); resolve('aparelho'); };
+  });
+}
+
 // ===== Backup: exportar / importar ===========================================
+// O estado do cronômetro e o meta da sincronização são deste aparelho — ficam
+// fora do backup (importar o meta de outro aparelho confundiria o pareamento).
+const BACKUP_SKIP = [TIMER_KEY, 'trackermed.sync.meta.v1'];
 function backupKeys() {
   const keys = [];
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (k && (k.startsWith('trackermed.') || BACKUP_EXTRA_KEYS.includes(k))) keys.push(k);
+    if (k && !BACKUP_SKIP.includes(k) && (k.startsWith('trackermed.') || BACKUP_EXTRA_KEYS.includes(k))) keys.push(k);
   }
   return keys.sort();
 }
@@ -698,8 +797,9 @@ function importarBackup(input) {
     const qtd = Object.keys(payload.dados).length;
     const quando = payload.exportadoEm ? new Date(payload.exportadoEm).toLocaleString('pt-BR') : 'data desconhecida';
     if (!confirm('Substituir os dados deste aparelho pelos do backup?\n\nBackup de ' + quando + ' · ' + qtd + ' chaves.\nEssa ação não pode ser desfeita.')) return;
-    backupKeys().forEach(k => { if (k !== TIMER_KEY) localStorage.removeItem(k); });
+    backupKeys().forEach(k => localStorage.removeItem(k));
     Object.entries(payload.dados).forEach(([k, v]) => {
+      if (BACKUP_SKIP.includes(k)) return;
       if ((k.startsWith('trackermed.') || BACKUP_EXTRA_KEYS.includes(k)) && typeof v === 'string') localStorage.setItem(k, v);
     });
     alert('Backup importado. O app vai recarregar.');
@@ -905,6 +1005,17 @@ function init() {
     history.replaceState(null, '', location.pathname + '#/hist');
     estudarAgora();
   }
+  // Sincronização: registra a pergunta de primeiro acesso e reage a eventos.
+  if (window.TrackerMedSync) window.TrackerMedSync.registerChooser(escolhaPrimeiraSync);
+  window.addEventListener('tmsync', e => {
+    const el = document.getElementById('syncStatus');
+    if (el) el.textContent = syncStatusTxt();
+    const hash = (location.hash || '#/home').replace('#/', '').split('?')[0];
+    // Chegou dado novo da nuvem: re-renderiza a tela atual (menos com o
+    // cronômetro aberto, pra não atrapalhar a sessão em andamento).
+    if (e.detail && e.detail.applied && !document.body.classList.contains('timer-open')) route();
+    else if (hash === 'sync' && (e.detail.state === 'signedout' || e.detail.state === 'aguardando-escolha')) route();
+  });
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
