@@ -544,44 +544,58 @@ html[data-theme="dark"] .ma-tipo-btn.active { background: var(--cobalt); color: 
 </div>
 
 <!-- Modal: registrar o recurso utilizado na sessão / avanço em material.
-     Abre ao encerrar o tempo de estudo: o aluno informa qual material usou
-     (existente ou cadastrado na hora) e a progressão conforme o tipo. -->
+     Abre ao encerrar o tempo de estudo. A leitura é OPCIONAL: a etapa 1
+     pergunta se o aluno quer atualizar o progresso de um livro/material —
+     "Não" salva o estudo normalmente, sem pedir nada sobre livros; "Sim"
+     mostra os campos pra escolher o material (existente ou cadastrado na
+     hora) e informar a progressão conforme o tipo. A abertura direta pelo
+     "+ avanço" da lista de materiais pula a pergunta. -->
 <div class="modal-backdrop" id="matAvancoModal" onclick="if(event.target===this) fecharMatAvanco()">
   <div class="modal-box" style="width:540px">
     <button class="mbtn-close" onclick="fecharMatAvanco()">×</button>
     <h2 id="maTitulo">Recurso <i>utilizado</i></h2>
     <div class="modal-sub" id="maSub">Registre o material usado na sessão e quanto você avançou.</div>
-    <div class="mfield"><label>Material de estudo</label><select id="maMaterial" onchange="maOnChange()"></select></div>
-    <div id="maNovoWrap" style="display:none">
-      <div class="mfield"><label>Tipo de material</label>
-        <div class="ma-tipo-grid" id="maTipoBtns"></div>
-      </div>
-      <div class="mfield"><label>Nome do material</label>
-        <input type="text" id="maNome" maxlength="140" placeholder="ex: Capítulo 12 — Insuficiência Cardíaca">
-      </div>
-    </div>
-    <div id="maProgWrap">
-      <div class="cont-extra-bar" style="margin:2px 0 0"><div class="cont-extra-fill" id="maFill"></div></div>
-      <div class="ma-progtxt" id="maProgTxt">—</div>
-    </div>
-    <div class="mfield ma-range" id="maRangeWrap" style="display:none">
-      <div id="maIniCol"><label id="maIniLbl">Página inicial</label><input type="number" id="maIni" min="0" step="any" oninput="maPreview()"></div>
-      <div><label id="maFimLbl">Página final</label><input type="number" id="maFim" min="0" step="any" oninput="maPreview()"></div>
-      <div id="maTotCol"><label id="maTotLbl">Total de páginas</label><input type="number" id="maTot" min="0" step="any" oninput="maPreview()"></div>
-    </div>
-    <div class="mfield" id="maQtdWrap" style="margin-top:14px">
-      <label id="maPergunta">Quantas páginas você leu?</label>
-      <div class="ma-qtd-row">
-        <input type="number" id="maQtd" min="0" step="any" placeholder="ex: 10" oninput="maPreview()">
-        <span class="ma-unid" id="maUnid">págs</span>
+    <div id="maStep1" style="display:none">
+      <div class="conc-pergunta">Deseja atualizar o progresso de leitura de um livro?</div>
+      <div class="conc-help" id="maStep1Help">“Sim” abre os campos pra escolher o livro ou material e registrar o avanço. “Não” salva o estudo normalmente.</div>
+      <div class="mactions" style="justify-content:space-between">
+        <button type="button" class="mbtn-cancel conc-btn" onclick="maResponderLeitura(false)">Não</button>
+        <button type="button" class="mbtn-save conc-btn" onclick="maResponderLeitura(true)">Sim</button>
       </div>
     </div>
-    <div class="live-preview" id="maPreviewBox">Informe quanto você avançou nesta sessão.</div>
-    <div class="mactions" style="justify-content:space-between">
-      <button type="button" class="mbtn-cancel" id="maPularBtn" onclick="fecharMatAvanco()">Pular</button>
-      <div style="display:flex;gap:10px">
-        <button type="button" class="mbtn-timer" onclick="concluirMatAvanco()" title="Marca o material inteiro como finalizado">✓ Concluí o material</button>
-        <button type="button" class="mbtn-save" onclick="salvarMatAvanco()">Salvar avanço</button>
+    <div id="maStep2">
+      <div class="mfield"><label>Material de estudo</label><select id="maMaterial" onchange="maOnChange()"></select></div>
+      <div id="maNovoWrap" style="display:none">
+        <div class="mfield"><label>Tipo de material</label>
+          <div class="ma-tipo-grid" id="maTipoBtns"></div>
+        </div>
+        <div class="mfield"><label>Nome do material</label>
+          <input type="text" id="maNome" maxlength="140" placeholder="ex: Capítulo 12 — Insuficiência Cardíaca">
+        </div>
+      </div>
+      <div id="maProgWrap">
+        <div class="cont-extra-bar" style="margin:2px 0 0"><div class="cont-extra-fill" id="maFill"></div></div>
+        <div class="ma-progtxt" id="maProgTxt">—</div>
+      </div>
+      <div class="mfield ma-range" id="maRangeWrap" style="display:none">
+        <div id="maIniCol"><label id="maIniLbl">Página inicial</label><input type="number" id="maIni" min="0" step="any" oninput="maPreview()"></div>
+        <div><label id="maFimLbl">Página final</label><input type="number" id="maFim" min="0" step="any" oninput="maPreview()"></div>
+        <div id="maTotCol"><label id="maTotLbl">Total de páginas</label><input type="number" id="maTot" min="0" step="any" oninput="maPreview()"></div>
+      </div>
+      <div class="mfield" id="maQtdWrap" style="margin-top:14px">
+        <label id="maPergunta">Quantas páginas você leu?</label>
+        <div class="ma-qtd-row">
+          <input type="number" id="maQtd" min="0" step="any" placeholder="ex: 10" oninput="maPreview()">
+          <span class="ma-unid" id="maUnid">págs</span>
+        </div>
+      </div>
+      <div class="live-preview" id="maPreviewBox">Informe quanto você avançou nesta sessão.</div>
+      <div class="mactions" style="justify-content:space-between">
+        <button type="button" class="mbtn-cancel" id="maPularBtn" onclick="maPularOuVoltar()">Pular</button>
+        <div style="display:flex;gap:10px">
+          <button type="button" class="mbtn-timer" onclick="concluirMatAvanco()" title="Marca o material inteiro como finalizado">✓ Concluí o material</button>
+          <button type="button" class="mbtn-save" onclick="salvarMatAvanco()">Salvar avanço</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1225,10 +1239,11 @@ function timerFinish(auto) {
   }
 
   // Estudo comum: o tempo da sessão já está salvo no bloco acima, mas a sessão
-  // ainda NÃO está marcada como concluída. Abre o modal "recurso utilizado": o
-  // aluno informa o material usado e a progressão (páginas, minutos de vídeo/
-  // áudio, capítulos…) e, só ao salvar, a tarefa é concluída e o check ✓
-  // aparece — fechar ou cancelar mantém o tempo registrado sem confirmar.
+  // ainda NÃO está marcada como concluída. Abre o modal "recurso utilizado",
+  // que primeiro pergunta se o aluno quer atualizar a leitura de um livro:
+  // "Não" salva e conclui direto; "Sim" pede material e progressão (páginas,
+  // minutos de vídeo/áudio, capítulos…) e conclui ao salvar. Fechar o modal
+  // sem responder mantém o tempo registrado sem confirmar a conclusão.
   const sessaoCtx = {
     discId: sessaoDiscId,
     discNome: sessaoMateria || 'Estudo',
@@ -1513,11 +1528,11 @@ function toggleFeito(wk, blocoId) {
   if (!atual) return;
   const isRevAtual = atual.tipo === 'revisao' || atual.revisao;
   // Concluir um ESTUDO manualmente (bolinha ○ / check) passa pelo mesmo modal
-  // do cronômetro: o aluno registra o material utilizado e a progressão da
-  // sessão e, só ao salvar, o bloco é marcado como concluído
-  // (confirmarConclusaoSessao). Fechar/cancelar o modal mantém o progresso
-  // como está, sem concluir. Desmarcar (✓→○) e blocos de revisão seguem o
-  // caminho direto de sempre.
+  // do cronômetro: primeiro a pergunta de leitura — "Não" conclui o bloco
+  // direto (confirmarConclusaoSessao); "Sim" pede material e progressão e
+  // conclui ao salvar. Fechar/cancelar o modal mantém o progresso como está,
+  // sem concluir. Desmarcar (✓→○) e blocos de revisão seguem o caminho
+  // direto de sempre.
   if (!isRevAtual && !atual.feito) {
     const d = atual.discId ? loadDisc().find(x => x.id === atual.discId) : null;
     const studiedMin = getStudiedMin(atual);
@@ -2163,11 +2178,13 @@ function renderMateriaisHoje() {
   document.getElementById('matHojeList').innerHTML = rows.concat(feitos).join('');
 }
 
-// Após encerrar uma sessão de estudo: pergunta qual recurso/material foi
-// utilizado e quanto o aluno avançou. ctx amarra o registro à tarefa (bloco),
-// ao conteúdo e à entrada do histórico da sessão.
+// Após encerrar uma sessão de estudo: pergunta se o aluno quer atualizar o
+// progresso de leitura de um livro/material — só no "Sim" os campos de
+// recurso e avanço aparecem. ctx amarra o registro à tarefa (bloco), ao
+// conteúdo e à entrada do histórico da sessão.
 let maCtx = null;        // { discId, discNome, conteudo, conteudoId, topicoId, minutos, histId, blocoId, bloco, concluded, pendenteConclusao }
 let maNovoTipo = 'livro';
+let maSubCampos = '';    // subtítulo da etapa de campos (definido em abrirMatAvanco)
 function abrirMatAvancoAposSessao(ctx) {
   ctx = ctx || {};
   if (!MAT) {
@@ -2201,26 +2218,65 @@ function abrirMatAvanco(opts) {
   // Título e subtítulo conforme o papel do modal: quando a conclusão da sessão
   // depende dele (pendenteConclusao), salvar é o que confirma a conclusão e faz
   // o check ✓ aparecer; fechar mantém o tempo registrado sem concluir.
-  const sub = document.getElementById('maSub');
-  const pularBtn = document.getElementById('maPularBtn');
-  if (pularBtn) pularBtn.textContent = (maCtx && maCtx.pendenteConclusao) ? 'Pular sem concluir' : 'Pular';
+  // maSubCampos guarda o subtítulo da etapa de campos — aplicado só quando o
+  // aluno responde "Sim" à pergunta de leitura (ou na abertura direta).
   if (maCtx && maCtx.pendenteConclusao) {
     document.getElementById('maTitulo').innerHTML = 'Sessão <i>finalizada</i>';
-    sub.innerHTML = 'Registre o material utilizado e a progressão da sessão (páginas, minutos de vídeo/áudio, capítulos…). <b>Salvar confirma a conclusão da sessão</b>; fechar mantém o tempo registrado sem concluir.';
+    maSubCampos = 'Registre o material utilizado e a progressão da sessão (páginas, minutos de vídeo/áudio, capítulos…). <b>Salvar confirma a conclusão da sessão</b>; fechar mantém o tempo registrado sem concluir.';
   } else if (maCtx && maCtx.concluded) {
     document.getElementById('maTitulo').innerHTML = 'Recurso <i>utilizado</i>';
-    sub.innerHTML = 'Conteúdo concluído! Registre o material usado na sessão — se ele também foi finalizado, use <b>✓ Concluí o material</b>.';
+    maSubCampos = 'Conteúdo concluído! Registre o material usado na sessão — se ele também foi finalizado, use <b>✓ Concluí o material</b>.';
   } else if (maCtx) {
     document.getElementById('maTitulo').innerHTML = 'Recurso <i>utilizado</i>';
-    sub.textContent = 'Tempo de estudo registrado — o conteúdo segue em andamento. Informe o material usado e a progressão pra atualizar o acumulado.';
+    maSubCampos = 'Tempo de estudo registrado — o conteúdo segue em andamento. Informe o material usado e a progressão pra atualizar o acumulado.';
   } else {
     document.getElementById('maTitulo').innerHTML = 'Avanço no <i>material</i>';
-    sub.textContent = 'Registre quanto você avançou — o material só é concluído quando você marcar ✓.';
+    maSubCampos = 'Registre quanto você avançou — o material só é concluído quando você marcar ✓.';
   }
   maMontarTipos();
   document.getElementById('maNome').value = (maCtx && maCtx.conteudo) || '';
   maOnChange();
+  // Sessão de estudo (play, conclusão manual, estudo extra, tempo editado):
+  // a leitura é opcional — começa na pergunta. "+ avanço" vai direto aos campos.
+  if (maCtx) maMostrarPerguntaLeitura();
+  else maMostrarCamposLeitura();
   document.getElementById('matAvancoModal').classList.add('open');
+}
+
+// ===== Etapas do modal de recurso: pergunta de leitura × campos ==============
+// Etapa 1 — "Deseja atualizar o progresso de leitura de um livro?". Só aparece
+// quando o modal abre após uma sessão de estudo (maCtx presente).
+function maMostrarPerguntaLeitura() {
+  document.getElementById('maStep1').style.display = '';
+  document.getElementById('maStep2').style.display = 'none';
+  document.getElementById('maSub').textContent = 'Tempo de estudo registrado.';
+  document.getElementById('maStep1Help').innerHTML = (maCtx && maCtx.pendenteConclusao)
+    ? '“<b>Não</b>” salva e conclui o estudo normalmente, sem pedir nada sobre livros ou páginas. “<b>Sim</b>” abre os campos pra escolher o livro ou material e registrar o avanço.'
+    : '“<b>Não</b>” mantém o estudo salvo como está, sem pedir nada sobre livros ou páginas. “<b>Sim</b>” abre os campos pra escolher o livro ou material e registrar o avanço.';
+}
+// Etapa 2 — campos de material/progressão (fluxo original do modal).
+function maMostrarCamposLeitura() {
+  document.getElementById('maStep1').style.display = 'none';
+  document.getElementById('maStep2').style.display = '';
+  document.getElementById('maSub').innerHTML = maSubCampos;
+  const pularBtn = document.getElementById('maPularBtn');
+  if (pularBtn) pularBtn.textContent = maCtx ? '← Voltar' : 'Pular';
+}
+// Resposta da etapa 1. "Sim" abre os campos; "Não" salva o estudo normalmente
+// sem pedir nada sobre livros — pra sessão aguardando conclusão, isso confirma
+// a conclusão direto (mesmo efeito de salvar o modal, só que sem material).
+function maResponderLeitura(sim) {
+  if (sim) { maMostrarCamposLeitura(); return; }
+  const pendente = (maCtx && maCtx.pendenteConclusao) ? maCtx : null;
+  fecharMatAvanco();
+  if (pendente) confirmarConclusaoSessao(pendente);
+  else render();
+}
+// Botão secundário da etapa 2: numa sessão volta pra pergunta de leitura;
+// na abertura direta ("+ avanço") mantém o "Pular" que só fecha o modal.
+function maPularOuVoltar() {
+  if (maCtx) { maMostrarPerguntaLeitura(); return; }
+  fecharMatAvanco();
 }
 
 function maMontarTipos() {
