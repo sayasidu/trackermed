@@ -133,6 +133,18 @@
 .view-tab:hover { color: var(--ink); }
 .view-tab.active { background-image: var(--grad-brand); color: #fff; box-shadow: var(--sh-glow); }
 
+.geral-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+.gstat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease); }
+.gstat:hover { transform: translateY(-3px); box-shadow: var(--sh-2); }
+.gstat .lbl { font-size: 10px; letter-spacing: 0.18em; color: var(--muted); font-weight: 700; text-transform: uppercase; }
+.gstat .val { font-family: 'Fraunces', serif; font-size: 36px; font-weight: 400; letter-spacing: -0.03em; line-height: 1.05; margin-top: 8px; color: var(--cobalt); }
+.gstat .val span { font-size: 16px; color: var(--muted); }
+.gstat .sub { font-size: 11px; color: var(--ink2); margin-top: 6px; }
+.gstat.ok .val { color: #2E7D32; }
+.gstat.bad .val { color: #C62828; }
+[data-theme="dark"] .gstat.ok .val { color: #81C784; }
+[data-theme="dark"] .gstat.bad .val { color: #EF9A9A; }
+
 .resumo-grid { display: grid; grid-template-columns: 1fr 1.8fr; gap: 20px; align-items: start; }
 .prog-card .prog-big { font-family: 'Fraunces', serif; font-size: 64px; font-weight: 400; letter-spacing: -0.04em; line-height: 1; color: var(--cobalt); margin-top: 10px; }
 .prog-card .prog-big span { font-size: 24px; color: var(--muted); }
@@ -200,7 +212,7 @@
 
 @media (max-width: 900px) {
   .greet-row, .col2 { grid-template-columns: 1fr; }
-  .kpi-row, .quick-links { grid-template-columns: 1fr 1fr; }
+  .kpi-row, .quick-links, .geral-stats { grid-template-columns: 1fr 1fr; }
   .resumo-grid, .laudo-cols { grid-template-columns: 1fr; }
 }
 </style></head><body>
@@ -250,7 +262,7 @@
   <div class="resumo-head">
     <div>
       <h2>Resumo <i>consolidado</i> dos planos</h2>
-      <div class="rsub">Tudo o que você já realizou nos planos ativos — com parecer clínico do Dr. TrackerMed, atualizado com seus dados reais.</div>
+      <div class="rsub">Panorama geral do seu desempenho somando tudo o que foi realizado em todos os planos — horas, questões, acertos e erros — com parecer clínico do Dr. TrackerMed, atualizado com seus dados reais.</div>
     </div>
     <div class="view-tabs" role="tablist">
       <button type="button" class="view-tab active" id="tabGeral" role="tab" onclick="setResumoView('geral')">Visão geral</button>
@@ -331,6 +343,7 @@ const PROVA_KEY = 'trackermed.prova.v1';
 const DISC_KEY = 'trackermed.disciplinas.v1';
 const PLAN_KEY = 'trackermed.plan.v1';
 const ERR_KEY = 'trackermed.erros.v1';
+const SIM_KEY = 'trackermed.simulados.v2';
 
 function loadJSON(k, d) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(d)); } catch { return d; } }
 function parseTime(t) { const [h,m]=t.split(':').map(Number); return h+m/60; }
@@ -896,25 +909,93 @@ function consolidar(porPlano, hoje) {
   return c;
 }
 
+function minutosEstudadosDoPlan(planData) {
+  let total = 0;
+  for (const wk in planData) {
+    for (const b of (planData[wk] || [])) {
+      const isRev = b.tipo === 'revisao' || b.revisao;
+      if (b.tipo && b.tipo !== 'estudo' && !isRev) continue;
+      total += getStudiedMin(b);
+    }
+  }
+  return total;
+}
+
+// Estatísticas gerais do aluno: soma TODOS os planos cadastrados (em foco,
+// ativos e arquivados), não só os ativos — horas estudadas via chaves vivas
+// ou snapshot de cada plano; questões/acertos/erros via o registro único de
+// simulados (que também recebe as revisões respondidas por questões).
+function estatisticasGerais() {
+  const ctx = window.TrackerMedContext;
+  const focoId = ctx ? ctx.focusId() : null;
+  const todos = ctx ? ctx.planos() : [];
+  let minTotais = 0, nPlanos = 0;
+  if (todos.length) {
+    nPlanos = todos.length;
+    for (const p of todos) {
+      let planData = {};
+      if (p.id === focoId) {
+        planData = loadJSON(PLAN_KEY, {});
+      } else {
+        const snap = (ctx && ctx.snapshotOf(p.id)) || {};
+        try { planData = JSON.parse(snap.plan || '{}'); } catch {}
+      }
+      minTotais += minutosEstudadosDoPlan(planData);
+    }
+  } else {
+    // Legado: estudo nas chaves vivas sem nenhum plano cadastrado.
+    minTotais = minutosEstudadosDoPlan(loadJSON(PLAN_KEY, {}));
+    if (minTotais > 0) nPlanos = 1;
+  }
+  const sims = loadJSON(SIM_KEY, []);
+  const qTotal = sims.reduce((s, x) => s + (Number(x.questoes) || 0), 0);
+  const qAcertos = sims.reduce((s, x) => s + Math.min(Number(x.acertos) || 0, Number(x.questoes) || 0), 0);
+  return { nPlanos, minTotais, qTotal, qAcertos, qErros: qTotal - qAcertos };
+}
+
+function geralStatsHTML(g) {
+  const apro = g.qTotal > 0 ? Math.round(g.qAcertos / g.qTotal * 100) : null;
+  return `<div class="geral-stats">
+    <div class="gstat"><div class="lbl">Horas estudadas</div><div class="val">${fmtH(g.minTotais)}</div>
+      <div class="sub">${g.nPlanos > 0 ? `somando ${g.nPlanos} ${plu(g.nPlanos,'plano de estudo','planos de estudo')}` : 'nenhum plano com registro'}</div></div>
+    <div class="gstat"><div class="lbl">Questões respondidas</div><div class="val">${g.qTotal}</div>
+      <div class="sub">${g.qTotal > 0 ? 'em simulados e revisões' : 'nenhuma registrada ainda'}</div></div>
+    <div class="gstat ok"><div class="lbl">Acertos</div><div class="val">${g.qAcertos}</div>
+      <div class="sub">${apro != null ? `aproveitamento de ${apro}%` : 'registre questões pra medir'}</div></div>
+    <div class="gstat bad"><div class="lbl">Erros</div><div class="val">${g.qErros}</div>
+      <div class="sub">${apro != null ? `${100 - apro}% das respondidas` : 'nenhum erro (ainda)'}</div></div>
+  </div>`;
+}
+
 function plu(n, sing, plur) { return n === 1 ? sing : plur; }
 
 function quadroTexto(c, nPlanos) {
+  const g = c.geral || {};
   if (!c.blocosTotal) return 'Paciente sem histórico de estudo registrado nos planos ativos.';
   const pct = c.pctAteHoje != null ? Math.round(c.pctAteHoje * 100) + '%' : '—';
+  const horasGerais = (g.minTotais || 0) > c.feitoTotal
+    ? `Acumula ${fmtHrange(g.minTotais)} de estudo somando todos os planos, ${fmtHrange(c.feitoTotal)} nos ativos, `
+    : `Registra ${fmtHrange(c.feitoTotal)} de estudo, `;
+  const questoes = g.qTotal > 0
+    ? ` Banco de questões: ${g.qTotal} ${plu(g.qTotal,'respondida','respondidas')}, com ${g.qAcertos} ${plu(g.qAcertos,'acerto','acertos')} e ${g.qErros} ${plu(g.qErros,'erro','erros')} (aproveitamento de ${Math.round(g.qAcertos / g.qTotal * 100)}%).`
+    : '';
   return `Paciente em acompanhamento com ${nPlanos} ${plu(nPlanos,'plano ativo','planos ativos')}. `
-    + `Registra ${fmtHrange(c.feitoTotal)} de estudo, cumprindo ${pct} do planejado até hoje `
+    + horasGerais + `cumprindo ${pct} do planejado até hoje `
     + `(${fmtHrange(c.feitoAteHoje)} de ${fmtHrange(c.planejadoAteHoje)}), com ${c.blocosFeitos} de ${c.blocosAteHoje} `
     + `${plu(c.blocosAteHoje,'sessão concluída','sessões concluídas')} e ${c.atrasados} ${plu(c.atrasados,'pendência','pendências')}. `
-    + `Ritmo dos últimos 7 dias: ${fmtHrange(c.min7)}${c.minPrev7 > 0 ? ` (7 dias anteriores: ${fmtHrange(c.minPrev7)})` : ''}.`;
+    + `Ritmo dos últimos 7 dias: ${fmtHrange(c.min7)}${c.minPrev7 > 0 ? ` (7 dias anteriores: ${fmtHrange(c.minPrev7)})` : ''}.`
+    + questoes;
 }
 
 function achadosBem(c) {
+  const g = c.geral || {};
   const bem = [];
   if (c.streak >= 3) bem.push(`Assiduidade: ${c.streak} dias consecutivos de estudo.`);
   if (c.dias14.size >= 8) bem.push(`Regularidade: estudo registrado em ${c.dias14.size} dos últimos 14 dias.`);
   if (c.semTotal > 0 && c.semBatidas / c.semTotal >= 0.5) bem.push(`Metas semanais: ${c.semBatidas} de ${c.semTotal} ${plu(c.semTotal,'semana encerrada','semanas encerradas')} com meta cumprida.`);
   if (c.tendencia === 'subindo' && c.minPrev7 > 0) bem.push(`Ritmo em ascensão: ${fmtHrange(c.min7)} nos últimos 7 dias, contra ${fmtHrange(c.minPrev7)} nos 7 anteriores.`);
   if (c.pctAteHoje != null && c.pctAteHoje >= 0.9) bem.push(`Adesão de ${Math.round(c.pctAteHoje*100)}% ao planejado até hoje.`);
+  if (g.qTotal >= 10 && g.qAcertos / g.qTotal >= 0.7) bem.push(`Desempenho em questões: ${Math.round(g.qAcertos / g.qTotal * 100)}% de aproveitamento em ${g.qTotal} respondidas (${g.qAcertos} acertos, ${g.qErros} erros).`);
   if (c.atrasados === 0 && c.blocosAteHoje > 0) bem.push('Nenhuma sessão em atraso. Prontuário limpo.');
   if (!bem.length && c.feitoTotal > 0) bem.push(`${fmtHrange(c.feitoTotal)} de estudo registradas até o momento — o esforço existe, ainda que irregular.`);
   if (!bem.length) bem.push('Nenhum achado favorável até o momento. Há amplo espaço para surpreender.');
@@ -922,11 +1003,14 @@ function achadosBem(c) {
 }
 
 function achadosAtencao(c) {
+  const g = c.geral || {};
   const at = [];
   if (c.atrasados > 0) at.push(`${c.atrasados} ${plu(c.atrasados,'sessão pendente acumulada','sessões pendentes acumuladas')} de dias anteriores.`);
   if (c.tendencia === 'caindo') at.push(`Queda de ritmo: ${fmtHrange(c.min7)} nos últimos 7 dias, contra ${fmtHrange(c.minPrev7)} nos 7 anteriores.`);
   if (c.min7 === 0 && c.blocosAteHoje > 0) at.push('Nenhum estudo registrado nos últimos 7 dias.');
   if (c.pctAteHoje != null && c.pctAteHoje < 0.7) at.push(`Apenas ${Math.round(c.pctAteHoje*100)}% do planejado até hoje foi cumprido.`);
+  if (g.qTotal >= 10 && g.qAcertos / g.qTotal < 0.6) at.push(`Aproveitamento de apenas ${Math.round(g.qAcertos / g.qTotal * 100)}% nas ${g.qTotal} questões respondidas (${g.qErros} erros acumulados).`);
+  if (g.qTotal === 0 && c.feitoTotal > 0) at.push('Nenhuma questão respondida registrada. Teoria sem treino de questões não vira ponto na prova.');
   if (c.semTotal > 0 && c.semBatidas / c.semTotal < 0.5) at.push(`Metas semanais: só ${c.semBatidas} de ${c.semTotal} ${plu(c.semTotal,'semana encerrada','semanas encerradas')} com meta batida.`);
   if (c.dias14.size > 0 && c.dias14.size < 7) at.push(`Regularidade baixa: estudo em apenas ${c.dias14.size} dos últimos 14 dias.`);
   if (!at.length) at.push('Nenhum achado relevante. Sim, o consultório também está surpreso.');
@@ -959,10 +1043,13 @@ function prognosticoTexto(c, alvoProx) {
 }
 
 function condutaItens(c) {
+  const g = c.geral || {};
   const itens = [];
   if (c.atrasados > 0) itens.push(`Liquidar ${c.atrasados === 1 ? 'a sessão pendente' : `as ${c.atrasados} sessões pendentes`}, começando pela mais antiga — não pela mais simpática.`);
   if (c.tendencia === 'caindo' && c.minPrev7 > 0) itens.push(`Retomar já nesta semana o ritmo de ${fmtHrange(c.minPrev7)}/semana que o próprio paciente provou ser capaz de manter.`);
   if (c.min7 === 0 && c.blocosAteHoje > 0) itens.push('Reintroduzir o estudo em doses diárias mínimas de 30 minutos, aumentando conforme tolerância.');
+  if (g.qTotal >= 10 && g.qAcertos / g.qTotal < 0.6) itens.push(`Refazer as ${g.qErros} questões erradas antes de acumular volume novo — errar duas vezes a mesma questão é reincidência, não azar.`);
+  if (g.qTotal === 0 && c.blocosAteHoje > 0) itens.push('Introduzir blocos de questões e simulados na rotina: desempenho só se mede treinando.');
   if (c.dias14.size > 0 && c.dias14.size < 7 && c.tendencia !== 'caindo') itens.push('Fracionar a carga em doses diárias: constância supera heroísmo de véspera.');
   if (!itens.length) itens.push('Manter exatamente a conduta atual. Sem inventar moda.');
   return itens.slice(0, 3);
@@ -1088,15 +1175,18 @@ function renderResumo() {
   });
   const gEl = document.getElementById('viewGeral');
   const pEl = document.getElementById('viewPlanos');
+  const geral = estatisticasGerais();
   if (!porPlano.length) {
     const vazio = `<div class="resumo-empty">Nenhum plano ativo e nenhum estudo registrado. <a href="planos.html">Ative um plano →</a> pra o Dr. TrackerMed ter o que diagnosticar.</div>`;
-    gEl.innerHTML = vazio;
+    const temDados = geral.minTotais > 0 || geral.qTotal > 0;
+    gEl.innerHTML = (temDados ? geralStatsHTML(geral) : '') + vazio;
     pEl.innerHTML = vazio;
     setResumoView(loadResumoView());
     return { estado: 'sem_dados' };
   }
   const c = consolidar(porPlano, hoje);
-  gEl.innerHTML = `<div class="resumo-grid">${progCardHTML(c)}${laudoHTML(c, porPlano, hoje)}</div>`;
+  c.geral = geral;
+  gEl.innerHTML = geralStatsHTML(geral) + `<div class="resumo-grid">${progCardHTML(c)}${laudoHTML(c, porPlano, hoje)}</div>`;
   pEl.innerHTML = `<div class="planos-grid">${porPlano.map(x => planoCardHTML(x, hoje)).join('')}</div>`;
   setResumoView(loadResumoView());
   return { estado: c.estado, cons: c, porPlano };
