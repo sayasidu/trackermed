@@ -267,8 +267,8 @@
     <div class="hero-preview" role="group" aria-label="Preview do dashboard">
       <div class="mini-card">
         <div class="mini-label">TEMPO DE ESTUDO</div>
-        <div class="mini-num" id="kSemanaVal">0<span>h00</span></div>
-        <div class="mini-sub" id="kSemanaSub">sem meta semanal</div>
+        <div class="mini-num" id="kTempoVal">0<span>h00</span></div>
+        <div class="mini-sub" id="kTempoSub">somando todos os planos</div>
       </div>
       <div class="mini-card">
         <div class="mini-label">STREAK</div>
@@ -442,7 +442,54 @@
   function dateKey(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
   function weekKey(d) { return dateKey(startOfWeek(d)); }
   function addDays(d,n) { const x=new Date(d); x.setDate(x.getDate()+n); return x; }
-  function blocoMin(b) { return b.minutos || Math.round((parseTime(b.fim) - parseTime(b.ini)) * 60); }
+  function getPlannedMin(b) { return b.minutos || Math.round((parseTime(b.fim) - parseTime(b.ini)) * 60); }
+  function getStudiedMin(b) {
+    if (b.minutosFeitos != null) return b.minutosFeitos;
+    return b.feito ? getPlannedMin(b) : 0;
+  }
+  function isBlocoEstudo(b) { return !b.tipo || b.tipo === 'estudo' || b.tipo === 'revisao' || !!b.revisao; }
+  // Data 'YYYY-MM-DD' de um bloco: respeita b.data (registrada pelo Histórico)
+  // ou deriva da segunda-feira da semana + dia da semana do bloco.
+  function blocoDateKey(wkS, b) {
+    if (b && b.data) return b.data;
+    if (!wkS || !b || b.dia == null) return null;
+    const [y, mo, d] = wkS.split('-').map(Number);
+    if (!y) return null;
+    return dateKey(addDays(new Date(y, mo - 1, d), b.dia === 0 ? 6 : b.dia - 1));
+  }
+
+  // Reúne grade semanal + disciplinas de TODOS os planos cadastrados (em foco,
+  // ativos e arquivados): o em foco vem das chaves vivas; os demais, dos
+  // snapshots (trackermed.semestres.v1) via TrackerMedContext — mesmo esquema
+  // do Dashboard e do Histórico. Sem plano cadastrado, cai nas chaves vivas.
+  function coletarTodosPlanos() {
+    const ctx = window.TrackerMedContext;
+    const focoId = ctx ? ctx.focusId() : null;
+    const todos = ctx ? ctx.planos() : [];
+    const out = [];
+    for (const p of todos) {
+      let planData = {}, disc = [];
+      if (p.id === focoId) {
+        planData = loadJSON(PLAN_KEY, {});
+        disc = loadJSON(DISC_KEY, []);
+      } else {
+        const snap = (ctx && ctx.snapshotOf(p.id)) || {};
+        try { planData = JSON.parse(snap.plan || '{}'); } catch {}
+        try { disc = JSON.parse(snap.disciplinas || '[]'); } catch {}
+      }
+      if (!planData || typeof planData !== 'object') planData = {};
+      if (!Array.isArray(disc)) disc = [];
+      out.push({ p, plan: planData, disc });
+    }
+    if (!out.length) {
+      const planData = loadJSON(PLAN_KEY, {});
+      const disc = loadJSON(DISC_KEY, []);
+      if (Object.keys(planData).length || (Array.isArray(disc) && disc.length)) {
+        out.push({ p: null, plan: planData, disc: Array.isArray(disc) ? disc : [] });
+      }
+    }
+    return out;
+  }
 
   function init() {
     const nome = lerNome();
@@ -455,73 +502,90 @@
     }
   }
 
+  // A home é o RESUMO GERAL do aluno: os números somam todos os planos
+  // cadastrados, não só o plano em foco/ativo. As estatísticas de um plano
+  // específico ficam nas páginas de acompanhamento de cada um.
   function renderPreview() {
-    const plan = loadJSON(PLAN_KEY, {});
-    const prova = loadJSON(PROVA_KEY, {});
     const hoje = nowCuiaba();
+    const hojeKey = dateKey(hoje);
     const wk = weekKey(hoje);
+    const planos = coletarTodosPlanos();
+    const nPlanos = planos.length;
 
-    // Semana
-    const blocosSemana = plan[wk] || [];
-    const semanaMin = blocosSemana.filter(b => b.feito).reduce((s,b) => s + blocoMin(b), 0);
-    const semanaPlan = blocosSemana.reduce((s,b) => s + blocoMin(b), 0);
-    const h = Math.floor(semanaMin/60), m = semanaMin%60;
-    document.getElementById('kSemanaVal').innerHTML = `${h}<span>h${String(m).padStart(2,'0')}</span>`;
-    document.getElementById('kSemanaSub').textContent = semanaPlan > 0
-      ? `${Math.round(semanaMin/semanaPlan*100)}% do plano da semana`
-      : 'sem meta semanal';
-
-    // Streak
+    // Agregados de todos os planos
+    let totalMin = 0, totalSess = 0, totalDisc = 0, semanaMin = 0, semanaPlan = 0;
     const diasEstudo = new Set();
-    Object.entries(plan).forEach(([wkS, blocos]) => {
-      const inicioSem = new Date(wkS + 'T00:00');
-      (blocos || []).filter(b => b.feito).forEach(b => {
-        const d = addDays(inicioSem, (b.dia + 6) % 7);
-        diasEstudo.add(dateKey(d));
+    planos.forEach(({ plan, disc }) => {
+      totalDisc += disc.length;
+      Object.entries(plan).forEach(([wkS, blocos]) => {
+        (blocos || []).forEach(b => {
+          if (!b || !isBlocoEstudo(b)) return;
+          const sm = getStudiedMin(b);
+          totalMin += sm;
+          if (b.feito) totalSess++;
+          if (sm > 0) {
+            const date = blocoDateKey(wkS, b);
+            if (date && date <= hojeKey) diasEstudo.add(date);
+          }
+          if (wkS === wk) { semanaMin += sm; semanaPlan += getPlannedMin(b); }
+        });
       });
     });
+
+    // Tempo de estudo: soma de todo o tempo estudado em todos os planos
+    const th = Math.floor(totalMin/60), tm = totalMin%60;
+    document.getElementById('kTempoVal').innerHTML = `${th}<span>h${String(tm).padStart(2,'0')}</span>`;
+    document.getElementById('kTempoSub').textContent = nPlanos > 1
+      ? `somando ${nPlanos} planos de estudo`
+      : (totalMin > 0 ? 'total registrado no site' : 'comece registrando uma sessão');
+
+    // Streak geral: dias consecutivos com estudo em qualquer plano
     let streak = 0;
     for (let i = 0; i < 365; i++) {
-      const d = addDays(hoje, -i);
-      const key = dateKey(d);
-      if (diasEstudo.has(key)) streak++;
+      if (diasEstudo.has(dateKey(addDays(hoje, -i)))) streak++;
       else if (i > 0) break;
     }
     document.getElementById('kStreakVal').textContent = streak;
     document.getElementById('kStreakSub').textContent = streak === 1 ? 'dia seguido' : 'dias seguidos';
 
-    // Próxima prova
-    if (prova.nome && prova.data) {
-      const [py, pm, pd] = prova.data.split('-').map(Number);
-      const examDate = new Date(py, pm-1, pd);
+    // Próxima prova: a mais próxima entre todas as cadastradas no sistema —
+    // prova avulsa (dashboard), data de prova dos planos e provas das
+    // disciplinas de cada plano.
+    const provas = [];
+    const provaAvulsa = loadJSON(PROVA_KEY, {});
+    if (provaAvulsa.nome && provaAvulsa.data) provas.push({ nome: provaAvulsa.nome, data: provaAvulsa.data });
+    planos.forEach(({ p, disc }) => {
+      if (p && p.dataProva) provas.push({ nome: p.nome || 'Prova', data: p.dataProva });
+      disc.forEach(d => ((d && d.provas) || []).forEach(pv => {
+        if (pv && pv.data) provas.push({ nome: pv.nome ? `${pv.nome} · ${d.nome}` : d.nome, data: pv.data });
+      }));
+    });
+    const futuras = provas
+      .filter(pv => /^\d{4}-\d{2}-\d{2}$/.test(String(pv.data)) && pv.data >= hojeKey)
+      .sort((a, b) => (a.data < b.data ? -1 : 1));
+    if (futuras.length) {
+      const prox = futuras[0];
+      const [py, pm, pd] = prox.data.split('-').map(Number);
       const todayDate = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-      const diff = Math.round((examDate - todayDate) / 86400000);
-      const dias = Math.max(0, diff);
+      const dias = Math.max(0, Math.round((new Date(py, pm-1, pd) - todayDate) / 86400000));
       document.getElementById('kProvaVal').textContent = dias;
-      document.getElementById('kProvaSub').textContent = `${dias === 1 ? 'dia' : 'dias'} · ${prova.nome}`;
+      document.getElementById('kProvaSub').textContent = `${dias === 1 ? 'dia' : 'dias'} · ${prox.nome}`;
     } else {
       document.getElementById('kProvaVal').textContent = '—';
-      document.getElementById('kProvaSub').textContent = 'sem prova cadastrada';
+      document.getElementById('kProvaSub').textContent = 'sem prova futura cadastrada';
     }
 
-    // Performance: agregados de todo o histórico
+    // Performance: agregados de todo o histórico (simulados e erros já são
+    // registros únicos, compartilhados entre os planos)
     const sims = loadJSON(SIM_KEY, []);
     const erros = loadJSON(ERR_KEY, []);
-    const disc = loadJSON(DISC_KEY, []);
 
-    let totalMin = 0, totalSess = 0;
-    Object.values(plan).forEach(blocos => {
-      (blocos || []).filter(b => b.feito).forEach(b => {
-        totalMin += blocoMin(b);
-        totalSess++;
-      });
-    });
-    const th = Math.floor(totalMin/60), tm = totalMin%60;
     document.getElementById('pHorasVal').innerHTML = `${th}<span>h${String(tm).padStart(2,'0')}</span>`;
     document.getElementById('pHorasSub').textContent = totalSess > 0
-      ? `em ${totalSess} ${totalSess === 1 ? 'sessão' : 'sessões'} concluída${totalSess === 1 ? '' : 's'}`
+      ? `em ${totalSess} ${totalSess === 1 ? 'sessão' : 'sessões'}${nPlanos > 1 ? ` · ${nPlanos} planos` : ''}`
       : 'comece registrando uma sessão';
 
+    const h = Math.floor(semanaMin/60), m = semanaMin%60;
     document.getElementById('pSemanaVal').innerHTML = `${h}<span>h${String(m).padStart(2,'0')}</span>`;
     document.getElementById('pSemanaSub').textContent = semanaPlan > 0
       ? `de ${Math.floor(semanaPlan/60)}h${String(semanaPlan%60).padStart(2,'0')} planejadas`
@@ -555,9 +619,9 @@
       ? 'de estudo concluídas'
       : 'comece sua primeira hoje';
 
-    document.getElementById('pDiscVal').textContent = disc.length;
-    document.getElementById('pDiscSub').textContent = disc.length > 0
-      ? `acompanhando seu progresso`
+    document.getElementById('pDiscVal').textContent = totalDisc;
+    document.getElementById('pDiscSub').textContent = totalDisc > 0
+      ? (nPlanos > 1 ? `em ${nPlanos} planos de estudo` : 'acompanhando seu progresso')
       : 'cadastre suas matérias';
 
     document.getElementById('pSimsVal').textContent = sims.length;
