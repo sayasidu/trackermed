@@ -36,6 +36,8 @@
 .sim-row:hover { transform: translateX(3px); box-shadow: var(--sh-2); }
 .sim-row .materia { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; letter-spacing: -0.015em; }
 .sim-row .meta { font-size: 12px; color: var(--muted); letter-spacing: 0.04em; margin-top: 4px; }
+.sim-row .vinculo { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.sim-row .vinculo .chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink2); }
 .sim-row .col { text-align: right; }
 .sim-row .col .k { font-size: 10px; letter-spacing: 0.15em; color: var(--muted); font-weight: 600; text-transform: uppercase; }
 .sim-row .col .v { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 500; letter-spacing: -0.02em; margin-top: 2px; }
@@ -116,7 +118,7 @@
 <div>
   <div class="kicker">Treine como se fosse a prova</div>
   <h1 class="page-title">Seus <i>simulados</i>.</h1>
-  <p class="page-lede">Registre cada simulado com matéria, número de questões, acertos e tempo. O site classifica seu desempenho automaticamente.</p>
+  <p class="page-lede">Registre cada simulado com matéria, plano de estudos, conteúdo, número de questões, acertos e tempo. O site classifica seu desempenho automaticamente.</p>
 </div>
 
 <div class="stats-row">
@@ -135,7 +137,10 @@
 </div>
 
 <div class="tool-row">
-  <input type="text" class="search" id="searchInput" placeholder="Buscar por matéria…"/>
+  <input type="text" class="search" id="searchInput" placeholder="Buscar por matéria, plano ou conteúdo…"/>
+  <select id="filterPlano">
+    <option value="">Todos os planos</option>
+  </select>
   <select id="filterClass">
     <option value="">Todas classificações</option>
     <option value="refazer">Refazer</option>
@@ -162,6 +167,20 @@
       <div class="mfield">
         <label>Matéria *</label>
         <input type="text" id="sMateria" required placeholder="ex: Clínica Médica, Cirurgia, Pediatria…"/>
+      </div>
+      <div class="mfield row2">
+        <div>
+          <label>Plano de estudos</label>
+          <select id="sPlano" onchange="popularConteudos(this.value)">
+            <option value="">— sem plano —</option>
+          </select>
+        </div>
+        <div>
+          <label>Conteúdo do plano</label>
+          <select id="sConteudo" disabled>
+            <option value="">— escolha um plano primeiro —</option>
+          </select>
+        </div>
       </div>
       <div class="mfield row2">
         <div>
@@ -202,6 +221,80 @@ function loadSims() { try { return JSON.parse(localStorage.getItem(SIM_KEY) || '
 function saveSims(s) { localStorage.setItem(SIM_KEY, JSON.stringify(s)); }
 function uid() { return 'sm-'+Date.now()+'-'+Math.random().toString(36).slice(2,6); }
 function esc(s) { return String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// ---- Planos de estudo e seus conteúdos ------------------------------------
+// Cada simulado pode ser vinculado a um plano (trackermed.planos.v1) e a um
+// conteúdo cadastrado nele. Os conteúdos vêm das disciplinas do plano — das
+// chaves vivas se ele está em foco, senão do snapshot arquivado
+// (trackermed.semestres.v1) — mais as matérias listadas no próprio plano.
+const PLANOS_KEY = 'trackermed.planos.v1';
+const FOCO_KEY   = 'trackermed.semestreAtivo.v1';
+const SNAP_KEY   = 'trackermed.semestres.v1';
+const DISC_KEY   = 'trackermed.disciplinas.v1';
+const PLANO_ICON = { semestre:'🎓', residencia:'🏥', enamed:'📋', objetivo:'📌' };
+
+function loadPlanos() { try { return JSON.parse(localStorage.getItem(PLANOS_KEY) || '[]'); } catch { return []; } }
+function focoPlanoId() { try { return localStorage.getItem(FOCO_KEY) || null; } catch { return null; } }
+function discDoPlano(planoId) {
+  try {
+    if (planoId === focoPlanoId()) return JSON.parse(localStorage.getItem(DISC_KEY) || '[]');
+    const snap = JSON.parse(localStorage.getItem(SNAP_KEY) || '{}')[planoId];
+    return snap ? JSON.parse(snap.disciplinas || '[]') : [];
+  } catch { return []; }
+}
+function conteudosDoPlano(planoId) {
+  const grupos = [];
+  discDoPlano(planoId).forEach(d => {
+    const itens = (d.conteudos || []).filter(c => c && c.nome).map(c => ({ id: c.id || 'c:' + c.nome, nome: c.nome }));
+    if (itens.length) grupos.push({ grupo: d.nome || 'Disciplina', itens });
+  });
+  const p = loadPlanos().find(x => x.id === planoId);
+  const mats = ((p && p.materias) || []).filter(Boolean).map(m => ({ id: 'mat:' + m, nome: m }));
+  if (mats.length) grupos.push({ grupo: 'Matérias do plano', itens: mats });
+  return grupos;
+}
+function popularPlanoSelect(selId, selNome) {
+  const sel = document.getElementById('sPlano');
+  const planos = loadPlanos();
+  let html = '<option value="">— sem plano —</option>' + planos.map(p =>
+    `<option value="${esc(p.id)}" data-nome="${esc(p.nome)}">${PLANO_ICON[p.tipo] || '📘'} ${esc(p.nome)}</option>`).join('');
+  if (selId && !planos.some(p => p.id === selId)) {
+    html += `<option value="${esc(selId)}" data-nome="${esc(selNome || '')}">⚠️ ${esc(selNome || 'Plano removido')}</option>`;
+  }
+  sel.innerHTML = html;
+  sel.value = selId || '';
+}
+function popularConteudos(planoId, selId, selNome) {
+  const sel = document.getElementById('sConteudo');
+  if (!planoId) {
+    sel.innerHTML = '<option value="">— escolha um plano primeiro —</option>';
+    sel.disabled = true;
+    return;
+  }
+  const grupos = conteudosDoPlano(planoId);
+  let html = grupos.length
+    ? '<option value="">— sem conteúdo específico —</option>'
+    : '<option value="">nenhum conteúdo cadastrado neste plano</option>';
+  grupos.forEach(g => {
+    html += `<optgroup label="${esc(g.grupo)}">` + g.itens.map(c =>
+      `<option value="${esc(c.id)}" data-nome="${esc(c.nome)}">${esc(c.nome)}</option>`).join('') + '</optgroup>';
+  });
+  if (selId && !grupos.some(g => g.itens.some(c => c.id === selId))) {
+    html += `<optgroup label="Removido do plano"><option value="${esc(selId)}" data-nome="${esc(selNome || '')}">⚠️ ${esc(selNome || 'Conteúdo removido')}</option></optgroup>`;
+  }
+  sel.innerHTML = html;
+  sel.disabled = false;
+  sel.value = selId || '';
+}
+function popularFiltroPlano() {
+  const sel = document.getElementById('filterPlano');
+  const atual = sel.value;
+  sel.innerHTML = '<option value="">Todos os planos</option>' + loadPlanos().map(p =>
+    `<option value="${esc(p.id)}">${PLANO_ICON[p.tipo] || '📘'} ${esc(p.nome)}</option>`).join('') +
+    '<option value="sem-plano">Sem plano</option>';
+  sel.value = atual;
+  if (sel.selectedIndex < 0) sel.value = '';
+}
 
 function classificar(pct) {
   if (pct <= 74) return { key: 'refazer', label: 'Refazer' };
@@ -265,9 +358,16 @@ function abrirModal(id) {
       document.getElementById('sAcertos').value = s.acertos;
       document.getElementById('sTempo').value = s.tempo;
       document.getElementById('sData').value = s.data || todayISO();
+      popularPlanoSelect(s.planoId, s.planoNome);
+      popularConteudos(s.planoId, s.conteudoId, s.conteudoNome);
     }
   } else {
     document.getElementById('mTitulo').innerHTML = 'Adicionar <i>simulado</i>';
+    // Pré-seleciona o plano em foco pra facilitar o vínculo.
+    const foco = focoPlanoId();
+    const temFoco = foco && loadPlanos().some(p => p.id === foco);
+    popularPlanoSelect(temFoco ? foco : '');
+    popularConteudos(temFoco ? foco : '');
   }
   atualizarPreview();
   document.getElementById('modal').classList.add('open');
@@ -283,7 +383,15 @@ function salvar() {
   const data = document.getElementById('sData').value;
   if (!materia || !questoes || isNaN(acertos) || !tempo) return;
   if (acertos > questoes) { alert('Acertos não pode ser maior que o total de questões.'); return; }
-  const dados = { materia, questoes, acertos, tempo, data };
+  const planoSel = document.getElementById('sPlano');
+  const planoId = planoSel.value || null;
+  const planoOpt = planoSel.selectedOptions[0];
+  const planoNome = planoId && planoOpt ? (planoOpt.dataset.nome || '') : '';
+  const contSel = document.getElementById('sConteudo');
+  const conteudoId = (planoId && contSel.value) ? contSel.value : null;
+  const contOpt = contSel.selectedOptions[0];
+  const conteudoNome = conteudoId && contOpt ? (contOpt.dataset.nome || contOpt.textContent) : '';
+  const dados = { materia, questoes, acertos, tempo, data, planoId, planoNome, conteudoId, conteudoNome };
   const sims = loadSims();
   if (id) {
     const i = sims.findIndex(x => x.id === id);
@@ -306,6 +414,27 @@ function render() {
   const sims = loadSims();
   const search = document.getElementById('searchInput').value.toLowerCase().trim();
   const fc = document.getElementById('filterClass').value;
+  const fp = document.getElementById('filterPlano').value;
+  popularFiltroPlano();
+
+  // Nomes atuais de plano/conteúdo por id, com fallback pros nomes gravados.
+  const planosById = {};
+  loadPlanos().forEach(p => { planosById[p.id] = p; });
+  const contNomesCache = {};
+  const nomeConteudoAtual = s => {
+    if (!s.conteudoId) return '';
+    if (!(s.planoId in contNomesCache)) {
+      const map = {};
+      conteudosDoPlano(s.planoId).forEach(g => g.itens.forEach(c => { map[c.id] = c.nome; }));
+      contNomesCache[s.planoId] = map;
+    }
+    return contNomesCache[s.planoId][s.conteudoId] || s.conteudoNome || '';
+  };
+  const nomePlanoAtual = s => {
+    if (!s.planoId) return '';
+    const p = planosById[s.planoId];
+    return p ? p.nome : (s.planoNome || 'Plano removido');
+  };
 
   // Stats
   const total = sims.length;
@@ -338,8 +467,11 @@ function render() {
   }
 
   let lista = sims.slice();
-  if (search) lista = lista.filter(s => s.materia.toLowerCase().includes(search));
+  if (search) lista = lista.filter(s =>
+    `${s.materia} ${nomePlanoAtual(s)} ${nomeConteudoAtual(s)}`.toLowerCase().includes(search));
   if (fc) lista = lista.filter(s => classificar(Math.round(s.acertos/s.questoes*100)).key === fc);
+  if (fp === 'sem-plano') lista = lista.filter(s => !s.planoId);
+  else if (fp) lista = lista.filter(s => s.planoId === fp);
 
   const listaEl = document.getElementById('lista');
   if (lista.length === 0) {
@@ -354,10 +486,18 @@ function render() {
   listaEl.innerHTML = lista.map(s => {
     const pct = Math.round((s.acertos / s.questoes) * 100);
     const c = classificar(pct);
+    const planoNm = nomePlanoAtual(s);
+    const contNm = nomeConteudoAtual(s);
+    const p = planosById[s.planoId];
+    const vinculo = (planoNm || contNm) ? `<div class="vinculo">
+        ${planoNm ? `<span class="chip">${PLANO_ICON[p && p.tipo] || '📘'} ${esc(planoNm)}</span>` : ''}
+        ${contNm ? `<span class="chip">📖 ${esc(contNm)}</span>` : ''}
+      </div>` : '';
     return `<div class="sim-row ${c.key}">
       <div>
         <div class="materia">${esc(s.materia)}</div>
         <div class="meta">${s.acertos}/${s.questoes} acertos · ${fmtTempo(s.tempo)}${s.data ? ' · '+fmtData(s.data) : ''}</div>
+        ${vinculo}
       </div>
       <div class="col"><div class="k">Aproveitamento</div><div class="v">${pct}%</div></div>
       <div class="col"><div class="k">Tempo</div><div class="v" style="font-size:18px">${fmtTempo(s.tempo)}</div></div>
@@ -373,6 +513,8 @@ function render() {
 ['sQuestoes','sAcertos'].forEach(id => document.getElementById(id).addEventListener('input', atualizarPreview));
 document.getElementById('searchInput').addEventListener('input', render);
 document.getElementById('filterClass').addEventListener('change', render);
+document.getElementById('filterPlano').addEventListener('change', render);
+popularFiltroPlano();
 render();
 </script>
 </body></html>
