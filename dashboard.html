@@ -98,6 +98,32 @@
 .empty-inline { padding: 24px 4px; color: var(--muted); font-size: 13px; font-style: italic; text-align: center; }
 .empty-inline a { color: var(--cobalt); font-weight: 600; font-style: normal; }
 
+/* ---- Simulados por plano e conteúdo + conteúdos a reforçar ---- */
+.simplano { border: 1px solid var(--line); border-left: 4px solid var(--cobalt); border-radius: 0 10px 10px 0; padding: 14px 18px; margin-bottom: 12px; background: var(--paper); }
+.simplano:last-child { margin-bottom: 0; }
+.simplano-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.simplano-nome { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 500; letter-spacing: -0.01em; }
+.simplano-agg { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.simplano-agg b { font-family: 'Fraunces', serif; font-size: 15px; color: var(--cobalt); }
+.simplano-conts { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 4px; }
+.simcont-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 12.5px; }
+.simcont-row .nm { min-width: 150px; flex-shrink: 0; font-weight: 600; }
+.simcont-row .nm span { color: var(--muted); font-weight: 400; font-size: 11px; }
+.simcont-row .bar-wrap { flex: 1; height: 6px; background: var(--line); position: relative; overflow: hidden; border-radius: 999px; }
+.simcont-row .bar-wrap div { height: 100%; background-image: var(--grad-brand); border-radius: 999px; transition: width .6s var(--ease); }
+.simcont-row .bar-wrap div.low { background-image: none; background: var(--rose); }
+.simcont-row .pct { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--muted); min-width: 42px; text-align: right; }
+.simcont-row .pct.low { color: var(--rose); font-weight: 700; }
+[data-theme="dark"] .simplano { background: var(--surface-soft); }
+
+.reforco-item { border-left: 3px solid var(--rose); padding: 12px 14px; background: var(--paper); border-radius: 0 8px 8px 0; display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 10px; transition: transform .2s var(--ease); }
+.reforco-item:hover { transform: translateX(3px); }
+.reforco-item .rk-plano { font-size: 10px; letter-spacing: 0.12em; font-weight: 700; color: var(--rose); text-transform: uppercase; }
+.reforco-item .rk-nome { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 500; margin-top: 2px; }
+.reforco-item .rk-sub { font-size: 11px; color: var(--ink2); margin-top: 3px; }
+.reforco-item .rk-pct { font-family: 'Fraunces', serif; font-size: 26px; color: var(--rose); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+[data-theme="dark"] .reforco-item { background: var(--surface-soft); }
+
 .quick-links { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 20px; }
 .quick { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; background: var(--card); border: 1px solid var(--line); min-height: 92px; border-radius: 10px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); }
 .quick:hover { border-color: var(--cobalt); transform: translateY(-3px); box-shadow: var(--sh-2); }
@@ -292,6 +318,19 @@
   </div>
   <div id="ritmoResumoChips" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"></div>
   <div id="ritmoResumoMats" style="margin-top:10px;font-size:13px;color:var(--ink2);line-height:1.7"></div>
+</div>
+
+<div class="col2">
+  <div class="box">
+    <h2>Simulados por <i>plano e conteúdo</i></h2>
+    <div class="sub">Aproveitamento dos seus simulados separado por plano de estudos e, dentro de cada um, por conteúdo.</div>
+    <div id="simPlanoList"></div>
+  </div>
+  <div class="box">
+    <h2>Conteúdos a <i>reforçar</i></h2>
+    <div class="sub">Os 3 conteúdos com os piores resultados em simulados — só entram os com aproveitamento abaixo de 70%.</div>
+    <div id="reforcoList"></div>
+  </div>
 </div>
 
 <div class="col2">
@@ -1233,9 +1272,140 @@ function renderRitmoResumo() {
   document.getElementById('ritmoResumoMats').innerHTML = linhas.join('<br>');
 }
 
+// ==== Simulados por plano e por conteúdo + conteúdos a reforçar ============
+// Cada simulado pode carregar planoId/conteudoId (vinculados em simulados.html).
+// Os resultados são agrupados por plano e, dentro de cada plano, por conteúdo;
+// os conteúdos com aproveitamento agregado abaixo de REFORCO_LIMIAR entram na
+// lista de reforço — os 3 piores.
+const REFORCO_LIMIAR = 70;
+
+// Nome atual dos conteúdos de um plano: disciplinas das chaves vivas se ele
+// está em foco, senão do snapshot arquivado — mesmo esquema do Histórico.
+function conteudoNomesDoPlano(planoId) {
+  const ctx = window.TrackerMedContext;
+  let disc = [];
+  try {
+    if (ctx && planoId === ctx.focusId()) disc = loadJSON(DISC_KEY, []);
+    else {
+      const snap = (ctx && ctx.snapshotOf(planoId)) || {};
+      disc = JSON.parse(snap.disciplinas || '[]');
+    }
+  } catch {}
+  const map = {};
+  disc.forEach(d => (d.conteudos || []).forEach(c => { if (c && c.id) map[c.id] = c.nome; }));
+  return map;
+}
+
+function renderSimuladosPorPlano() {
+  const listaEl = document.getElementById('simPlanoList');
+  const refEl = document.getElementById('reforcoList');
+  const sims = loadJSON(SIM_KEY, []);
+  const planos = window.TrackerMedContext ? window.TrackerMedContext.planos() : loadJSON('trackermed.planos.v1', []);
+  const planosById = {};
+  planos.forEach(p => { planosById[p.id] = p; });
+  const contNomes = {};
+
+  const grupos = new Map();
+  let temVinculo = false;
+  sims.forEach(s => {
+    const q = Number(s.questoes) || 0;
+    if (!q) return;
+    const a = Math.min(Number(s.acertos) || 0, q);
+    const pKey = s.planoId || '';
+    if (!grupos.has(pKey)) {
+      const p = planosById[pKey];
+      grupos.set(pKey, {
+        nome: p ? p.nome : (pKey ? (s.planoNome || 'Plano removido') : 'Sem plano'),
+        tipo: p ? p.tipo : null,
+        q: 0, a: 0, n: 0, conts: new Map()
+      });
+    }
+    const g = grupos.get(pKey);
+    g.q += q; g.a += a; g.n++;
+    const cKey = s.conteudoId || '';
+    if (cKey) temVinculo = true;
+    if (!g.conts.has(cKey)) {
+      let nome = 'Sem conteúdo específico';
+      if (cKey) {
+        if (!(pKey in contNomes)) contNomes[pKey] = conteudoNomesDoPlano(pKey);
+        nome = contNomes[pKey][cKey] || s.conteudoNome || (cKey.startsWith('mat:') ? cKey.slice(4) : cKey);
+      }
+      g.conts.set(cKey, { nome, q: 0, a: 0, n: 0 });
+    }
+    const c = g.conts.get(cKey);
+    c.q += q; c.a += a; c.n++;
+  });
+
+  if (!grupos.size) {
+    listaEl.innerHTML = `<div class="empty-inline">Nenhum simulado registrado. <a href="simulados.html">Registrar agora →</a></div>`;
+    refEl.innerHTML = `<div class="empty-inline">Sem simulados, sem diagnóstico. <a href="simulados.html">Registrar →</a></div>`;
+    return;
+  }
+
+  // Ordena: planos na ordem do cadastro, removidos depois, "Sem plano" por último.
+  const ordemPlanos = planos.map(p => p.id);
+  const chaves = [...grupos.keys()].sort((x, y) => {
+    if (!x) return 1;
+    if (!y) return -1;
+    const ix = ordemPlanos.indexOf(x), iy = ordemPlanos.indexOf(y);
+    return (ix === -1 ? ordemPlanos.length : ix) - (iy === -1 ? ordemPlanos.length : iy);
+  });
+
+  listaEl.innerHTML = chaves.map(pKey => {
+    const g = grupos.get(pKey);
+    const pct = Math.round(g.a / g.q * 100);
+    const cor = pKey ? (PLANO_COR[g.tipo] || '#7C5CFC') : '#6B6A5F';
+    const icon = pKey ? (PLANO_ICON[g.tipo] || '📘') : '🗂️';
+    // Conteúdos reais primeiro (do pior pro melhor); "sem conteúdo" por último.
+    const conts = [...g.conts.entries()]
+      .sort((x, y) => (x[0] ? 0 : 1) - (y[0] ? 0 : 1) || (x[1].a / x[1].q) - (y[1].a / y[1].q));
+    const rows = conts.map(([cKey, c]) => {
+      const cp = Math.round(c.a / c.q * 100);
+      const low = cKey && cp < REFORCO_LIMIAR;
+      return `<div class="simcont-row">
+        <div class="nm">${cKey ? esc(c.nome) : '<span>sem conteúdo específico</span>'} <span>· ${c.n} ${plu(c.n,'simulado','simulados')}</span></div>
+        <div class="bar-wrap"><div class="${low ? 'low' : ''}" style="width:${Math.min(100, cp)}%"></div></div>
+        <div class="pct ${low ? 'low' : ''}">${cp}%</div>
+      </div>`;
+    }).join('');
+    return `<div class="simplano" style="border-left-color:${cor}">
+      <div class="simplano-head">
+        <div class="simplano-nome">${icon} ${esc(g.nome)}</div>
+        <div class="simplano-agg"><b>${pct}%</b> · ${g.n} ${plu(g.n,'simulado','simulados')} · ${g.a}/${g.q} acertos</div>
+      </div>
+      <div class="simplano-conts">${rows}</div>
+    </div>`;
+  }).join('');
+
+  // Os 3 piores conteúdos com aproveitamento abaixo do limiar.
+  const ruins = [];
+  grupos.forEach(g => g.conts.forEach((c, cKey) => {
+    if (!cKey || !c.q) return;
+    const pct = Math.round(c.a / c.q * 100);
+    if (pct < REFORCO_LIMIAR) ruins.push({ plano: g.nome, nome: c.nome, pct, q: c.q, a: c.a, n: c.n });
+  }));
+  ruins.sort((x, y) => x.pct - y.pct);
+  const piores = ruins.slice(0, 3);
+  if (!temVinculo) {
+    refEl.innerHTML = `<div class="empty-inline">Vincule seus simulados a um plano e conteúdo em <a href="simulados.html">Simulados</a> pra identificar o que precisa de reforço.</div>`;
+  } else if (!piores.length) {
+    refEl.innerHTML = `<div class="empty-inline">Nenhum conteúdo abaixo de ${REFORCO_LIMIAR}% — nada a reforçar por enquanto 🎯</div>`;
+  } else {
+    refEl.innerHTML = piores.map(r => `<div class="reforco-item">
+      <div>
+        <div class="rk-plano">${esc(r.plano)}</div>
+        <div class="rk-nome">${esc(r.nome)}</div>
+        <div class="rk-sub">${r.a}/${r.q} acertos em ${r.n} ${plu(r.n,'simulado','simulados')} — abaixo da meta de ${REFORCO_LIMIAR}%</div>
+      </div>
+      <div class="rk-pct">${r.pct}%</div>
+    </div>`).join('');
+  }
+}
+
 render();
 renderFrase(renderResumo());
 renderRitmoResumo();
+renderSimuladosPorPlano();
 incrementVisit();
 </script>
 </body></html>
