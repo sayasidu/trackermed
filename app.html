@@ -709,6 +709,12 @@ function renderSync() {
       </div>
       <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importarBackup(this)">
       <div style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:14px">Importar <b>substitui</b> os dados deste aparelho pelos do arquivo — o app sempre pergunta antes.</div>
+    </div>
+
+    <div class="card lg" style="border-color:rgba(255,91,91,0.5)">
+      <div class="kicker" style="color:#C0392B">Começar do zero</div>
+      <div style="font-size:12.5px;color:var(--ink2);line-height:1.55;margin-top:8px">Apaga todos os dados de estudo — plano, disciplinas, sessões, revisões, erros, simulados e prova — pra recomeçar com o app limpo. ${user ? 'Como a conta está conectada, apaga também da nuvem e dos outros aparelhos.' : 'Vale para este aparelho.'} Se quiser guardar uma cópia, exporta um backup antes.</div>
+      <button type="button" onclick="resetarTudo(this)" style="width:100%;min-height:46px;margin-top:14px;border:none;border-radius:10px;background:#FF5B5B;color:#fff;font:600 13px 'Inter Tight',sans-serif;letter-spacing:0.03em">Apagar tudo e começar do zero</button>
     </div>`;
 }
 
@@ -806,6 +812,32 @@ function importarBackup(input) {
     location.reload();
   };
   reader.readAsText(file);
+}
+
+// ===== Começar do zero =======================================================
+// Apaga as mesmas chaves do backup, mais o cronômetro. As remoções passam pelo
+// localStorage normal de propósito: o sync.js registra tombstones, então com a
+// conta conectada a limpeza também vale pra nuvem e pros outros aparelhos —
+// offline, os tombstones ficam pendentes e sobem quando a conexão voltar.
+function resetarTudo(btn) {
+  const chaves = backupKeys();
+  if (!chaves.length && !localStorage.getItem(TIMER_KEY)) {
+    alert('Não há nada para apagar — o app já está zerado.');
+    return;
+  }
+  const S = window.TrackerMedSync;
+  const conta = S ? S.user() : null;
+  const alcance = conta
+    ? 'Isso apaga os dados deste aparelho E da nuvem — os outros aparelhos da conta ' + conta.email + ' também ficam zerados.'
+    : 'Isso apaga os dados deste aparelho.';
+  if (!confirm('Começar do zero?\n\n' + alcance + '\nPlano, disciplinas, sessões, revisões, erros, simulados e prova: tudo vai embora (' + chaves.length + ' chaves).\n\nSe quiser guardar uma cópia, cancela e exporta um backup antes.')) return;
+  if (!confirm('Última confirmação: apagar TUDO e começar do zero?\n\nEssa ação não pode ser desfeita.')) return;
+  if (btn) btn.disabled = true;
+  timer = null;
+  localStorage.removeItem(TIMER_KEY);
+  chaves.forEach(k => localStorage.removeItem(k));
+  const fim = () => { alert('Pronto — tudo apagado. O app vai recarregar do zero.'); location.reload(); };
+  if (conta && S) S.syncNow().catch(() => {}).then(fim); else fim();
 }
 
 // ===== Cronômetro =============================================================

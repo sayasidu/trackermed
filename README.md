@@ -18,7 +18,10 @@ o login fica em **app → ↻ Conta e sincronização** (uma vez por aparelho; d
 todas as páginas do site sincronizam sozinhas em segundo plano). Conflitos são
 resolvidos chave a chave — a alteração mais recente vence — e no primeiro login
 de um aparelho que já tem dados o app pergunta qual lado vale. O backup por
-arquivo (Exportar/Importar na mesma tela) continua como plano B.
+arquivo (Exportar/Importar na mesma tela) continua como plano B. A mesma tela
+tem a opção **Começar do zero**, que apaga todos os dados de estudo (com
+confirmação dupla) — com a conta conectada, a limpeza vale também para a nuvem
+e os outros aparelhos.
 
 Backend: Firebase (projeto `trackermed-b335e`) — Authentication (e-mail/senha) +
 Cloud Firestore, plano gratuito. As chaves em `sync.js` são públicas por design;
