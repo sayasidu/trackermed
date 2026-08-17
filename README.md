@@ -2,6 +2,24 @@
 
 Painel de estudo para medicina. Site estático — basta servir os arquivos (GitHub Pages).
 
+## Identidade visual · tema Rosé
+
+O site usa a paleta **Rosé**: ameixa profunda, creme rosado, rosa framboesa e
+blush, com degradê-assinatura rosa→lilás e modo escuro em tons de ameixa. Os
+nomes das variáveis CSS antigas (`--cobalt`, `--acid`, `--ink`, `--paper`)
+foram mantidos por compatibilidade — só os valores mudaram (em `app.css` e no
+`<style>` próprio de `index.html`).
+
+Atalhos de personalização e manutenção:
+
+- **Recomeçar do zero**: botão no pé da barra lateral de todas as páginas (e
+  no rodapé da home), com confirmação dupla — apaga todos os dados E
+  configurações (nome, tema, planos, leituras…). Com a conta conectada, a
+  limpeza vale também pra nuvem. Também disponível em app → Conta.
+- **Excluir leituras individualmente**: nas listas "Materiais em andamento"
+  do Histórico e do Planejamento, o botão 🗑 remove só aquela leitura (as
+  sessões já registradas no histórico ficam).
+
 ## App no iPhone e iPad (PWA)
 
 O site agora instala como app na tela inicial, com a tela `app.html` como início

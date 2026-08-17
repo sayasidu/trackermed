@@ -11,23 +11,23 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="TrackerMed">
-<meta name="theme-color" content="#F4F1EA">
+<meta name="theme-color" content="#FAF0EE">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   /* Paleta fixa clara do app (a versão escura é o próximo passo, como na proposta). */
   :root {
-    --ink: #0A1330; --ink2: #2A3356; --paper: #F4F1EA; --line: #E4DFD2;
-    --cobalt: #1E3AE8; --acid: #E6FF3D; --muted: #6B6A5F;
-    --grad: linear-gradient(120deg, #1E3AE8 0%, #4361FF 46%, #7C5CFC 100%);
-    --navy: linear-gradient(150deg, #13224E 0%, #0A1330 68%);
-    --acid-grad: linear-gradient(135deg, #ECFF6B, #E6FF3D 60%, #D4F52E);
+    --ink: #2B0F26; --ink2: #56304A; --paper: #FAF0EE; --line: #EFDBDD;
+    --cobalt: #C2255C; --acid: #FFB8D2; --muted: #7E6577;
+    --grad: linear-gradient(120deg, #C2255C 0%, #E14C8C 46%, #7C5CFC 100%);
+    --navy: linear-gradient(150deg, #482145 0%, #2B0F26 68%);
+    --acid-grad: linear-gradient(135deg, #FFD0E1, #FFB8D2 60%, #FF9EC4);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { background: #F4F1EA; }
+  html { background: #FAF0EE; }
   body {
-    background: #F4F1EA; color: var(--ink);
+    background: #FAF0EE; color: var(--ink);
     font-family: 'Inter Tight', -apple-system, sans-serif; font-size: 14px; line-height: 1.5;
     min-height: 100dvh;
     -webkit-tap-highlight-color: transparent;
@@ -45,7 +45,7 @@
   .logo { display: flex; align-items: center; gap: 7px; }
   .logo b { font-family: 'Fraunces', serif; font-size: 23px; font-weight: 600; letter-spacing: -0.04em; }
   .logo b em { font-style: italic; color: var(--cobalt); }
-  .logo .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--acid); box-shadow: 0 0 0 3px rgba(230,255,61,0.35); }
+  .logo .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--acid); box-shadow: 0 0 0 3px rgba(255,184,210,0.35); }
   .top-actions { display: flex; align-items: center; gap: 8px; }
   .net-pill {
     min-height: 34px; display: inline-flex; align-items: center; gap: 6px;
@@ -96,10 +96,10 @@
   .kpi .num { font-family: 'Fraunces', serif; font-size: 40px; font-weight: 400; letter-spacing: -0.04em; line-height: 1; margin-top: 10px; color: var(--cobalt); }
   .kpi .num span { font-size: 16px; color: var(--muted); }
   .kpi .sub { font-size: 12px; color: var(--ink2); margin-top: 8px; }
-  .kpi.dark { background: linear-gradient(150deg, #12204A, #0A1330 72%); border-color: var(--ink); color: var(--paper); }
+  .kpi.dark { background: linear-gradient(150deg, #421F3D, #2B0F26 72%); border-color: var(--ink); color: var(--paper); }
   .kpi.dark .kicker { color: var(--acid); }
   .kpi.dark .num { color: var(--acid); }
-  .kpi.dark .sub { color: rgba(244,241,234,0.6); }
+  .kpi.dark .sub { color: rgba(250,240,238,0.6); }
   .kpi.acid { background: var(--acid-grad); border-color: var(--acid); }
   .kpi.acid .kicker, .kpi.acid .num { color: var(--ink); }
   .kpi.acid .num { font-style: italic; }
@@ -118,14 +118,14 @@
   .atalho .n { font-family: 'Fraunces', serif; font-size: 14px; font-style: italic; color: var(--cobalt); }
   .atalho .t { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 500; letter-spacing: -0.02em; }
   .atalho .s { font-size: 11.5px; color: var(--muted); margin-top: auto; }
-  .atalho.dark { background: linear-gradient(150deg, #12204A, #0A1330 72%); border-color: var(--ink); color: var(--paper); }
+  .atalho.dark { background: linear-gradient(150deg, #421F3D, #2B0F26 72%); border-color: var(--ink); color: var(--paper); }
   .atalho.dark .n { color: var(--acid); }
-  .atalho.dark .s { color: rgba(244,241,234,0.6); }
+  .atalho.dark .s { color: rgba(250,240,238,0.6); }
   .atalho.acid { background: var(--acid-grad); border-color: var(--acid); color: var(--ink); }
   .atalho.acid .n { color: var(--ink); }
   .atalho.acid .s { color: var(--ink2); }
 
-  .foot { text-align: center; font: 600 10px/1 'Inter Tight', sans-serif; letter-spacing: 0.14em; text-transform: uppercase; color: #9e9c92; padding: 22px 0 8px; }
+  .foot { text-align: center; font: 600 10px/1 'Inter Tight', sans-serif; letter-spacing: 0.14em; text-transform: uppercase; color: #B09AA6; padding: 22px 0 8px; }
 
   /* Barras de progresso */
   .bar { height: 6px; background: var(--paper); border-radius: 999px; overflow: hidden; }
@@ -164,11 +164,11 @@
   .sess.done .mins { color: #2E7D32; }
   .sess .play {
     width: 44px; height: 44px; border-radius: 10px; border: none; background: var(--grad); color: #fff;
-    font-size: 14px; box-shadow: 0 8px 22px rgba(30,58,232,0.34);
+    font-size: 14px; box-shadow: 0 8px 22px rgba(194,37,92,0.34);
   }
   .sess.done .play { background: transparent; color: #43A047; box-shadow: none; font-size: 18px; }
   .sess .prog { grid-column: 1 / -1; }
-  .sess .prog .bar { height: 7px; background: rgba(10,19,48,0.1); }
+  .sess .prog .bar { height: 7px; background: rgba(43,15,38,0.1); }
   .sess .prog .lbl { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); margin-top: 4px; }
 
   .dia7 { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid #F1F1F1; }
@@ -194,7 +194,7 @@
     max-width: 488px; margin: 0 auto;
     min-height: 56px; border: none; border-radius: 14px; background: var(--grad); color: #fff;
     font: 600 15px 'Inter Tight', sans-serif; letter-spacing: 0.01em;
-    box-shadow: 0 10px 30px rgba(30,58,232,0.42);
+    box-shadow: 0 10px 30px rgba(194,37,92,0.42);
     display: flex; align-items: center; justify-content: center; gap: 10px;
   }
   body.timer-open .fab { display: none; }
@@ -204,22 +204,22 @@
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 80;
     max-width: 520px; margin: 0 auto;
     background: var(--navy); border-top-left-radius: 22px; border-top-right-radius: 22px;
-    border-top: 1px solid rgba(244,241,234,0.12); border-left: 5px solid var(--acid);
+    border-top: 1px solid rgba(250,240,238,0.12); border-left: 5px solid var(--acid);
     padding: 20px 22px calc(24px + env(safe-area-inset-bottom)); color: var(--paper);
-    box-shadow: 0 -18px 44px rgba(10,19,48,0.4);
+    box-shadow: 0 -18px 44px rgba(43,15,38,0.4);
     display: none;
   }
   body.timer-open .sheet { display: block; }
   .sheet .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
   .sheet .kicker { color: var(--acid); }
   .sheet .disc { font-size: 15px; font-weight: 600; margin-top: 5px; }
-  .sheet .close { width: 40px; height: 40px; border-radius: 999px; background: rgba(244,241,234,0.08); border: 1px solid rgba(244,241,234,0.15); color: rgba(244,241,234,0.7); font-size: 18px; }
+  .sheet .close { width: 40px; height: 40px; border-radius: 999px; background: rgba(250,240,238,0.08); border: 1px solid rgba(250,240,238,0.15); color: rgba(250,240,238,0.7); font-size: 18px; }
   .sheet .clock { font-family: 'Fraunces', serif; font-size: 62px; font-weight: 500; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; text-align: center; color: var(--acid); margin: 16px 0 6px; }
-  .sheet .bar { height: 7px; background: rgba(244,241,234,0.14); }
+  .sheet .bar { height: 7px; background: rgba(250,240,238,0.14); }
   .sheet .bar i { background: var(--acid); transition: width 0.3s ease; }
-  .sheet .lbl { display: flex; justify-content: space-between; font-size: 11px; color: rgba(244,241,234,0.6); margin-top: 6px; }
+  .sheet .lbl { display: flex; justify-content: space-between; font-size: 11px; color: rgba(250,240,238,0.6); margin-top: 6px; }
   .sheet .btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 16px; }
-  .sheet .btns button { min-height: 48px; border-radius: 10px; background: rgba(244,241,234,0.08); border: 1px solid rgba(244,241,234,0.15); color: var(--paper); font: 600 11px 'Inter Tight', sans-serif; letter-spacing: 0.06em; text-transform: uppercase; }
+  .sheet .btns button { min-height: 48px; border-radius: 10px; background: rgba(250,240,238,0.08); border: 1px solid rgba(250,240,238,0.15); color: var(--paper); font: 600 11px 'Inter Tight', sans-serif; letter-spacing: 0.06em; text-transform: uppercase; }
   .sheet .btns .go { background: var(--acid); border-color: var(--acid); color: var(--ink); font-weight: 700; }
 </style>
 <script defer src="theme.js"></script>
@@ -393,11 +393,11 @@ function renderHome() {
         <div>
           <div class="kicker">Próxima prova</div>
           <div style="font-family:Fraunces,serif;font-size:18px;font-weight:500;margin-top:5px">${esc(prova.nome)}</div>
-          <div style="font-size:11px;color:rgba(244,241,234,0.6);margin-top:5px;letter-spacing:0.04em">${examDate.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}</div>
+          <div style="font-size:11px;color:rgba(250,240,238,0.6);margin-top:5px;letter-spacing:0.04em">${examDate.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}</div>
         </div>
         <div style="text-align:right;line-height:1;flex:none">
-          <span style="font-family:Fraunces,serif;font-size:62px;font-weight:500;color:var(--acid);letter-spacing:-0.04em;text-shadow:0 6px 30px rgba(230,255,61,0.25)">${diff}</span>
-          <span style="font-family:Fraunces,serif;font-size:15px;font-style:italic;color:rgba(244,241,234,0.6);margin-left:4px">${diff === 1 ? 'dia' : 'dias'}</span>
+          <span style="font-family:Fraunces,serif;font-size:62px;font-weight:500;color:var(--acid);letter-spacing:-0.04em;text-shadow:0 6px 30px rgba(255,184,210,0.25)">${diff}</span>
+          <span style="font-family:Fraunces,serif;font-size:15px;font-style:italic;color:rgba(250,240,238,0.6);margin-left:4px">${diff === 1 ? 'dia' : 'dias'}</span>
         </div>
       </div>`;
   } else {
@@ -405,7 +405,7 @@ function renderHome() {
       <div style="position:relative">
         <div class="kicker">Próxima prova</div>
         <div style="font-family:Fraunces,serif;font-size:18px;font-weight:500;margin-top:5px">Nenhuma prova cadastrada</div>
-        <div style="font-size:11px;color:rgba(244,241,234,0.6);margin-top:5px">Cadastra no <a href="dashboard.html" style="color:var(--acid)">Dashboard</a> pra ver a contagem aqui.</div>
+        <div style="font-size:11px;color:rgba(250,240,238,0.6);margin-top:5px">Cadastra no <a href="dashboard.html" style="color:var(--acid)">Dashboard</a> pra ver a contagem aqui.</div>
       </div>`;
   }
 
@@ -425,7 +425,7 @@ function renderHome() {
 
   screenEl.innerHTML = `
     <div style="padding:18px 4px 0">
-      <div class="kicker">${saudacaoHora()}${nome ? ', '+esc(nome) : ''} —</div>
+      <div class="kicker">${saudacaoHora()}${nome ? ', '+esc(nome)+' ✨' : ''} —</div>
       <h1 class="big">Seu <i>resumo</i> de hoje.</h1>
     </div>
 
@@ -656,9 +656,9 @@ function renderSync() {
         <div style="position:relative">
           <div class="kicker">Conectada como</div>
           <div style="font-family:Fraunces,serif;font-size:20px;font-weight:500;margin-top:6px;word-break:break-all">${esc(user.email)}</div>
-          <div style="font-size:12px;color:rgba(244,241,234,0.6);margin-top:4px" id="syncStatus">${esc(syncStatusTxt())}</div>
+          <div style="font-size:12px;color:rgba(250,240,238,0.6);margin-top:4px" id="syncStatus">${esc(syncStatusTxt())}</div>
           <button type="button" class="btn-acid" onclick="doSyncNow(this)">Sincronizar agora</button>
-          <button type="button" style="width:100%;min-height:44px;margin-top:10px;border:1px solid rgba(244,241,234,0.25);border-radius:10px;background:transparent;color:rgba(244,241,234,0.75);font:600 12px 'Inter Tight',sans-serif;letter-spacing:0.03em" onclick="doLogout()">Sair da conta</button>
+          <button type="button" style="width:100%;min-height:44px;margin-top:10px;border:1px solid rgba(250,240,238,0.25);border-radius:10px;background:transparent;color:rgba(250,240,238,0.75);font:600 12px 'Inter Tight',sans-serif;letter-spacing:0.03em" onclick="doLogout()">Sair da conta</button>
         </div>
       </div>`;
   } else if (st === 'indisponivel' || st === 'carregando') {
@@ -668,7 +668,7 @@ function renderSync() {
         <div style="position:relative">
           <div class="kicker">Este aparelho</div>
           <div style="font-family:Fraunces,serif;font-size:20px;font-weight:500;margin-top:6px">Dados salvos localmente</div>
-          <div style="font-size:12px;color:rgba(244,241,234,0.6);margin-top:4px">${st === 'carregando' ? 'carregando a sincronização…' : 'sem internet para carregar a sincronização — o backup por arquivo continua funcionando'}</div>
+          <div style="font-size:12px;color:rgba(250,240,238,0.6);margin-top:4px">${st === 'carregando' ? 'carregando a sincronização…' : 'sem internet para carregar a sincronização — o backup por arquivo continua funcionando'}</div>
           <button type="button" class="btn-acid" onclick="exportarBackup()">Exportar backup agora</button>
         </div>
       </div>`;
@@ -678,12 +678,12 @@ function renderSync() {
         <div class="glow"></div>
         <div style="position:relative">
           <div class="kicker">Entrar na sua conta</div>
-          <div style="font-size:12.5px;color:rgba(244,241,234,0.75);line-height:1.5;margin-top:8px">Com a conta, seus dados aparecem em todos os aparelhos — o que você marcar aqui sincroniza com o site do computador, e vice-versa.</div>
-          <input type="email" id="loginEmail" placeholder="seu e-mail" autocomplete="email" style="width:100%;min-height:44px;margin-top:14px;border:1px solid rgba(244,241,234,0.25);border-radius:10px;background:rgba(244,241,234,0.08);color:#F4F1EA;padding:0 14px;font:500 14px 'Inter Tight',sans-serif;outline:none">
-          <input type="password" id="loginSenha" placeholder="senha (mín. 6 caracteres)" autocomplete="current-password" style="width:100%;min-height:44px;margin-top:8px;border:1px solid rgba(244,241,234,0.25);border-radius:10px;background:rgba(244,241,234,0.08);color:#F4F1EA;padding:0 14px;font:500 14px 'Inter Tight',sans-serif;outline:none">
+          <div style="font-size:12.5px;color:rgba(250,240,238,0.75);line-height:1.5;margin-top:8px">Com a conta, seus dados aparecem em todos os aparelhos — o que você marcar aqui sincroniza com o site do computador, e vice-versa.</div>
+          <input type="email" id="loginEmail" placeholder="seu e-mail" autocomplete="email" style="width:100%;min-height:44px;margin-top:14px;border:1px solid rgba(250,240,238,0.25);border-radius:10px;background:rgba(250,240,238,0.08);color:#FAF0EE;padding:0 14px;font:500 14px 'Inter Tight',sans-serif;outline:none">
+          <input type="password" id="loginSenha" placeholder="senha (mín. 6 caracteres)" autocomplete="current-password" style="width:100%;min-height:44px;margin-top:8px;border:1px solid rgba(250,240,238,0.25);border-radius:10px;background:rgba(250,240,238,0.08);color:#FAF0EE;padding:0 14px;font:500 14px 'Inter Tight',sans-serif;outline:none">
           <div id="loginErro" style="display:none;font-size:12px;color:#FFB4A9;line-height:1.4;margin-top:10px"></div>
           <button type="button" class="btn-acid" onclick="doLogin('login', this)">Entrar</button>
-          <button type="button" style="width:100%;min-height:44px;margin-top:10px;border:1px solid rgba(244,241,234,0.25);border-radius:10px;background:transparent;color:rgba(244,241,234,0.85);font:600 12px 'Inter Tight',sans-serif;letter-spacing:0.03em" onclick="doLogin('signup', this)">Criar conta nova</button>
+          <button type="button" style="width:100%;min-height:44px;margin-top:10px;border:1px solid rgba(250,240,238,0.25);border-radius:10px;background:transparent;color:rgba(250,240,238,0.85);font:600 12px 'Inter Tight',sans-serif;letter-spacing:0.03em" onclick="doLogin('signup', this)">Criar conta nova</button>
         </div>
       </div>`;
   }
@@ -749,14 +749,14 @@ function doSyncNow(btn) {
 function escolhaPrimeiraSync() {
   return new Promise(resolve => {
     const ov = document.createElement('div');
-    ov.style.cssText = 'position:fixed;inset:0;z-index:100;background:rgba(10,19,48,0.55);display:flex;align-items:flex-end;justify-content:center';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:100;background:rgba(43,15,38,0.55);display:flex;align-items:flex-end;justify-content:center';
     ov.innerHTML = `
-      <div style="max-width:520px;width:100%;background:linear-gradient(150deg,#13224E 0%,#0A1330 68%);border-top-left-radius:22px;border-top-right-radius:22px;border-left:5px solid #E6FF3D;padding:22px 22px calc(28px + env(safe-area-inset-bottom));color:#F4F1EA">
-        <div class="kicker" style="color:#E6FF3D">Primeira sincronização</div>
+      <div style="max-width:520px;width:100%;background:linear-gradient(150deg,#482145 0%,#2B0F26 68%);border-top-left-radius:22px;border-top-right-radius:22px;border-left:5px solid #FFB8D2;padding:22px 22px calc(28px + env(safe-area-inset-bottom));color:#FAF0EE">
+        <div class="kicker" style="color:#FFB8D2">Primeira sincronização</div>
         <div style="font-family:Fraunces,serif;font-size:20px;font-weight:500;margin-top:8px">Este aparelho e a nuvem têm dados diferentes.</div>
-        <div style="font-size:13px;color:rgba(244,241,234,0.75);line-height:1.55;margin-top:8px">Escolhe qual lado vale — o outro é substituído. (Na dúvida, exporta um backup antes, na tela de conta.)</div>
-        <button type="button" id="escNuvem" style="width:100%;min-height:50px;margin-top:16px;border:none;border-radius:10px;background:#E6FF3D;color:#0A1330;font:700 13px 'Inter Tight',sans-serif">Trazer os dados da nuvem</button>
-        <button type="button" id="escAparelho" style="width:100%;min-height:50px;margin-top:10px;border:1px solid rgba(244,241,234,0.3);border-radius:10px;background:transparent;color:#F4F1EA;font:600 13px 'Inter Tight',sans-serif">Enviar os deste aparelho</button>
+        <div style="font-size:13px;color:rgba(250,240,238,0.75);line-height:1.55;margin-top:8px">Escolhe qual lado vale — o outro é substituído. (Na dúvida, exporta um backup antes, na tela de conta.)</div>
+        <button type="button" id="escNuvem" style="width:100%;min-height:50px;margin-top:16px;border:none;border-radius:10px;background:#FFB8D2;color:#2B0F26;font:700 13px 'Inter Tight',sans-serif">Trazer os dados da nuvem</button>
+        <button type="button" id="escAparelho" style="width:100%;min-height:50px;margin-top:10px;border:1px solid rgba(250,240,238,0.3);border-radius:10px;background:transparent;color:#FAF0EE;font:600 13px 'Inter Tight',sans-serif">Enviar os deste aparelho</button>
       </div>`;
     document.body.appendChild(ov);
     ov.querySelector('#escNuvem').onclick = () => { ov.remove(); resolve('nuvem'); };

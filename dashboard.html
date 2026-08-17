@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="pt-BR"><head><link rel="icon" type="image/png" href="favicon.png"><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="TrackerMed"><meta name="theme-color" content="#0A1330"><script defer src="pwa.js"></script><script defer src="sync.js"></script>
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="TrackerMed"><meta name="theme-color" content="#2B0F26"><script defer src="pwa.js"></script><script defer src="sync.js"></script>
 <title>Dashboard · TrackerMed</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=4"></script>
+<script src="theme.js?v=5"></script>
 <style>
 .greet-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-bottom: 36px; align-items: start; }
 .greet .kicker-sm { font-size: 11px; letter-spacing: 0.2em; color: var(--muted); font-weight: 700; text-transform: uppercase; }
@@ -13,15 +13,15 @@
 .greet h1 i { color: var(--cobalt); font-style: italic; }
 .greet p { font-size: 16px; color: var(--ink2); margin-top: 12px; max-width: 480px; }
 
-.countdown-box { background-image: linear-gradient(150deg, #13224E 0%, #0A1330 68%); color: var(--paper); padding: 26px 28px; border-left: 5px solid var(--acid); border-radius: 12px; box-shadow: var(--sh-2); position: relative; overflow: hidden; }
+.countdown-box { background-image: linear-gradient(150deg, #482145 0%, #2B0F26 68%); color: var(--paper); padding: 26px 28px; border-left: 5px solid var(--acid); border-radius: 12px; box-shadow: var(--sh-2); position: relative; overflow: hidden; }
 .countdown-box::before { content: ''; position: absolute; top: -30%; right: -12%; width: 46%; height: 160%; background: radial-gradient(circle, rgba(124,92,252,.34), transparent 70%); pointer-events: none; }
 .countdown-box > * { position: relative; }
 .countdown-box .lbl { font-size: 10px; letter-spacing: 0.2em; color: var(--acid); font-weight: 700; text-transform: uppercase; }
 .countdown-box .nome-prova { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; margin-top: 4px; }
-.countdown-box .dias { font-family: 'Fraunces', serif; font-size: 88px; font-weight: 500; color: var(--acid); line-height: 1; letter-spacing: -0.04em; margin-top: 8px; text-shadow: 0 6px 30px rgba(230,255,61,.25); }
-.countdown-box .dias span { font-size: 20px; color: rgba(244,241,234,0.6); font-style: italic; margin-left: 6px; }
-.countdown-box .data-prova { font-size: 12px; color: rgba(244,241,234,0.6); margin-top: 8px; letter-spacing: 0.04em; }
-.countdown-box .edit-btn { background: transparent; color: rgba(244,241,234,0.5); border: 1px solid rgba(244,241,234,0.15); padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 14px; letter-spacing: 0.04em; }
+.countdown-box .dias { font-family: 'Fraunces', serif; font-size: 88px; font-weight: 500; color: var(--acid); line-height: 1; letter-spacing: -0.04em; margin-top: 8px; text-shadow: 0 6px 30px rgba(255,184,210,.25); }
+.countdown-box .dias span { font-size: 20px; color: rgba(250,240,238,0.6); font-style: italic; margin-left: 6px; }
+.countdown-box .data-prova { font-size: 12px; color: rgba(250,240,238,0.6); margin-top: 8px; letter-spacing: 0.04em; }
+.countdown-box .edit-btn { background: transparent; color: rgba(250,240,238,0.5); border: 1px solid rgba(250,240,238,0.15); padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 14px; letter-spacing: 0.04em; }
 .countdown-box .edit-btn:hover { color: var(--paper); }
 
 .frase-box { background: var(--card); border: 1px solid var(--line); padding: 20px 26px; margin-bottom: 36px; display: flex; align-items: flex-start; gap: 14px; border-radius: 12px; box-shadow: var(--sh-1); }
@@ -37,10 +37,10 @@
 .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 40px; }
 .kpi { background: var(--card); border: 1px solid var(--line); padding: 22px 24px; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); }
 .kpi:hover { transform: translateY(-4px); box-shadow: var(--sh-2); }
-.kpi.dark { background-image: linear-gradient(150deg, #12204A, #0A1330 72%); color: var(--paper); border-color: var(--ink); }
-.kpi.acid { background-image: linear-gradient(135deg, #ECFF6B, #E6FF3D 60%, #D4F52E); }
-.kpi.dark:hover { box-shadow: 0 12px 34px rgba(10,19,48,.4); }
-.kpi.acid:hover { box-shadow: 0 12px 30px rgba(230,255,61,.4); }
+.kpi.dark { background-image: linear-gradient(150deg, #421F3D, #2B0F26 72%); color: var(--paper); border-color: var(--ink); }
+.kpi.acid { background-image: linear-gradient(135deg, #FFD0E1, #FFB8D2 60%, #FF9EC4); }
+.kpi.dark:hover { box-shadow: 0 12px 34px rgba(43,15,38,.4); }
+.kpi.acid:hover { box-shadow: 0 12px 30px rgba(255,184,210,.4); }
 .kpi .lbl { font-size: 10px; letter-spacing: 0.18em; color: var(--muted); font-weight: 700; text-transform: uppercase; }
 .kpi.dark .lbl { color: var(--acid); }
 .kpi.acid .lbl { color: var(--ink); }
@@ -48,10 +48,10 @@
 .kpi.dark .val { color: var(--acid); }
 .kpi.acid .val { color: var(--ink); font-style: italic; }
 .kpi .val span { font-size: 20px; color: var(--muted); font-style: normal; }
-.kpi.dark .val span { color: rgba(244,241,234,0.5); }
+.kpi.dark .val span { color: rgba(250,240,238,0.5); }
 .kpi.acid .val span { color: var(--ink2); }
 .kpi .sub { font-size: 13px; color: var(--ink2); margin-top: 10px; }
-.kpi.dark .sub { color: rgba(244,241,234,0.6); }
+.kpi.dark .sub { color: rgba(250,240,238,0.6); }
 .kpi.acid .sub { color: var(--ink2); }
 .kpi .meme { font-size: 12px; color: #2E7D32; margin-top: 8px; font-style: italic; line-height: 1.35; display: none; }
 .kpi.dark .meme { color: var(--acid); }
@@ -132,7 +132,7 @@
 .quick .qs { font-size: 11px; color: var(--muted); margin-top: auto; }
 
 /* Modal edit prova */
-.modal-backdrop { position: fixed; inset: 0; background: rgba(10,19,48,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(43,15,38,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
 .modal-backdrop.open { display: flex; }
 .modal-box { background: #fff; width: 420px; max-width: 100%; padding: 28px; position: relative; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--sh-3); }
 @media (prefers-reduced-motion: no-preference) { .modal-backdrop.open .modal-box { animation: modalIn .28s var(--ease) both; } @keyframes modalIn { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } } }
@@ -146,7 +146,7 @@
 .mbtn-cancel { background: transparent; border: 1px solid var(--line); padding: 10px 18px; font-size: 13px; cursor: pointer; font-family: inherit; border-radius: 8px; transition: border-color .2s var(--ease); }
 .mbtn-cancel:hover { border-color: var(--text); }
 .mbtn-save { background-image: var(--grad-brand); color: #fff; border: none; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; border-radius: 8px; box-shadow: var(--sh-glow); transition: transform .2s var(--ease), box-shadow .2s var(--ease); }
-.mbtn-save:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(30,58,232,.45); }
+.mbtn-save:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(194,37,92,.45); }
 
 /* ---- Resumo consolidado dos planos + laudo ---- */
 .resumo-sec { margin-bottom: 40px; }
@@ -202,12 +202,12 @@
 
 .st-badge { display: inline-flex; align-items: center; padding: 5px 13px; border-radius: 999px; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
 .st-good { background: #E8F5E9; color: #1B5E20; }
-.st-ok   { background: #E8EDFF; color: #1E3AE8; }
+.st-ok   { background: #FCE7F1; color: #C2255C; }
 .st-warn { background: #FFF8E1; color: #8D5A00; }
 .st-bad  { background: #FFEBEE; color: #B71C1C; }
 .st-mute { background: var(--paper); color: var(--muted); border: 1px solid var(--line); }
 [data-theme="dark"] .st-good { background: rgba(67,160,71,.16); color: #81C784; }
-[data-theme="dark"] .st-ok   { background: rgba(30,58,232,.22); color: #93B4FF; }
+[data-theme="dark"] .st-ok   { background: rgba(194,37,92,.22); color: #93B4FF; }
 [data-theme="dark"] .st-warn { background: rgba(244,167,47,.16); color: #F7C77A; }
 [data-theme="dark"] .st-bad  { background: rgba(198,40,40,.18); color: #EF9A9A; }
 [data-theme="dark"] .laudo-list.pos li::before { color: #81C784; }
@@ -216,7 +216,7 @@
 [data-theme="dark"] .laudo-top,
 [data-theme="dark"] .plano-card .pc-parecer,
 [data-theme="dark"] .st-mute { background: var(--surface-soft); }
-[data-theme="dark"] .prog-bar { background: rgba(241,238,229,0.1); }
+[data-theme="dark"] .prog-bar { background: rgba(246,237,241,0.1); }
 
 .planos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
 .plano-card { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--cobalt); border-radius: 12px; padding: 20px 22px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease); display: flex; flex-direction: column; gap: 12px; }
@@ -255,7 +255,7 @@
 <a href="dashboard.html" class="nav-item active">Dashboard</a>
 <a href="simulados.html" class="nav-item">Simulados</a>
 <a href="cortex-simulados.html" class="nav-item">Córtex</a>
-<div class="sidebar-foot">v0.1 · pessoal</div>
+<div class="sidebar-foot">v0.2 · feito com ♥ pra você</div>
 </aside>
 <main class="main">
 
@@ -511,7 +511,7 @@ function render() {
   const hojeDia = hoje.getDay();
   const wk = weekKey(hoje);
 
-  document.getElementById('saudacao').textContent = `${saudacaoHora()}${nome?`, ${nome}`:''} —`;
+  document.getElementById('saudacao').textContent = `${saudacaoHora()}${nome?`, ${nome} ✨`:''} —`;
   document.getElementById('dataHoje').textContent = hoje.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
 
   // Prova
@@ -713,7 +713,7 @@ function renderFrase(resumo) {
 // mesmo esquema do Histórico. Sobre eles calcula progresso, ritmo, pendências
 // e regularidade, e gera um "laudo médico" + frases ácidas por estado.
 const RESUMO_VIEW_KEY = 'trackermed.dashResumoView.v1';
-const PLANO_COR = { semestre:'#1FC28A', residencia:'#1E3AE8', enamed:'#F4A72F', objetivo:'#7C5CFC' };
+const PLANO_COR = { semestre:'#1FC28A', residencia:'#C2255C', enamed:'#F4A72F', objetivo:'#7C5CFC' };
 const PLANO_TIPO_LBL = { semestre:'Semestre', residencia:'Residência', enamed:'ENAMED', objetivo:'Objetivo' };
 const PLANO_ICON = { semestre:'🎓', residencia:'🏥', enamed:'📋', objetivo:'📌' };
 
@@ -1254,7 +1254,7 @@ function renderRitmoResumo() {
     const c = cats[k];
     if (!c.nSessoes || !c.vel) return '';
     const prov = c.vel.provisoria ? ' <span style="opacity:.6">· inicial</span>' : '';
-    return `<span style="font-size:12px;font-weight:600;background:var(--surface-soft,#f4f2ec);border:1px solid var(--line);border-radius:999px;padding:6px 13px">${c.icon} ${esc(c.label)}: <b style="color:var(--cobalt)">${esc(RITMO.fmtVel(c.vel.porHora, c.unidade))}</b>${prov}</span>`;
+    return `<span style="font-size:12px;font-weight:600;background:var(--surface-soft,#FAF1EF);border:1px solid var(--line);border-radius:999px;padding:6px 13px">${c.icon} ${esc(c.label)}: <b style="color:var(--cobalt)">${esc(RITMO.fmtVel(c.vel.porHora, c.unidade))}</b>${prov}</span>`;
   }).filter(Boolean);
   document.getElementById('ritmoResumoChips').innerHTML = chips.length
     ? chips.join('')
@@ -1354,7 +1354,7 @@ function renderSimuladosPorPlano() {
   listaEl.innerHTML = chaves.map(pKey => {
     const g = grupos.get(pKey);
     const pct = Math.round(g.a / g.q * 100);
-    const cor = pKey ? (PLANO_COR[g.tipo] || '#7C5CFC') : '#6B6A5F';
+    const cor = pKey ? (PLANO_COR[g.tipo] || '#7C5CFC') : '#7E6577';
     const icon = pKey ? (PLANO_ICON[g.tipo] || '📘') : '🗂️';
     // Conteúdos reais primeiro (do pior pro melhor); "sem conteúdo" por último.
     const conts = [...g.conts.entries()]
