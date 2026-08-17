@@ -4,52 +4,52 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="TrackerMed"><meta name="theme-color" content="#0A1330"><script defer src="pwa.js"></script><script defer src="sync.js"></script>
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="TrackerMed"><meta name="theme-color" content="#2B0F26"><script defer src="pwa.js"></script><script defer src="sync.js"></script>
 <title>TrackerMed · Seu painel de estudo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --ink: #0A1330; --ink2: #2A3356; --paper: #F4F1EA; --card: #FFFFFF;
-    --line: #E4DFD2; --cobalt: #1E3AE8; --acid: #E6FF3D;
-    --rose: #FF5B5B; --mint: #1FC28A; --muted: #6B6A5F;
+    --ink: #2B0F26; --ink2: #56304A; --paper: #FAF0EE; --card: #FFFFFF;
+    --line: #EFDBDD; --cobalt: #C2255C; --acid: #FFB8D2;
+    --rose: #FF5B5B; --mint: #1FC28A; --muted: #7E6577;
     /* semantic theme tokens */
-    --bg: #F4F1EA; --surface: #FFFFFF; --surface-soft: #F4F1EA;
-    --text: #0A1330; --text-soft: #2A3356; --text-mute: #6B6A5F;
-    --border: #E4DFD2;
-    --nav-bg: rgba(244,241,234,0.72);
-    --shadow-card: rgba(10,19,48,0.12);
-    --shadow-hover: rgba(10,19,48,0.08);
-    --placeholder: #9e9c92;
+    --bg: #FAF0EE; --surface: #FFFFFF; --surface-soft: #FAF0EE;
+    --text: #2B0F26; --text-soft: #56304A; --text-mute: #7E6577;
+    --border: #EFDBDD;
+    --nav-bg: rgba(250,240,238,0.72);
+    --shadow-card: rgba(43,15,38,0.12);
+    --shadow-hover: rgba(43,15,38,0.08);
+    --placeholder: #B09AA6;
     /* modernização 2026 */
-    --grad-brand: linear-gradient(120deg, #1E3AE8 0%, #4361FF 46%, #7C5CFC 100%);
+    --grad-brand: linear-gradient(120deg, #C2255C 0%, #E14C8C 46%, #7C5CFC 100%);
     --ease: cubic-bezier(.22,.61,.36,1);
-    --sh-1: 0 1px 2px rgba(10,19,48,.05), 0 3px 10px rgba(10,19,48,.05);
-    --sh-2: 0 6px 18px rgba(10,19,48,.08), 0 18px 40px rgba(10,19,48,.10);
-    --sh-glow: 0 10px 30px rgba(30,58,232,.34);
-    --a1: rgba(30,58,232,0.20); --a2: rgba(124,92,252,0.18); --a3: rgba(230,255,61,0.16);
+    --sh-1: 0 1px 2px rgba(43,15,38,.05), 0 3px 10px rgba(43,15,38,.05);
+    --sh-2: 0 6px 18px rgba(43,15,38,.08), 0 18px 40px rgba(43,15,38,.10);
+    --sh-glow: 0 10px 30px rgba(194,37,92,.34);
+    --a1: rgba(194,37,92,0.20); --a2: rgba(124,92,252,0.18); --a3: rgba(255,184,210,0.16);
   }
   [data-theme="dark"] {
-    --bg: #0B1226; --surface: #161D40; --surface-soft: #11173A;
-    --text: #F1EEE5; --text-soft: #C8CCDE; --text-mute: #8B8FA8;
-    --border: rgba(241,238,229,0.12);
-    --nav-bg: rgba(11,18,38,0.68);
+    --bg: #1F0E1E; --surface: #33182F; --surface-soft: #2A1327;
+    --text: #F6EDF1; --text-soft: #DCC8D6; --text-mute: #A88BA0;
+    --border: rgba(246,237,241,0.12);
+    --nav-bg: rgba(31,14,30,0.68);
     --shadow-card: rgba(0,0,0,0.45);
     --shadow-hover: rgba(0,0,0,0.35);
-    --placeholder: #6B7090;
+    --placeholder: #8F7089;
     --sh-1: 0 1px 2px rgba(0,0,0,.45), 0 3px 12px rgba(0,0,0,.45);
     --sh-2: 0 8px 22px rgba(0,0,0,.5), 0 20px 48px rgba(0,0,0,.5);
-    --sh-glow: 0 10px 32px rgba(124,148,255,.42);
-    --a1: rgba(63,97,255,0.26); --a2: rgba(124,92,252,0.24); --a3: rgba(230,255,61,0.10);
+    --sh-glow: 0 10px 32px rgba(244,143,187,.42);
+    --a1: rgba(225,76,140,0.26); --a2: rgba(124,92,252,0.24); --a3: rgba(255,184,210,0.10);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
   html, body { background: var(--bg); color: var(--text); font-family: 'Inter Tight', -apple-system, sans-serif; line-height: 1.5; min-height: 100vh; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
   a { color: inherit; text-decoration: none; }
   .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
-  ::selection { background: rgba(30,58,232,.18); }
-  [data-theme="dark"] ::selection { background: rgba(124,148,255,.28); }
+  ::selection { background: rgba(194,37,92,.18); }
+  [data-theme="dark"] ::selection { background: rgba(244,143,187,.28); }
 
   /* AURORA de fundo — degradês suaves que dão profundidade sem pesar */
   .aurora { position: fixed; inset: -20vh -10vw; z-index: -1; pointer-events: none; overflow: hidden; filter: blur(60px); opacity: .9; }
@@ -71,8 +71,12 @@
   .nav-inner { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; max-width: 1200px; margin: 0 auto; gap: 14px; }
   .logo { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; letter-spacing: -0.04em; display: inline-flex; align-items: center; }
   .logo em { color: var(--cobalt); font-style: italic; }
-  .logo::after { content: ''; width: 6px; height: 6px; margin-left: 7px; border-radius: 50%; background: var(--acid); box-shadow: 0 0 0 0 rgba(230,255,61,.6); }
-  @media (prefers-reduced-motion: no-preference) { .logo::after { animation: tmPulse 2.8s var(--ease) infinite; } @keyframes tmPulse { 0%{box-shadow:0 0 0 0 rgba(230,255,61,.5)} 70%{box-shadow:0 0 0 9px rgba(230,255,61,0)} 100%{box-shadow:0 0 0 0 rgba(230,255,61,0)} } }
+  .logo::after { content: '♥'; margin-left: 7px; color: var(--acid); font-size: 14px; line-height: 1; }
+  @media (prefers-reduced-motion: no-preference) {
+    .logo::after { animation: tmHeart 2.8s var(--ease) infinite; }
+    @keyframes tmHeart { 0%,100%{transform:scale(1)} 12%{transform:scale(1.25)} 24%{transform:scale(1)} }
+    @keyframes tmPulse { 0%{box-shadow:0 0 0 0 rgba(255,184,210,.5)} 70%{box-shadow:0 0 0 9px rgba(255,184,210,0)} 100%{box-shadow:0 0 0 0 rgba(255,184,210,0)} }
+  }
   .nav-links { display: flex; gap: 28px; font-size: 14px; }
   .nav-links a { color: var(--text-soft); position: relative; padding: 4px 0; transition: color .2s var(--ease); }
   .nav-links a::after { content: ''; position: absolute; left: 0; right: 100%; bottom: -2px; height: 2px; background: var(--grad-brand); transition: right .28s var(--ease); }
@@ -87,7 +91,7 @@
   .theme-toggle:hover { border-color: var(--cobalt); color: var(--cobalt); }
   .theme-toggle .ico { font-size: 13px; line-height: 1; }
   .theme-toggle .lbl { text-transform: uppercase; }
-  [data-theme="dark"] .theme-toggle { color: var(--acid); border-color: rgba(230,255,61,0.35); }
+  [data-theme="dark"] .theme-toggle { color: var(--acid); border-color: rgba(255,184,210,0.35); }
   [data-theme="dark"] .theme-toggle:hover { border-color: var(--acid); color: var(--acid); }
 
   /* HERO */
@@ -132,13 +136,13 @@
   .access-row button::after { content: '→'; font-size: 18px; }
   .access-hint { margin-top: 10px; font-size: 12px; color: var(--text-mute); }
   .access-hint b { color: var(--text-soft); font-weight: 600; }
-  .welcome-back { margin-top: 14px; padding: 16px 18px; background-image: linear-gradient(120deg, #0B1533, #0A1330); color: var(--paper); display: none; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; border-radius: 10px; box-shadow: var(--sh-2); }
+  .welcome-back { margin-top: 14px; padding: 16px 18px; background-image: linear-gradient(120deg, #3A1533, #2B0F26); color: var(--paper); display: none; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; border-radius: 10px; box-shadow: var(--sh-2); }
   .welcome-back.show { display: flex; }
   .welcome-back span { font-size: 14px; }
   .welcome-back span i { color: var(--acid); font-style: italic; font-family: 'Fraunces', serif; }
   .welcome-back a { background: var(--acid); color: var(--ink); padding: 9px 16px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; border-radius: 6px; transition: transform .2s var(--ease), box-shadow .2s var(--ease); }
-  .welcome-back a:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(230,255,61,.4); }
-  .welcome-back .reset { background: transparent; color: rgba(244,241,234,0.5); border: none; font-size: 11px; cursor: pointer; text-decoration: underline; padding: 4px 0; font-family: inherit; }
+  .welcome-back a:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(255,184,210,.4); }
+  .welcome-back .reset { background: transparent; color: rgba(250,240,238,0.5); border: none; font-size: 11px; cursor: pointer; text-decoration: underline; padding: 4px 0; font-family: inherit; }
 
   /* HERO PREVIEW */
   .hero-preview { margin-top: 60px; background: var(--surface); border: 1px solid var(--border); padding: 20px; box-shadow: 0 30px 80px var(--shadow-card); display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; border-radius: 14px; }
@@ -148,18 +152,18 @@
   .mini-num { font-family: 'Fraunces', serif; font-size: 48px; letter-spacing: -0.04em; line-height: 1; color: var(--text); }
   .mini-num span { font-size: 20px; color: var(--text-mute); }
   .mini-sub { font-size: 12px; color: var(--text-soft); margin-top: 8px; }
-  .mini-card.dark { background-image: linear-gradient(150deg, #12204A, #0A1330 70%); color: var(--paper); border-color: var(--ink); }
+  .mini-card.dark { background-image: linear-gradient(150deg, #421F3D, #2B0F26 70%); color: var(--paper); border-color: var(--ink); }
   .mini-card.dark .mini-label { color: var(--acid); }
   .mini-card.dark .mini-num { color: var(--acid); }
 
   /* MOTIVATION BANNER */
-  .motivation { margin-top: 28px; background-image: linear-gradient(120deg, #0B1533, #0A1330); color: var(--paper); padding: 24px 28px; display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; border: 1px solid var(--ink); border-radius: 12px; box-shadow: var(--sh-2); position: relative; overflow: hidden; }
+  .motivation { margin-top: 28px; background-image: linear-gradient(120deg, #3A1533, #2B0F26); color: var(--paper); padding: 24px 28px; display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; border: 1px solid var(--ink); border-radius: 12px; box-shadow: var(--sh-2); position: relative; overflow: hidden; }
   .motivation::before { content: ''; position: absolute; top: -40%; right: -10%; width: 40%; height: 180%; background: radial-gradient(circle, rgba(124,92,252,.35), transparent 70%); pointer-events: none; }
   [data-theme="dark"] .motivation { background: var(--surface); border-color: var(--border); }
   .motivation .quote { font-family: 'Fraunces', serif; font-style: italic; font-size: clamp(18px, 2vw, 22px); line-height: 1.35; max-width: 760px; }
   .motivation .quote::before { content: '“'; color: var(--acid); margin-right: 4px; font-size: 1.2em; }
   .motivation .quote::after { content: '”'; color: var(--acid); margin-left: 2px; font-size: 1.2em; }
-  .motivation button { background: transparent; border: 1px solid rgba(244,241,234,0.35); color: var(--paper); padding: 8px 14px; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; font-family: inherit; }
+  .motivation button { background: transparent; border: 1px solid rgba(250,240,238,0.35); color: var(--paper); padding: 8px 14px; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; font-family: inherit; }
   .motivation button:hover { border-color: var(--acid); color: var(--acid); }
   [data-theme="dark"] .motivation button { color: var(--text); border-color: var(--border); }
   [data-theme="dark"] .motivation button:hover { border-color: var(--acid); color: var(--acid); }
@@ -177,7 +181,7 @@
   .perf-card.cobalt .pval { background-image: var(--grad-brand); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
   .perf-card.mint .pval { color: var(--mint); }
   .perf-card.rose .pval { color: var(--rose); }
-  .perf-card.acid { background-image: linear-gradient(135deg, #ECFF6B, #E6FF3D 60%, #D4F52E); border-color: var(--acid); color: var(--ink); }
+  .perf-card.acid { background-image: linear-gradient(135deg, #FFD0E1, #FFB8D2 60%, #FF9EC4); border-color: var(--acid); color: var(--ink); }
   .perf-card.acid .plbl { color: var(--ink2); }
   .perf-card.acid .pval { color: var(--ink); }
   .perf-card.acid .psub { color: var(--ink2); }
@@ -196,16 +200,18 @@
   .qcard p { font-size: 13px; color: var(--text-soft); margin-top: auto; }
   .qcard::after { content: '→'; position: absolute; top: 20px; right: 20px; font-size: 16px; opacity: 0; transform: translateX(-6px); transition: opacity .25s var(--ease), transform .25s var(--ease); color: var(--cobalt); }
   .qcard:hover::after { opacity: 1; transform: translateX(0); }
-  .qcard.dark { background-image: linear-gradient(150deg, #12204A, #0A1330 72%); color: var(--paper); border-color: var(--ink); }
-  .qcard.dark p { color: rgba(244,241,234,0.6); }
+  .qcard.dark { background-image: linear-gradient(150deg, #421F3D, #2B0F26 72%); color: var(--paper); border-color: var(--ink); }
+  .qcard.dark p { color: rgba(250,240,238,0.6); }
   .qcard.dark .qn { color: var(--acid); }
   .qcard.dark::after { color: var(--acid); }
-  .qcard.acid { background-image: linear-gradient(135deg, #ECFF6B, #E6FF3D 60%, #D4F52E); color: var(--ink); border-color: var(--acid); }
+  .qcard.acid { background-image: linear-gradient(135deg, #FFD0E1, #FFB8D2 60%, #FF9EC4); color: var(--ink); border-color: var(--acid); }
   .qcard.acid p { color: var(--ink2); }
   .qcard.acid .qn { color: var(--ink); }
   .qcard.acid::after { color: var(--ink); }
 
   footer { padding: 40px 0; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-mute); text-align: center; }
+  footer .foot-reset { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; background: transparent; border: 1px solid rgba(255,91,91,0.4); color: #E05656; border-radius: 999px; padding: 7px 14px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; font-family: inherit; transition: all .2s var(--ease); }
+  footer .foot-reset:hover { border-color: #FF5B5B; color: #fff; background: #FF5B5B; }
 
   @media (max-width: 900px) {
     .hero-preview { grid-template-columns: 1fr; }
@@ -221,7 +227,7 @@
     .motivation { flex-direction: column; align-items: flex-start; }
   }
 </style>
-<script src="theme.js?v=4"></script>
+<script src="theme.js?v=5"></script>
 </head>
 <body>
 <div class="aurora" aria-hidden="true"><i></i></div>
@@ -278,7 +284,7 @@
       <div class="mini-card dark">
         <div class="mini-label">PRÓXIMA PROVA</div>
         <div class="mini-num" style="color:var(--acid);font-style:italic" id="kProvaVal">—</div>
-        <div class="mini-sub" style="color:rgba(244,241,234,0.6)" id="kProvaSub">sem prova cadastrada</div>
+        <div class="mini-sub" style="color:rgba(250,240,238,0.6)" id="kProvaSub">sem prova cadastrada</div>
       </div>
     </div>
 
@@ -399,7 +405,10 @@
 </section>
 
 <footer>
-  <div class="wrap">© 2026 TrackerMed · painel pessoal · feito em Cuiabrasa</div>
+  <div class="wrap">
+    © 2026 TrackerMed · painel pessoal · feito com ♥ em Cuiabrasa
+    <div><button type="button" class="foot-reset" onclick="window.TrackerMedReset && TrackerMedReset.run()">🗑 Apagar tudo e recomeçar do zero</button></div>
+  </div>
 </footer>
 
 <script>
@@ -420,7 +429,10 @@
     'A melhor hora pra começar foi ontem. A segunda melhor é agora.',
     'Disciplina vence motivação todo dia da semana.',
     'Cada questão errada hoje é uma armadilha desarmada na prova.',
-    'Você está mais perto da aprovação do que estava ontem.'
+    'Você está mais perto da aprovação do que estava ontem.',
+    'Estude com calma, confie no processo: você está se tornando a médica que sempre sonhou. ✨',
+    'Um dia de cada vez, uma página de cada vez — e de repente, jaleco novo. 🩺',
+    'Seja gentil com você hoje: constância também é descanso na hora certa. 💗'
   ];
 
   function lerNome() {

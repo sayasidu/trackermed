@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="pt-BR"><head><link rel="icon" type="image/png" href="favicon.png"><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="TrackerMed"><meta name="theme-color" content="#0A1330"><script defer src="pwa.js"></script><script defer src="sync.js"></script>
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="TrackerMed"><meta name="theme-color" content="#2B0F26"><script defer src="pwa.js"></script><script defer src="sync.js"></script>
 <title>Disciplinas · TrackerMed</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=4"></script>
+<script src="theme.js?v=5"></script>
 <style>
 .disc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; }
 .disc-card { background: var(--card); border: 1px solid var(--line); padding: 22px; display: flex; flex-direction: column; gap: 10px; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); position: relative; cursor: pointer; }
@@ -30,7 +30,7 @@
 .empty h3 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
 .empty p { color: var(--muted); margin-top: 8px; font-size: 14px; }
 .empty button { margin-top: 18px; background-image: var(--grad-brand); color: #fff; border: none; border-radius: 8px; box-shadow: var(--sh-glow); padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: transform .2s var(--ease), box-shadow .2s var(--ease); }
-.empty button:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(30,58,232,.45); }
+.empty button:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(194,37,92,.45); }
 .top-stats { display: flex; gap: 28px; text-align: right; }
 .top-stats .val { font-family: 'Fraunces', serif; font-size: 36px; letter-spacing: -0.03em; font-weight: 500; line-height: 1; }
 .sem-context { background: var(--paper); border: 1px solid var(--line); border-left: 3px solid var(--cobalt); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 22px; font-size: 13px; color: var(--ink2); }
@@ -42,7 +42,7 @@
 .sem-context a:hover { text-decoration: underline; }
 
 /* Modal */
-.modal-backdrop { position: fixed; inset: 0; background: rgba(10,19,48,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(43,15,38,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
 .modal-backdrop.open { display: flex; }
 .modal-box { background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--sh-3); width: 580px; max-width: 100%; max-height: 92vh; overflow-y: auto; padding: 32px; position: relative; }
 .modal-box h2 { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.1; }
@@ -111,18 +111,18 @@
 .mat-modal-bar i { display: block; height: 100%; background-image: var(--grad-brand); border-radius: 99px; }
 .hr-box { display: flex; align-items: center; gap: 14px; background: var(--ink); color: var(--paper); padding: 14px 16px; margin-bottom: 16px; border-radius: 10px; box-shadow: var(--sh-1); }
 .hr-box label { color: var(--acid); margin: 0 !important; font-size: 11px !important; flex: 1; }
-.hr-box .sub-hint { font-size: 11px; color: rgba(244,241,234,0.6); margin-top: 2px; display: block; letter-spacing: 0; text-transform: none; font-weight: 400; }
-.hr-box input { width: 70px; background: transparent; border: 1px solid rgba(244,241,234,0.2); color: var(--acid); font-family: 'Fraunces', serif; font-size: 22px; padding: 6px 10px; text-align: right; }
+.hr-box .sub-hint { font-size: 11px; color: rgba(250,240,238,0.6); margin-top: 2px; display: block; letter-spacing: 0; text-transform: none; font-weight: 400; }
+.hr-box input { width: 70px; background: transparent; border: 1px solid rgba(250,240,238,0.2); color: var(--acid); font-family: 'Fraunces', serif; font-size: 22px; padding: 6px 10px; text-align: right; }
 .hr-dual { display: grid; grid-template-columns: 1fr 1fr; background: var(--ink); color: var(--paper); margin-bottom: 16px; border-radius: 10px; box-shadow: var(--sh-1); }
 .hr-dual .hr-side { padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
-.hr-dual .hr-side + .hr-side { border-left: 1px solid rgba(244,241,234,0.08); }
+.hr-dual .hr-side + .hr-side { border-left: 1px solid rgba(250,240,238,0.08); }
 .hr-dual label { color: var(--acid); font-size: 11px !important; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; margin: 0 !important; }
-.hr-dual .sub-hint { font-size: 11px; color: rgba(244,241,234,0.55); letter-spacing: 0; text-transform: none; font-weight: 400; }
+.hr-dual .sub-hint { font-size: 11px; color: rgba(250,240,238,0.55); letter-spacing: 0; text-transform: none; font-weight: 400; }
 .hr-dual .meta-input { display: flex; align-items: center; gap: 8px; margin-top: auto; }
-.hr-dual .meta-input input { flex: 1; width: auto; background: transparent; border: 1px solid rgba(244,241,234,0.2); color: var(--acid); font-family: 'Fraunces', serif; font-size: 22px; padding: 6px 10px; text-align: right; }
+.hr-dual .meta-input input { flex: 1; width: auto; background: transparent; border: 1px solid rgba(250,240,238,0.2); color: var(--acid); font-family: 'Fraunces', serif; font-size: 22px; padding: 6px 10px; text-align: right; }
 .hr-dual .prio-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: auto; }
-.hr-dual .prio-chip { background: rgba(244,241,234,0.06); border: 1px solid rgba(244,241,234,0.14); color: rgba(244,241,234,0.72); padding: 6px 10px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; text-transform: uppercase; font-family: inherit; box-shadow: 0 1px 2px rgba(10,19,48,.08); }
-.hr-dual .prio-chip:hover { color: var(--paper); border-color: rgba(244,241,234,0.3); }
+.hr-dual .prio-chip { background: rgba(250,240,238,0.06); border: 1px solid rgba(250,240,238,0.14); color: rgba(250,240,238,0.72); padding: 6px 10px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; text-transform: uppercase; font-family: inherit; box-shadow: 0 1px 2px rgba(43,15,38,.08); }
+.hr-dual .prio-chip:hover { color: var(--paper); border-color: rgba(250,240,238,0.3); }
 .hr-dual .prio-chip.active { background: var(--acid); color: var(--ink); border-color: var(--acid); }
 .color-picker { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
 .color-swatch { width: 30px; height: 30px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; transition: transform .12s, box-shadow .12s; }
@@ -132,7 +132,7 @@
 .mactions { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
 .mbtn-cancel { background: transparent; border: 1px solid var(--line); padding: 10px 18px; font-size: 13px; cursor: pointer; font-family: inherit; }
 .mbtn-save { background-image: var(--grad-brand); color: #fff; border: none; border-radius: 8px; box-shadow: var(--sh-glow); padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: transform .2s var(--ease), box-shadow .2s var(--ease); }
-.mbtn-save:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(30,58,232,.45); }
+.mbtn-save:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(194,37,92,.45); }
 .mbtn-delete { background: transparent; border: none; color: var(--rose); padding: 10px 0; font-size: 12px; cursor: pointer; font-family: inherit; font-weight: 600; }
 /* Destructive confirm keeps its rose fill (inline) — give it a rose glow, not the cobalt CTA glow */
 #btnDelConfirm { box-shadow: 0 6px 18px rgba(255,91,91,.30); }
@@ -156,7 +156,7 @@
 <a href="dashboard.html" class="nav-item">Estatísticas</a>
 <a href="simulados.html" class="nav-item">Simulados</a>
 <a href="cortex-simulados.html" class="nav-item">Córtex</a>
-<div class="sidebar-foot">v0.1 · pessoal</div>
+<div class="sidebar-foot">v0.2 · feito com ♥ pra você</div>
 </aside>
 <main class="main">
 <div class="topbar">
@@ -362,7 +362,7 @@
 const KEY = 'trackermed.disciplinas.v1';
 const DIAS = [['seg','Seg'],['ter','Ter'],['qua','Qua'],['qui','Qui'],['sex','Sex'],['sab','Sáb'],['dom','Dom']];
 const DIA_FULL = {seg:'Segunda', ter:'Terça', qua:'Quarta', qui:'Quinta', sex:'Sexta', sab:'Sábado', dom:'Domingo'};
-const CORES = ['#1E3AE8','#FF5B5B','#1FC28A','#F4A72F','#7C3AED','#0D9488','#EC4899','#0A1330'];
+const CORES = ['#C2255C','#FF5B5B','#1FC28A','#F4A72F','#7C3AED','#0D9488','#EC4899','#2B0F26'];
 const PRIOS = [
   { v:'alta',    l:'Alta',    h:'45min/dia' },
   { v:'media',   l:'Média',   h:'25min/dia' },

@@ -233,34 +233,86 @@
     var foco = ctxFocusId();
     var box = document.createElement('div');
     box.className = 'ctx-indicator';
-    box.style.cssText = 'margin-top:16px;padding:10px 11px;border:1px solid rgba(244,241,234,0.12);border-radius:4px;background:rgba(244,241,234,0.04);';
+    box.style.cssText = 'margin-top:16px;padding:10px 11px;border:1px solid rgba(250,240,238,0.12);border-radius:4px;background:rgba(250,240,238,0.04);';
     var rows = ativos.map(function (p) {
       var isFoco = p.id === foco;
       var ci = chipInfo(p.tipo);
       var badge = isFoco
         ? '<span style="font-size:8px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:' + ci.txt + '">● em edição</span>'
-        : '<span style="font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:rgba(244,241,234,0.42)">clique pra editar</span>';
+        : '<span style="font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,240,238,0.42)">clique pra editar</span>';
       return '<div style="display:flex;align-items:center;gap:6px;margin-top:6px;padding:6px 8px;border-radius:3px;border:1px solid rgba(' + ci.base + ',' + (isFoco ? '0.5' : '0.2') + ');border-left:3px solid ' + ci.txt + ';background:rgba(' + ci.base + ',' + (isFoco ? '0.16' : '0.05') + ')">'
         + '<button type="button" onclick="TrackerMedContext.switchTo(\'' + p.id + '\')" title="Editar este plano nas abas" style="flex:1 1 auto;min-width:0;text-align:left;background:transparent;border:0;cursor:pointer;padding:0;font-family:inherit">'
         + badge
         + '<b style="display:block;font-family:\'Fraunces\',serif;font-size:13px;font-weight:600;margin-top:1px;color:var(--paper);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + tipoIcon(p.tipo) + ' ' + escTxt(p.nome) + '</b>'
         + '</button>'
-        + '<button type="button" onclick="TrackerMedContext.deactivateReload(\'' + p.id + '\')" title="Desativar este plano" aria-label="Desativar" style="flex:0 0 auto;background:transparent;border:0;color:rgba(244,241,234,0.5);cursor:pointer;font-size:16px;line-height:1;padding:2px 4px">×</button>'
+        + '<button type="button" onclick="TrackerMedContext.deactivateReload(\'' + p.id + '\')" title="Desativar este plano" aria-label="Desativar" style="flex:0 0 auto;background:transparent;border:0;color:rgba(250,240,238,0.5);cursor:pointer;font-size:16px;line-height:1;padding:2px 4px">×</button>'
         + '</div>';
     }).join('');
     box.innerHTML =
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">'
-      + '<span style="font-size:9px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;color:rgba(244,241,234,0.55)">Planos ativos · ' + ativos.length + '/' + MAX_ATIVOS + '</span>'
-      + '<a href="planos.html" title="Gerenciar planos" style="font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:rgba(244,241,234,0.5);text-decoration:none">gerenciar ›</a>'
+      + '<span style="font-size:9px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;color:rgba(250,240,238,0.55)">Planos ativos · ' + ativos.length + '/' + MAX_ATIVOS + '</span>'
+      + '<a href="planos.html" title="Gerenciar planos" style="font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:rgba(250,240,238,0.5);text-decoration:none">gerenciar ›</a>'
       + '</div>' + rows;
     var foot = sidebar.querySelector('.sidebar-foot');
     if (foot) sidebar.insertBefore(box, foot);
     else sidebar.appendChild(box);
   }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', renderContextIndicator);
-  } else {
+  // ---- Recomeçar do zero: reset global de dados E configurações ---------
+  // Apaga todas as chaves do TrackerMed deste aparelho — dados de estudo,
+  // leituras, nome, tema e preferências — com confirmação dupla. As remoções
+  // passam pelo localStorage normal de propósito: o sync.js registra
+  // tombstones, então com a conta conectada a limpeza vale também pra nuvem
+  // e pros outros aparelhos. O pareamento da conta (sync.meta) fica — é dele
+  // que o sync precisa pra propagar a limpeza; sair da conta é outra ação.
+  var RESET_KEEP = ['trackermed.sync.meta.v1'];
+  var RESET_EXTRA = ['planejamento.disponibilidade'];
+  function resetKeys() {
+    var keys = [];
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (!k || RESET_KEEP.indexOf(k) !== -1) continue;
+        if (k.indexOf('trackermed.') === 0 || RESET_EXTRA.indexOf(k) !== -1) keys.push(k);
+      }
+    } catch (e) {}
+    return keys.sort();
+  }
+  function resetRun() {
+    var chaves = resetKeys();
+    if (!chaves.length) { alert('Não há nada para apagar — o TrackerMed já está zerado. 🌷'); return; }
+    var S = window.TrackerMedSync;
+    var conta = S && S.user ? S.user() : null;
+    var alcance = conta
+      ? 'Isso apaga os dados deste aparelho E da nuvem — os outros aparelhos da conta ' + conta.email + ' também ficam zerados.'
+      : 'Isso apaga os dados deste aparelho.';
+    if (!confirm('Recomeçar do zero?\n\n' + alcance + '\nTudo vai embora: planos, disciplinas, sessões, revisões, erros, simulados, leituras, nome e preferências (' + chaves.length + ' chaves).\n\nSe quiser guardar uma cópia, cancela e exporta um backup antes (app → Conta e sincronização).')) return;
+    if (!confirm('Última confirmação: apagar TUDO e começar de novo?\n\nEssa ação não pode ser desfeita.')) return;
+    chaves.forEach(function (k) { lsDel(k); });
+    var fim = function () { alert('Prontinho — tudo limpo pra recomeçar. ✨'); try { location.reload(); } catch (e) {} };
+    if (conta && S && S.syncNow) { S.syncNow().catch(function () {}).then(fim); } else { fim(); }
+  }
+  // Botão discreto no pé da sidebar de todas as páginas do painel.
+  function renderResetButton() {
+    var foot = document.querySelector('.sidebar-foot');
+    if (!foot || foot.querySelector('.tm-reset-btn')) return;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'tm-reset-btn';
+    btn.textContent = '🗑 Recomeçar do zero';
+    btn.title = 'Apaga todos os dados e configurações salvos pra começar de novo';
+    btn.addEventListener('click', resetRun);
+    foot.appendChild(btn);
+  }
+  window.TrackerMedReset = { run: resetRun, keys: resetKeys };
+
+  function renderSidebarExtras() {
     renderContextIndicator();
+    renderResetButton();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderSidebarExtras);
+  } else {
+    renderSidebarExtras();
   }
   // Atualiza quando outra aba muda o contexto, ou quando a própria página pede.
   window.addEventListener('storage', function (e) {

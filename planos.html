@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="pt-BR"><head><link rel="icon" type="image/png" href="favicon.png"><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="TrackerMed"><meta name="theme-color" content="#0A1330"><script defer src="pwa.js"></script><script defer src="sync.js"></script>
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="TrackerMed"><meta name="theme-color" content="#2B0F26"><script defer src="pwa.js"></script><script defer src="sync.js"></script>
 <title>Planos · TrackerMed</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=4"></script>
+<script src="theme.js?v=5"></script>
 <style>
 .plano-card { background: var(--card); border: 1px solid var(--line); padding: 26px 28px; margin-top: 16px; position: relative; display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: flex-start; cursor: pointer; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); }
 .plano-card:hover { border-color: var(--cobalt); transform: translateY(-3px); box-shadow: var(--sh-2); }
@@ -21,7 +21,7 @@
 .plano-card .meta { font-size: 13px; color: var(--ink2); margin-top: 6px; }
 .plano-card .meta b { font-variant-numeric: tabular-nums; }
 .plano-materias { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
-.plano-materias span { background: var(--paper); border: 1px solid var(--line); padding: 5px 11px; font-size: 12px; color: var(--ink2); box-shadow: 0 1px 2px rgba(10,19,48,.08); }
+.plano-materias span { background: var(--paper); border: 1px solid var(--line); padding: 5px 11px; font-size: 12px; color: var(--ink2); box-shadow: 0 1px 2px rgba(43,15,38,.08); }
 .plano-provas { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); font-size: 12px; }
 .plano-countdown { text-align: right; min-width: 140px; }
 .plano-countdown .num { font-family: 'Fraunces', serif; font-size: 54px; font-weight: 500; letter-spacing: -0.04em; line-height: 1; color: var(--cobalt); font-style: italic; }
@@ -36,7 +36,7 @@
 .empty h3 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
 .empty p { color: var(--muted); margin-top: 8px; font-size: 14px; }
 .empty button { margin-top: 18px; background-image: var(--grad-brand); color: #fff; border: none; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; border-radius: 8px; box-shadow: var(--sh-glow); transition: transform .2s var(--ease), box-shadow .2s var(--ease); }
-.empty button:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(30,58,232,.45); }
+.empty button:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(194,37,92,.45); }
 .add-more { margin-top: 18px; text-align: center; }
 .add-more button { background: transparent; border: 1.5px dashed var(--line); color: var(--ink2); padding: 14px 24px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; width: 100%; border-radius: 10px; transition: all .15s; }
 .add-more button:hover { border-color: var(--cobalt); color: var(--cobalt); border-style: solid; }
@@ -44,7 +44,7 @@
 /* Semestre: ativo / arquivo */
 .plano-card.is-ativo { box-shadow: 0 0 0 1px var(--mint) inset, var(--sh-1); }
 .plano-card.is-fechado { opacity: 0.72; }
-.sem-badge { font-size: 10px; letter-spacing: 0.1em; font-weight: 700; padding: 2px 7px; margin-left: 8px; text-transform: uppercase; vertical-align: middle; box-shadow: 0 1px 2px rgba(10,19,48,.08); }
+.sem-badge { font-size: 10px; letter-spacing: 0.1em; font-weight: 700; padding: 2px 7px; margin-left: 8px; text-transform: uppercase; vertical-align: middle; box-shadow: 0 1px 2px rgba(43,15,38,.08); }
 .sem-badge.ativo { background: var(--mint); color: #06351f; }
 .sem-badge.fechado { background: var(--line); color: var(--muted); }
 .sem-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--mint); padding: 16px 20px; margin-bottom: 16px; flex-wrap: wrap; border-radius: 0 8px 8px 0; box-shadow: var(--sh-1); transition: border-color .2s var(--ease), box-shadow .2s var(--ease); }
@@ -53,13 +53,13 @@
 .sem-banner .sb-nome { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; letter-spacing: -0.02em; margin-top: 2px; }
 .sem-banner .sb-meta { font-size: 12px; color: var(--ink2); margin-top: 4px; }
 .sem-banner .sb-close { background-image: var(--grad-brand); color: #fff; border: none; padding: 11px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; border-radius: 8px; box-shadow: var(--sh-glow); transition: transform .2s var(--ease), box-shadow .2s var(--ease); }
-.sem-banner .sb-close:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(30,58,232,.45); }
+.sem-banner .sb-close:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(194,37,92,.45); }
 .sem-ctrl { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: var(--paper); border: 1px solid var(--line); padding: 14px 18px; margin-bottom: 28px; font-size: 13px; color: var(--ink2); flex-wrap: wrap; border-radius: 10px; box-shadow: var(--sh-1); }
 .sem-ctrl.ativo { border-left: 3px solid var(--mint); }
 .sem-ctrl.fechado { border-left: 3px solid var(--muted); }
 .sem-ctrl b { color: var(--ink); }
 .sem-ctrl button { background-image: var(--grad-brand); color: #fff; border: none; padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; border-radius: 8px; box-shadow: var(--sh-glow); transition: transform .2s var(--ease), box-shadow .2s var(--ease); }
-.sem-ctrl button:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(30,58,232,.45); }
+.sem-ctrl button:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(194,37,92,.45); }
 .sem-ctrl.fechado button { background: var(--mint); color: #06351f; }
 
 /* Detalhe do plano */
@@ -100,7 +100,7 @@
 .det-notas-hint.saved { color: var(--mint); font-style: normal; }
 
 /* Modal */
-.modal-backdrop { position: fixed; inset: 0; background: rgba(10,19,48,0.55); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(43,15,38,0.55); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 .modal-backdrop.open { display: flex; }
 .modal-box { background: var(--card); border: 1px solid var(--line); width: 540px; max-width: 100%; max-height: 92vh; overflow-y: auto; padding: 32px; position: relative; border-radius: 14px; box-shadow: var(--sh-3); }
 .modal-box h2 { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.1; }
@@ -117,8 +117,8 @@
 .type-choice label { cursor: pointer; padding: 12px 10px; border: 1.5px solid var(--line); background: var(--paper); transition: all .15s; display: flex; flex-direction: column; gap: 3px; position: relative; border-radius: 10px; }
 .type-choice label:hover { border-color: var(--ink2); }
 .type-choice input { position: absolute; opacity: 0; }
-.type-choice label:has(input:checked) { border-color: var(--cobalt); background: #DDE3FF; }
-[data-theme="dark"] .type-choice label:has(input:checked) { background: rgba(30,58,232,.22); }
+.type-choice label:has(input:checked) { border-color: var(--cobalt); background: #FFDFEC; }
+[data-theme="dark"] .type-choice label:has(input:checked) { background: rgba(194,37,92,.22); }
 .type-choice .t-icon { font-size: 20px; }
 .type-choice .t-title { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 500; }
 .type-choice .t-desc { font-size: 10px; color: var(--muted); line-height: 1.35; }
@@ -128,7 +128,7 @@
 .mactions { display: flex; justify-content: space-between; gap: 10px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
 .mbtn-cancel { background: transparent; border: 1px solid var(--line); padding: 10px 18px; font-size: 13px; cursor: pointer; font-family: inherit; border-radius: 8px; }
 .mbtn-save { background-image: var(--grad-brand); color: #fff; border: none; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; border-radius: 8px; box-shadow: var(--sh-glow); transition: transform .2s var(--ease), box-shadow .2s var(--ease); }
-.mbtn-save:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(30,58,232,.45); }
+.mbtn-save:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(194,37,92,.45); }
 .mbtn-delete { background: transparent; border: none; color: var(--rose); padding: 10px 0; font-size: 12px; cursor: pointer; font-family: inherit; font-weight: 600; }
 
 /* Objetivo (meta de estudo independente) — accent violeta */
@@ -167,7 +167,7 @@
 <a href="dashboard.html" class="nav-item">Estatísticas</a>
 <a href="simulados.html" class="nav-item">Simulados</a>
 <a href="cortex-simulados.html" class="nav-item">Córtex</a>
-<div class="sidebar-foot">v0.1 · pessoal</div>
+<div class="sidebar-foot">v0.2 · feito com ♥ pra você</div>
 </aside>
 <main class="main">
 <div class="topbar">

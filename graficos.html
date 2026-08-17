@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="pt-BR"><head><link rel="icon" type="image/png" href="favicon.png"><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="TrackerMed"><meta name="theme-color" content="#0A1330"><script defer src="pwa.js"></script><script defer src="sync.js"></script>
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="TrackerMed"><meta name="theme-color" content="#2B0F26"><script defer src="pwa.js"></script><script defer src="sync.js"></script>
 <title>Gráficos e Estatísticas · TrackerMed</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=4"></script>
+<script src="theme.js?v=5"></script>
 <style>
 /* ---- Period switch --------------------------------------------------- */
 .period-switch { display: inline-flex; gap: 4px; padding: 4px; background: var(--surface-soft); border: 1px solid var(--line); border-radius: 999px; margin-top: 28px; }
@@ -20,10 +20,10 @@
 .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 24px; }
 .kpi { background: var(--card); border: 1px solid var(--line); padding: 20px 22px; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease); position: relative; overflow: hidden; }
 .kpi:hover { transform: translateY(-3px); box-shadow: var(--sh-2); }
-.kpi.dark { background-image: linear-gradient(150deg, #12204A, #0A1330 72%); border-color: var(--ink); }
+.kpi.dark { background-image: linear-gradient(150deg, #421F3D, #2B0F26 72%); border-color: var(--ink); }
 .kpi.dark .lbl { color: var(--acid); }
 .kpi.dark .val { color: var(--acid); }
-.kpi.dark .sub { color: rgba(244,241,234,0.6); }
+.kpi.dark .sub { color: rgba(250,240,238,0.6); }
 .kpi .lbl { font-size: 10px; letter-spacing: 0.16em; color: var(--muted); font-weight: 700; text-transform: uppercase; }
 .kpi .val { font-family: 'Fraunces', serif; font-size: 42px; font-weight: 400; letter-spacing: -0.035em; line-height: 1; margin-top: 12px; color: var(--cobalt); }
 .kpi .val span { font-size: 17px; color: var(--muted); font-style: normal; letter-spacing: 0; }
@@ -103,15 +103,15 @@
 .heat-wrap { overflow-x: auto; padding-bottom: 4px; }
 .heat { display: inline-grid; grid-auto-flow: column; grid-template-rows: repeat(7, 15px); gap: 4px; }
 .heat .cell { width: 15px; height: 15px; border-radius: 3px; background: var(--surface-soft); border: 1px solid var(--line); }
-.heat .cell.l1 { background: rgba(30,58,232,0.22); border-color: transparent; }
-.heat .cell.l2 { background: rgba(30,58,232,0.42); border-color: transparent; }
-.heat .cell.l3 { background: rgba(30,58,232,0.66); border-color: transparent; }
-.heat .cell.l4 { background: rgba(30,58,232,0.92); border-color: transparent; }
+.heat .cell.l1 { background: rgba(194,37,92,0.22); border-color: transparent; }
+.heat .cell.l2 { background: rgba(194,37,92,0.42); border-color: transparent; }
+.heat .cell.l3 { background: rgba(194,37,92,0.66); border-color: transparent; }
+.heat .cell.l4 { background: rgba(194,37,92,0.92); border-color: transparent; }
 .heat .cell.today { outline: 2px solid var(--cobalt); outline-offset: 1px; }
-[data-theme="dark"] .heat .cell.l1 { background: rgba(124,148,255,0.28); }
-[data-theme="dark"] .heat .cell.l2 { background: rgba(124,148,255,0.48); }
-[data-theme="dark"] .heat .cell.l3 { background: rgba(124,148,255,0.70); }
-[data-theme="dark"] .heat .cell.l4 { background: rgba(124,148,255,0.95); }
+[data-theme="dark"] .heat .cell.l1 { background: rgba(244,143,187,0.28); }
+[data-theme="dark"] .heat .cell.l2 { background: rgba(244,143,187,0.48); }
+[data-theme="dark"] .heat .cell.l3 { background: rgba(244,143,187,0.70); }
+[data-theme="dark"] .heat .cell.l4 { background: rgba(244,143,187,0.95); }
 .heat-legend { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); margin-top: 14px; }
 .heat-legend .cell { width: 13px; height: 13px; border-radius: 3px; display: inline-block; }
 .reg-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
@@ -129,16 +129,16 @@
 .data-details th, .data-details td { padding: 7px 10px; }
 
 /* ---- Parecer --------------------------------------------------------- */
-.parecer { background-image: linear-gradient(155deg, #12204A 0%, #0A1330 70%); color: var(--paper); border-radius: 16px; padding: 32px 34px; margin-top: 24px; box-shadow: var(--sh-2); position: relative; overflow: hidden; }
+.parecer { background-image: linear-gradient(155deg, #421F3D 0%, #2B0F26 70%); color: var(--paper); border-radius: 16px; padding: 32px 34px; margin-top: 24px; box-shadow: var(--sh-2); position: relative; overflow: hidden; }
 .parecer::before { content: ''; position: absolute; top: -30%; right: -8%; width: 40%; height: 150%; background: radial-gradient(circle, rgba(124,92,252,0.30), transparent 70%); pointer-events: none; }
 .parecer > * { position: relative; }
 .parecer .pk { font-size: 10px; letter-spacing: 0.2em; color: var(--acid); font-weight: 700; text-transform: uppercase; }
 .parecer h2 { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 500; letter-spacing: -0.025em; margin-top: 6px; }
 .parecer h2 i { color: var(--acid); font-style: italic; }
-.parecer .verdict { font-family: 'Fraunces', serif; font-style: italic; font-size: 18px; color: rgba(244,241,234,0.9); margin-top: 12px; line-height: 1.5; max-width: 720px; }
+.parecer .verdict { font-family: 'Fraunces', serif; font-style: italic; font-size: 18px; color: rgba(250,240,238,0.9); margin-top: 12px; line-height: 1.5; max-width: 720px; }
 .parecer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 26px; margin-top: 26px; }
 .par-sec { }
-.par-sec h3 { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(244,241,234,0.14); margin-bottom: 10px; }
+.par-sec h3 { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(250,240,238,0.14); margin-bottom: 10px; }
 .par-sec h3 .ic { font-size: 15px; }
 .par-sec.ok h3 { color: var(--mint); } [data-theme="dark"] .par-sec.ok h3 { color: var(--mint); }
 .par-sec.warn h3 { color: var(--amber); }
@@ -147,14 +147,14 @@
 .par-sec.load h3 { color: var(--acid); }
 .par-sec.next h3 { color: #93B4FF; }
 .par-sec ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
-.par-sec li { font-size: 13px; line-height: 1.5; color: rgba(244,241,234,0.86); padding-left: 16px; position: relative; }
-.par-sec li::before { content: '—'; position: absolute; left: 0; color: rgba(244,241,234,0.4); }
+.par-sec li { font-size: 13px; line-height: 1.5; color: rgba(250,240,238,0.86); padding-left: 16px; position: relative; }
+.par-sec li::before { content: '—'; position: absolute; left: 0; color: rgba(250,240,238,0.4); }
 .par-sec li b { color: var(--paper); font-weight: 600; }
 .par-next { grid-column: 1 / -1; margin-top: 6px; }
 .par-next .horizons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 4px; }
-.par-next .hz { background: rgba(244,241,234,0.05); border: 1px solid rgba(244,241,234,0.1); border-radius: 10px; padding: 14px 16px; }
+.par-next .hz { background: rgba(250,240,238,0.05); border: 1px solid rgba(250,240,238,0.1); border-radius: 10px; padding: 14px 16px; }
 .par-next .hz .hz-lbl { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; color: var(--acid); }
-.par-next .hz .hz-txt { font-size: 13px; line-height: 1.5; color: rgba(244,241,234,0.9); margin-top: 6px; }
+.par-next .hz .hz-txt { font-size: 13px; line-height: 1.5; color: rgba(250,240,238,0.9); margin-top: 6px; }
 
 /* ---- Ritmo & projeções ----------------------------------------------- */
 .vel-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
@@ -234,7 +234,7 @@
 <a href="dashboard.html" class="nav-item">Estatísticas</a>
 <a href="simulados.html" class="nav-item">Simulados</a>
 <a href="cortex-simulados.html" class="nav-item">Córtex</a>
-<div class="sidebar-foot">v0.1 · pessoal</div>
+<div class="sidebar-foot">v0.2 · feito com ♥ pra você</div>
 </aside>
 <main class="main">
 <div class="topbar">
@@ -510,7 +510,7 @@ function renderEvo(series, period) {
     bands += `<rect x="${bx.toFixed(1)}" y="${padT}" width="${Math.max(1,bw).toFixed(1)}" height="${H-padT-padB}" fill="transparent" data-tip="${esc(t)}"/>`;
   });
   wrap.innerHTML = `<svg class="evo-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Gráfico de evolução do tempo estudado e planejado">
-    <defs><linearGradient id="evoGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1E3AE8" stop-opacity="0.28"/><stop offset="100%" stop-color="#1E3AE8" stop-opacity="0.02"/></linearGradient></defs>
+    <defs><linearGradient id="evoGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#C2255C" stop-opacity="0.28"/><stop offset="100%" stop-color="#C2255C" stop-opacity="0.02"/></linearGradient></defs>
     ${grid}${xlbl}
     <path d="${areaPath}" fill="url(#evoGrad)"/>
     ${plannedHasData ? `<polyline class="ev-plan" points="${planPts}"/>` : ''}
@@ -529,7 +529,7 @@ function renderMateria(evP, discById) {
   const by = {};
   evP.forEach(e => {
     const k = e.discId || ('m:'+(e.matNome || '—'));
-    if (!by[k]) by[k] = { studied:0, planned:0, discId: e.discId || null, name: e.discId && discById[e.discId] ? discById[e.discId].nome : (e.matNome || 'Sem matéria'), cor: e.discId && discById[e.discId] ? (discById[e.discId].cor || '#1E3AE8') : '#6B6A5F' };
+    if (!by[k]) by[k] = { studied:0, planned:0, discId: e.discId || null, name: e.discId && discById[e.discId] ? discById[e.discId].nome : (e.matNome || 'Sem matéria'), cor: e.discId && discById[e.discId] ? (discById[e.discId].cor || '#C2255C') : '#7E6577' };
     by[k].studied += e.studied; by[k].planned += e.planned;
   });
   let rows = Object.values(by).filter(r => r.studied > 0 || r.planned > 0).sort((a,b) => b.studied - a.studied);
@@ -561,7 +561,7 @@ function renderConteudo(evP, discById) {
     if (e.studied <= 0) return;
     const c = e.conteudo || '(sem conteúdo)';
     const k = (e.discId||'') + '|' + c;
-    if (!by[k]) by[k] = { studied:0, conteudo: c, cor: e.discId && discById[e.discId] ? (discById[e.discId].cor || '#1E3AE8') : '#6B6A5F', mat: e.discId && discById[e.discId] ? discById[e.discId].nome : (e.matNome||'') };
+    if (!by[k]) by[k] = { studied:0, conteudo: c, cor: e.discId && discById[e.discId] ? (discById[e.discId].cor || '#C2255C') : '#7E6577', mat: e.discId && discById[e.discId] ? discById[e.discId].nome : (e.matNome||'') };
     by[k].studied += e.studied;
   });
   let rows = Object.values(by).sort((a,b) => b.studied - a.studied);
