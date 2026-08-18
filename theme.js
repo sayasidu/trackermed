@@ -614,6 +614,23 @@
       return discId == null || m.discId === discId;
     });
   }
+  // Posição atual em unidades de posição (página/minuto/% em que o aluno
+  // parou). Segue o log em ordem: lançamentos com `ate` fixam a posição
+  // exata; os demais (avanços avulsos) somam a quantidade. É a base da regra
+  // "avanço da sessão = posição informada − última posição registrada".
+  function matPosAtual(m) {
+    if (!m) return 0;
+    var log = Array.isArray(m.log) ? m.log : [];
+    var pos = 0;
+    for (var i = 0; i < log.length; i++) {
+      var e = log[i]; if (!e) continue;
+      var ate = parseFloat(e.ate);
+      pos = isFinite(ate) ? ate : pos + matNum(e.qtd);
+    }
+    var total = matNum(m.total);
+    return total > 0 ? Math.min(pos, total) : pos;
+  }
+
   // Avanços de um dia ('YYYY-MM-DD') → [{material, qtd}] pro Histórico.
   function matAvancosDoDia(dataKey) {
     var out = [];
@@ -829,6 +846,7 @@
     concluir: matConcluir,
     reabrir: matReabrir,
     stats: matStats,
+    posAtual: matPosAtual,
     mensagens: matMensagens,
     porDisciplina: matPorDisciplina,
     emAndamento: matEmAndamento,
