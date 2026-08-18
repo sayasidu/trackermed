@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=5"></script>
+<script src="theme.js?v=6"></script>
 <style>
 .disc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; }
 .disc-card { background: var(--card); border: 1px solid var(--line); padding: 22px; display: flex; flex-direction: column; gap: 10px; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); position: relative; cursor: pointer; }
@@ -341,6 +341,7 @@
         <span class="unid" id="mAvancoUnid">págs</span>
         <button type="button" onclick="registrarAvancoDisc()">+ Registrar avanço</button>
       </div>
+      <div class="sg-help" id="mAvancoHelp" style="margin-top:6px;display:none"></div>
       <div class="mat-msgs" id="matMsgs"></div>
     </div>
 
@@ -818,10 +819,36 @@ function abrirMaterialEdit(matId) {
   document.getElementById('materialModal').classList.add('open');
 }
 
+// Unidades de posição: o aluno informa ONDE PAROU (página, minuto ou %) e o
+// avanço registrado é a diferença pra última posição — parou na pág. 10 e
+// agora está na 16 registra 6 páginas, nunca 16.
+const MAT_POS_UNIDADES = { paginas: 'página', minutos: 'minuto', percentual: '%' };
+// Última posição registrada. Fallback pro theme.js antigo em cache, sem
+// posAtual: a soma dos avanços (feito) equivale à posição.
+const matPos = m => (MAT.posAtual ? MAT.posAtual(m) : MAT.stats(m).feito);
+function matPosRotulo(m, pos) {
+  if (m.unidade === 'percentual') return MAT.fmtQtd(pos) + '%';
+  return (m.unidade === 'paginas' ? 'a página ' : 'o minuto ') + MAT.fmtQtd(pos);
+}
+
 function matRenderProgresso(m) {
   const st = MAT.stats(m);
   document.getElementById('matModalFill').style.width = st.pct + '%';
   const u = q => MAT.fmtUnid(q, m.unidade);
+  const inp = document.getElementById('mAvanco');
+  const help = document.getElementById('mAvancoHelp');
+  if (MAT_POS_UNIDADES[m.unidade] && !m.concluido) {
+    const pos = matPos(m);
+    inp.placeholder = m.unidade === 'percentual' ? 'Em que % você está agora?' : `Em que ${MAT_POS_UNIDADES[m.unidade]} você parou?`;
+    help.textContent = pos > 0
+      ? `Você registrou até ${matPosRotulo(m, pos)} — informe onde está agora; só a diferença conta como avanço.`
+      : (m.unidade === 'percentual' ? 'Informe o percentual atual do material.' : `Informe a ${MAT_POS_UNIDADES[m.unidade] === 'página' ? 'página' : 'posição'} em que você parou — é o primeiro registro.`);
+    help.style.display = '';
+  } else {
+    inp.placeholder = 'Quanto você avançou agora?';
+    help.textContent = '';
+    help.style.display = 'none';
+  }
   const linhas = [
     ['Concluído', `${u(st.feito)} · ${st.pct}%`],
     ['Restante', u(st.restante)],
@@ -872,14 +899,26 @@ function salvarMaterial() {
 
 function registrarAvancoDisc() {
   if (!matEditingId) return;
-  const v = parseFloat(document.getElementById('mAvanco').value);
-  if (!(v > 0)) { document.getElementById('mAvanco').focus(); return; }
-  MAT.addAvanco(matEditingId, v);
-  document.getElementById('mAvanco').value = '';
   const m = MAT.get(matEditingId);
-  matRenderProgresso(m);
-  document.getElementById('btnMatConcluir').style.display = m.concluido ? 'none' : '';
-  document.getElementById('btnMatReabrir').style.display = m.concluido ? '' : 'none';
+  if (!m) return;
+  const inp = document.getElementById('mAvanco');
+  const v = parseFloat(inp.value);
+  if (!(v > 0)) { inp.focus(); return; }
+  if (MAT_POS_UNIDADES[m.unidade]) {
+    // Posição informada → avanço = posição − última registrada.
+    const pos = matPos(m);
+    const total = MAT.stats(m).total;
+    if (v <= pos) { alert(`Você já registrou até ${matPosRotulo(m, pos)}. Informe uma posição maior — só a diferença conta como avanço.`); inp.focus(); return; }
+    if (total > 0 && v > total) { alert(`O valor não pode passar do total do material (${MAT.fmtQtd(total)}).`); inp.focus(); return; }
+    MAT.addAvanco(matEditingId, v - pos, undefined, { de: pos, ate: v });
+  } else {
+    MAT.addAvanco(matEditingId, v);
+  }
+  inp.value = '';
+  const atual = MAT.get(matEditingId);
+  matRenderProgresso(atual);
+  document.getElementById('btnMatConcluir').style.display = atual.concluido ? 'none' : '';
+  document.getElementById('btnMatReabrir').style.display = atual.concluido ? '' : 'none';
   render();
 }
 

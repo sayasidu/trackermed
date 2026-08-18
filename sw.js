@@ -4,7 +4,7 @@
  * pro cache sem conexão; fontes do Google ficam em cache de runtime após o
  * primeiro uso. Ao publicar mudanças, subir a versão abaixo troca o cache.
  */
-const VERSION = 'trackermed-v4';
+const VERSION = 'trackermed-v5';
 const CORE = [
   './',
   'index.html',

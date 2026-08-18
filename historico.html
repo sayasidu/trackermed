@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=5"></script>
+<script src="theme.js?v=6"></script>
 <style>
 .hoje-head { display: grid; grid-template-columns: 1fr auto auto auto; gap: 12px; margin-bottom: 20px; }
 .hoje-head .stat-card { background: #fff; border: 1px solid #E0E0E0; padding: 18px 20px; min-width: 140px; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); }
@@ -2092,6 +2092,9 @@ function render() {
 // poucos. Aqui: (1) a seção "Materiais em andamento" com progresso, ritmo e
 // previsão dinâmica; (2) o modal que pergunta o avanço ao encerrar a sessão.
 const MAT = window.TrackerMedMateriais;
+// Última posição registrada (página/minuto/%). Fallback pro theme.js antigo
+// em cache, sem posAtual: a soma dos avanços (feito) equivale à posição.
+const matPos = m => (MAT.posAtual ? MAT.posAtual(m) : MAT.stats(m).feito);
 
 const MA_PERGUNTAS = {
   paginas: 'Quantas páginas você leu?',
@@ -2100,7 +2103,7 @@ const MA_PERGUNTAS = {
   aulas: 'Quantas aulas você concluiu?',
   questoes: 'Quantas questões você fez?',
   itens: 'Quantos itens você concluiu?',
-  percentual: 'Qual percentual do material você concluiu nesta sessão?'
+  percentual: 'Em que percentual do material você está agora?'
 };
 
 // ===== Modal "recurso utilizado": tipos e campos de progressão =============
@@ -2120,15 +2123,21 @@ const MA_TIPOS_NOVO = [
   { tipo:'audio',    grupo:'minutos', icon:'🎧', label:'Podcast / áudio' },
   { tipo:'outro',    grupo:'itens',   icon:'📚', label:'Outros materiais' }
 ];
-// `calc` devolve o avanço da sessão a partir de (inicial, final). Páginas
-// contam inclusive (da pág. 10 à 14 = 5 páginas); tempo é a diferença.
+// `calc` devolve o avanço da PRIMEIRA sessão de um material novo a partir de
+// (inicial, final). Páginas contam inclusive (da pág. 10 à 14 = 5 páginas);
+// tempo é a diferença. Em material JÁ EM ANDAMENTO a retomada é por posição
+// (retIni/retFim): o aluno informa só onde parou e o avanço é a diferença pra
+// última posição registrada (parou na pág. 10, agora na 16 → 6 páginas) —
+// informar a página nunca soma o número dela como quantidade lida.
 const MA_GRUPOS = {
   paginas: { unidade:'paginas', ini:'Página inicial', fim:'Página final', tot:'Total de páginas',
-             calc:(i,f)=>f-i+1, iniDe: st=>st.feito+1, iniMin:1 },
+             calc:(i,f)=>f-i+1, iniMin:1,
+             retIni:'Parou na página', retFim:'Em que página você parou agora?' },
   minutos: { unidade:'minutos', ini:'Tempo inicial (min)', fim:'Tempo final (min)', tot:'Duração total (min)',
-             calc:(i,f)=>f-i, iniDe: st=>st.feito, iniMin:0 },
+             calc:(i,f)=>f-i, iniMin:0,
+             retIni:'Parou no minuto', retFim:'Em que minuto você parou agora?' },
   itens:   { unidade:'itens', ini:null, fim:'Quantidade concluída nesta sessão', tot:'Quantidade total',
-             calc:(i,f)=>f, iniDe:null, iniMin:0 }
+             calc:(i,f)=>f, iniMin:0 }
 };
 
 function renderMateriaisHoje() {
@@ -2351,14 +2360,18 @@ function maAtualizarCampos() {
   }
   range.style.display = '';
   qtdW.style.display = 'none';
+  // Retomada: material em andamento com unidade de posição — a posição onde
+  // parou fica fixa (só informativa) e o aluno digita apenas onde está agora.
+  const retomada = !!(m && g.ini);
   document.getElementById('maIniCol').style.display = g.ini ? '' : 'none';
-  if (g.ini) document.getElementById('maIniLbl').textContent = g.ini;
-  document.getElementById('maFimLbl').textContent = g.fim;
+  if (g.ini) document.getElementById('maIniLbl').textContent = retomada ? g.retIni : g.ini;
+  document.getElementById('maFimLbl').textContent = retomada ? g.retFim : g.fim;
   document.getElementById('maTotLbl').textContent = g.tot;
   // Material existente: o total já é conhecido; retoma de onde parou.
   document.getElementById('maTotCol').style.display = m ? 'none' : '';
   const iniEl = document.getElementById('maIni');
-  if (g.ini) iniEl.value = m ? g.iniDe(MAT.stats(m)) : g.iniMin;
+  iniEl.readOnly = retomada;
+  if (g.ini) iniEl.value = retomada ? matPos(m) : g.iniMin;
   else iniEl.value = '';
   document.getElementById('maFim').value = '';
   document.getElementById('maTot').value = '';
@@ -2366,13 +2379,32 @@ function maAtualizarCampos() {
 }
 // Lê os campos de progressão → { qtd, de, ate } ou null. estrito=true valida
 // com alertas (salvar); senão falha silenciosamente (preview / conclusão).
-function maLerProgresso(g, estrito) {
+// m (material já em andamento) ativa o modo retomada: o avanço é SEMPRE
+// posição informada − última posição registrada — parou na pág. 10 e agora
+// está na 16 registra 6 páginas, nunca 16.
+function maLerProgresso(g, estrito, m) {
   if (!g) {
     const v = parseFloat(document.getElementById('maQtd').value);
+    if (m && m.unidade === 'percentual') {
+      const pos = matPos(m);
+      if (isNaN(v) || v <= pos) {
+        if (estrito) { alert(`Informe o percentual atual do material — maior que o já registrado (${MAT.fmtQtd(pos)}%).`); document.getElementById('maQtd').focus(); }
+        return null;
+      }
+      return { qtd: v - pos, de: pos, ate: v };
+    }
     if (!(v > 0)) { if (estrito) document.getElementById('maQtd').focus(); return null; }
     return { qtd: v, de: null, ate: null };
   }
   const fim = parseFloat(document.getElementById('maFim').value);
+  if (g.ini && m) {
+    const pos = matPos(m);
+    if (isNaN(fim) || fim <= pos) {
+      if (estrito) alert(`${g.retFim} Informe um valor maior que o já registrado (${MAT.fmtQtd(pos)}).`);
+      return null;
+    }
+    return { qtd: fim - pos, de: pos, ate: fim };
+  }
   if (g.ini) {
     const ini = parseFloat(document.getElementById('maIni').value);
     if (isNaN(ini) || ini < g.iniMin) { if (estrito) alert(`${g.ini}: informe um valor válido.`); return null; }
@@ -2386,7 +2418,7 @@ function maPreview() {
   const box = document.getElementById('maPreviewBox');
   const m = maSelecionado();
   const g = m ? maGrupoDe(m.unidade) : maGrupoNovo();
-  const av = maLerProgresso(g, false);
+  const av = maLerProgresso(g, false, m);
   let total, feito = 0, unidade;
   if (m) {
     const st = MAT.stats(m);
@@ -2397,7 +2429,13 @@ function maPreview() {
   }
   if (!av || !(av.qtd > 0)) {
     box.classList.remove('on');
-    box.textContent = m ? 'Informe quanto você avançou nesta sessão.' : 'Informe a progressão da sessão e o total do material.';
+    if (m && g && g.retIni) {
+      box.textContent = `${g.retIni} ${MAT.fmtQtd(matPos(m))} — informe onde parou agora; só a diferença conta como avanço.`;
+    } else if (m && m.unidade === 'percentual') {
+      box.textContent = `Você está em ${MAT.fmtQtd(matPos(m))}% — informe o percentual atual; só a diferença conta como avanço.`;
+    } else {
+      box.textContent = m ? 'Informe quanto você avançou nesta sessão.' : 'Informe a progressão da sessão e o total do material.';
+    }
     return;
   }
   if (!(total > 0)) {
@@ -2475,9 +2513,9 @@ function salvarMatAvanco() {
   } else {
     total = MAT.stats(m).total;
   }
-  const av = maLerProgresso(g, true);
+  const av = maLerProgresso(g, true, m);
   if (!av) return;
-  if (g && g.ini && total > 0 && av.ate > total) { alert(`${g.fim} não pode passar de ${g.tot.toLowerCase()} (${total}).`); return; }
+  if (av.ate != null && total > 0 && av.ate > total) { alert(`O valor informado (${MAT.fmtQtd(av.ate)}) não pode passar do total do material (${MAT.fmtQtd(total)}).`); return; }
   if (novo) m = maCriarMaterial(g, total);
   // Sessão aguardando conclusão: cria a entrada do feed ANTES de amarrar o
   // recurso, pra que o material salvo fique gravado nessa mesma entrada.
@@ -2495,7 +2533,7 @@ function concluirMatAvanco() {
   let m = maSelecionado();
   const novo = !m;
   const g = novo ? maGrupoNovo() : maGrupoDe(m.unidade);
-  const av = maLerProgresso(g, false); // opcional: registra o trecho da sessão, se preenchido
+  const av = maLerProgresso(g, false, m); // opcional: registra o trecho da sessão, se preenchido
   if (novo) {
     const nome = (document.getElementById('maNome').value || '').trim();
     if (!nome) { alert('Dê um nome ao material antes de concluí-lo.'); return; }
