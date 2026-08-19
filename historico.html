@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=6"></script>
+<script src="theme.js?v=7"></script>
 <style>
 .hoje-head { display: grid; grid-template-columns: 1fr auto auto auto; gap: 12px; margin-bottom: 20px; }
 .hoje-head .stat-card { background: #fff; border: 1px solid #E0E0E0; padding: 18px 20px; min-width: 140px; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); }
@@ -904,7 +904,7 @@ function pickMeme(seed, lista) {
 
 // Timer state
 function makeTimerState() {
-  return { discId: null, discNome: '', conteudo: '', conteudoId: null, topicoId: null, focusSec: 0, pauseSec: 0, sections: 1, currentSection: 1, mode: 'focus', leftSec: 0, running: false, intervalId: null, linkedBlocoId: null, fromModal: false, revisar: false, studiedSec: 0, freeMode: false, elapsedSec: 0, revHistId: null, extraFlow: false, plannedTotalMin: 0, pomodoroMin: 0, accumStudiedMin: 0 };
+  return { discId: null, discNome: '', conteudo: '', conteudoId: null, topicoId: null, focusSec: 0, pauseSec: 0, sections: 1, currentSection: 1, mode: 'focus', leftSec: 0, running: false, intervalId: null, linkedBlocoId: null, fromModal: false, revisar: false, studiedSec: 0, freeMode: false, elapsedSec: 0, revHistId: null, extraFlow: false, plannedTotalMin: 0, pomodoroMin: 0, accumStudiedMin: 0, accumStudiedSec: 0 };
 }
 let timerState = makeTimerState();
 function beep() {
@@ -932,7 +932,7 @@ function timerOpen(discId, discNome, mins, linkedBlocoId, opts) {
     extraFlow: !!opts.extraFlow,
     plannedTotalMin: Math.max(0, parseInt(opts.plannedTotalMin) || 0),
     pomodoroMin: Math.max(1, parseInt(opts.pomodoroMin) || mins),
-    accumStudiedMin: 0
+    accumStudiedMin: 0, accumStudiedSec: 0
   };
   document.getElementById('tDisc').textContent = discNome;
   document.getElementById('tPlayBtn').textContent = 'Iniciar';
@@ -1103,17 +1103,22 @@ function timerReset() {
 function timerFinish(auto) {
   if (timerState.intervalId) clearInterval(timerState.intervalId);
   timerState.running = false;
-  let studied, totalPlannedSec;
+  // exatoSec preserva a duração medida em SEGUNDOS: é ela que alimenta o
+  // cálculo de velocidade (págs/h) via sessaoCtx.segundos. `studied` são os
+  // minutos inteiros consolidados que o resto do app usa (blocos, histórico,
+  // dashboards) — arredondados UMA vez, sobre o total.
+  let studied, totalPlannedSec, exatoSec;
   if (timerState.freeMode) {
-    studied = Math.round(timerState.elapsedSec/60);
+    exatoSec = Math.max(0, timerState.elapsedSec);
+    studied = Math.round(exatoSec/60);
     totalPlannedSec = timerState.elapsedSec;
   } else {
     // soma o tempo da seção de foco em andamento (se houver)
     let studiedSec = timerState.studiedSec;
     if (timerState.mode === 'focus') studiedSec += Math.max(0, timerState.focusSec - Math.max(0, timerState.leftSec));
-    studied = Math.round(studiedSec/60);
-    // Estudo extra: soma o tempo das sessões de Pomodoro já concluídas.
-    if (timerState.extraFlow) studied += timerState.accumStudiedMin;
+    // Estudo extra: soma o tempo exato das sessões de Pomodoro já concluídas.
+    exatoSec = Math.max(0, studiedSec + (timerState.extraFlow ? (timerState.accumStudiedSec || 0) : 0));
+    studied = Math.round(exatoSec/60);
     totalPlannedSec = timerState.focusSec * timerState.sections;
   }
   if (studied < 1) { timerClose(); return; }
@@ -1253,6 +1258,7 @@ function timerFinish(auto) {
     conteudoId: sessaoConteudoId,
     topicoId: sessaoTopicoId,
     minutos: studied,
+    segundos: exatoSec,
     histId: null,
     blocoId: estudoBlocoRef ? estudoBlocoRef.id : null,
     bloco: estudoBlocoRef,
@@ -1273,7 +1279,10 @@ function extraSessionDone() {
   // Tempo desta sessão (na última seção o leftSec chega a 0 => sessão completa).
   let sessaoSec = timerState.studiedSec;
   if (timerState.mode === 'focus') sessaoSec += Math.max(0, timerState.focusSec - Math.max(0, timerState.leftSec));
-  timerState.accumStudiedMin += Math.round(sessaoSec/60);
+  // Acumula o tempo EXATO em segundos; os minutos inteiros (modal "continuar?",
+  // blocos) derivam do total acumulado — arredondamento único, não por seção.
+  timerState.accumStudiedSec = (timerState.accumStudiedSec || 0) + sessaoSec;
+  timerState.accumStudiedMin = Math.round(timerState.accumStudiedSec/60);
   // Prepara uma nova sessão de foco (só inicia se o aluno pedir).
   timerState.studiedSec = 0;
   timerState.currentSection = 1;
@@ -1310,7 +1319,7 @@ function abrirContinuarExtra() {
 function continuarExtra() {
   document.getElementById('continuarExtraModal').classList.remove('open');
   // Nova sessão de foco com a mesma duração de Pomodoro; o tempo acumulado
-  // das sessões anteriores continua guardado em accumStudiedMin.
+  // das sessões anteriores continua guardado em accumStudiedSec/Min.
   timerState.mode = 'focus';
   timerState.currentSection = 1;
   timerState.studiedSec = 0;
@@ -2443,12 +2452,14 @@ function maPreview() {
     box.innerHTML = `Avanço desta sessão: <b>${escHtml(MAT.fmtUnid(av.qtd, unidade))}</b> — informe o total pra calcular o progresso.`;
     return;
   }
-  const novoFeito = Math.min(total, feito + av.qtd);
+  // Progresso acumulado = posição alcançada (ate) quando a unidade é de
+  // posição; unidades avulsas (capítulos, questões…) seguem somando.
+  const novoFeito = Math.min(total, av.ate != null ? av.ate : feito + av.qtd);
   const novoPct = Math.min(100, Math.round((novoFeito / total) * 100));
   const novoRest = Math.max(0, total - novoFeito);
   box.classList.add('on');
   box.innerHTML = `Avanço: <b>${escHtml(MAT.fmtUnid(av.qtd, unidade))}</b> · novo progresso: <b>${escHtml(MAT.fmtCurto(novoFeito, unidade))}</b> de ${escHtml(MAT.fmtUnid(total, unidade))} · ${novoPct}% · restam ${escHtml(MAT.fmtUnid(novoRest, unidade))}`
-    + (av.qtd >= (total - feito) ? ' · <b>material será concluído ✓</b>' : '');
+    + (novoFeito >= total ? ' · <b>material será concluído ✓</b>' : '');
 }
 // Cria o material cadastrado na hora, já vinculado à disciplina e ao conteúdo
 // da sessão que originou o modal.
@@ -2495,8 +2506,11 @@ function maMetaAvanco(av) {
   if (av && av.ate != null) meta.ate = av.ate;
   if (maCtx && maCtx.blocoId) meta.blocoId = maCtx.blocoId;
   // Tempo real da sessão: base do cálculo de velocidade (págs/h, min/h…)
-  // usado nas projeções de ritmo em graficos.html.
-  if (maCtx && maCtx.minutos > 0) meta.sessaoMin = Math.round(maCtx.minutos);
+  // usado nas projeções de ritmo em graficos.html. Preferência pelo tempo
+  // EXATO do cronômetro (segundos → minutos com 2 casas: 16min20s = 16,33);
+  // fluxos manuais e registros antigos seguem em minutos inteiros.
+  if (maCtx && maCtx.segundos > 0) meta.sessaoMin = Math.round(maCtx.segundos / 60 * 100) / 100;
+  else if (maCtx && maCtx.minutos > 0) meta.sessaoMin = Math.round(maCtx.minutos);
   return meta;
 }
 function salvarMatAvanco() {
