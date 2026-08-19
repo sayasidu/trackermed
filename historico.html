@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=6"></script>
+<script src="theme.js?v=7"></script>
 <style>
 .hoje-head { display: grid; grid-template-columns: 1fr auto auto auto; gap: 12px; margin-bottom: 20px; }
 .hoje-head .stat-card { background: #fff; border: 1px solid #E0E0E0; padding: 18px 20px; min-width: 140px; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); }
@@ -2443,12 +2443,14 @@ function maPreview() {
     box.innerHTML = `Avanço desta sessão: <b>${escHtml(MAT.fmtUnid(av.qtd, unidade))}</b> — informe o total pra calcular o progresso.`;
     return;
   }
-  const novoFeito = Math.min(total, feito + av.qtd);
+  // Progresso acumulado = posição alcançada (ate) quando a unidade é de
+  // posição; unidades avulsas (capítulos, questões…) seguem somando.
+  const novoFeito = Math.min(total, av.ate != null ? av.ate : feito + av.qtd);
   const novoPct = Math.min(100, Math.round((novoFeito / total) * 100));
   const novoRest = Math.max(0, total - novoFeito);
   box.classList.add('on');
   box.innerHTML = `Avanço: <b>${escHtml(MAT.fmtUnid(av.qtd, unidade))}</b> · novo progresso: <b>${escHtml(MAT.fmtCurto(novoFeito, unidade))}</b> de ${escHtml(MAT.fmtUnid(total, unidade))} · ${novoPct}% · restam ${escHtml(MAT.fmtUnid(novoRest, unidade))}`
-    + (av.qtd >= (total - feito) ? ' · <b>material será concluído ✓</b>' : '');
+    + (novoFeito >= total ? ' · <b>material será concluído ✓</b>' : '');
 }
 // Cria o material cadastrado na hora, já vinculado à disciplina e ao conteúdo
 // da sessão que originou o modal.

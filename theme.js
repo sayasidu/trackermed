@@ -502,8 +502,9 @@
     var m = matGet(id);
     if (!m) return null;
     var st = matStats(m);
-    // Completa o que falta com um lançamento final, pra soma bater com o total.
-    if (st.restante > 0) m.log.push({ data: tzTodayKey(), qtd: st.restante, ts: Date.now() });
+    // Completa o que falta com um lançamento final que leva a POSIÇÃO até o
+    // total (ate) — qtd registra só o trecho restante de fato.
+    if (st.restante > 0) m.log.push({ data: tzTodayKey(), qtd: st.restante, ate: matNum(m.total), ts: Date.now() });
     m.concluido = true;
     m.concluidoEm = tzTodayKey();
     matUpsert(m);
@@ -521,10 +522,17 @@
   // Estatísticas derivadas + estimativa DINÂMICA:
   // o ritmo usa a janela dos últimos 7 dias corridos (ou desde o 1º avanço,
   // se mais recente) — acelerou, a previsão cai; desacelerou, ela sobe.
+  //
+  // Dois conceitos distintos, que só coincidem quando a leitura começa do
+  // início do material:
+  //   · lidas (Σ qtd das sessões) — esforço real: alimenta hoje, média/dia,
+  //     ritmo e a velocidade (págs/h). Ler da pág. 34 à 40 conta 7.
+  //   · posição alcançada (matPosAtual) — progresso acumulado: alimenta
+  //     feito, pct e restante. Parou na pág. 40 de 240 → 40 · 17% · restam 200.
   function matStats(m) {
     var total = matNum(m.total);
     var log = Array.isArray(m.log) ? m.log : [];
-    var feito = 0, hoje = 0, first = null;
+    var lidas = 0, hoje = 0, first = null;
     var hojeKey = tzTodayKey();
     var hojeDate = tzToday();
     var diasSet = {};
@@ -533,7 +541,7 @@
     for (var i = 0; i < log.length; i++) {
       var e = log[i]; if (!e) continue;
       var q = matNum(e.qtd);
-      feito += q;
+      lidas += q;
       if (e.data === hojeKey) hoje += q;
       diasSet[e.data] = (diasSet[e.data] || 0) + q;
       var d = matParseKey(e.data);
@@ -542,17 +550,18 @@
         if (d >= iniJanela && d <= hojeDate) recente += q;
       }
     }
-    var restante = Math.max(0, total - feito);
-    var pct = total > 0 ? Math.min(100, Math.round((feito / total) * 100)) : 0;
+    var pos = matPosAtual(m);
+    var restante = Math.max(0, total - pos);
+    var pct = total > 0 ? Math.min(100, Math.round((pos / total) * 100)) : 0;
     var diasComAvanco = Object.keys(diasSet).length;
-    var mediaDia = diasComAvanco > 0 ? feito / diasComAvanco : 0;
+    var mediaDia = diasComAvanco > 0 ? lidas / diasComAvanco : 0;
     // Ritmo por dia corrido na janela recente; fallback: média desde o início.
     var ritmo = 0;
     if (first) {
       var diasDesde = Math.max(1, matDiffDias(first, hojeDate) + 1);
       var janela = Math.min(7, diasDesde);
       ritmo = janela > 0 ? recente / janela : 0;
-      if (ritmo <= 0) ritmo = feito / diasDesde;
+      if (ritmo <= 0) ritmo = lidas / diasDesde;
     }
     var estimativaDias = (!m.concluido && restante > 0 && ritmo > 0) ? Math.ceil(restante / ritmo) : null;
     var dataEstimada = null;
@@ -567,7 +576,8 @@
       sugestaoDiaria = restante / diasUteis;
     }
     return {
-      total: total, feito: Math.min(feito, total), feitoBruto: feito,
+      total: total, feito: total > 0 ? Math.min(pos, total) : pos,
+      lidas: lidas, feitoBruto: lidas,
       restante: restante, pct: pct, hoje: hoje,
       diasComAvanco: diasComAvanco, mediaDia: mediaDia, ritmo: ritmo,
       estimativaDias: estimativaDias, dataEstimada: dataEstimada,
