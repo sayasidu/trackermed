@@ -205,6 +205,40 @@
 .rit-charts-details summary::before { content: '▸ '; }
 .rit-charts-details[open] summary::before { content: '▾ '; }
 
+/* ---- Atualização manual de progresso ---------------------------------
+   Botão nos cards de material + modal pra informar até onde chegou fora
+   de uma sessão cronometrada. Classes de modal iguais às do Histórico
+   (.modal-backdrop, .modal-box, .mfield, .mbtn-*) — o app.css já cuida
+   dos ajustes de dark mode pra esses nomes. */
+.rm-upd { background: transparent; border: 1px dashed var(--cobalt); color: var(--cobalt); border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.rm-upd:hover { background: var(--cobalt); color: #fff; }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(43,15,38,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.modal-backdrop.open { display: flex; }
+.modal-box { background: #fff; border: 1px solid #E0E0E0; width: 480px; max-width: 100%; padding: 30px; position: relative; border-radius: 14px; box-shadow: var(--sh-3); }
+@media (prefers-reduced-motion: no-preference) { .modal-backdrop.open .modal-box { animation: modalIn .28s var(--ease) both; } @keyframes modalIn { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } } }
+.modal-box h2 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
+.modal-box h2 i { color: var(--cobalt); font-style: italic; }
+.modal-sub { font-size: 13px; color: #7D6B77; margin-top: 6px; margin-bottom: 18px; }
+.mbtn-close { position: absolute; right: 20px; top: 20px; background: transparent; border: none; font-size: 24px; cursor: pointer; color: #7D6B77; }
+.mfield { margin-bottom: 14px; }
+.mfield label { display: block; font-size: 11px; letter-spacing: 0.12em; color: #7D6B77; font-weight: 600; text-transform: uppercase; margin-bottom: 5px; }
+.mfield input { width: 100%; padding: 10px 12px; border: 1px solid #E0E0E0; background: var(--paper); font-size: 14px; font-family: inherit; border-radius: 8px; transition: border-color .2s var(--ease), box-shadow .2s var(--ease); }
+.mfield input:focus { outline: none; border-color: var(--cobalt); box-shadow: var(--ring); }
+.mactions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #E0E0E0; }
+.mbtn-cancel { background: transparent; border: 1px solid #E0E0E0; padding: 10px 18px; font-size: 13px; cursor: pointer; font-family: inherit; border-radius: 8px; transition: border-color .2s var(--ease); color: var(--text); }
+.mbtn-cancel:hover { border-color: var(--text); }
+.mbtn-save { background-image: var(--grad-brand); color: #fff; border: none; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; border-radius: 8px; box-shadow: var(--sh-glow); transition: transform .2s var(--ease), box-shadow .2s var(--ease); }
+.mbtn-save:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(194,37,92,.45); }
+.live-preview { margin-top: 6px; padding: 14px 16px; background: var(--paper); border-left: 3px solid var(--line); font-size: 13px; color: var(--muted); border-radius: 0 8px 8px 0; }
+.live-preview.on { border-left-color: var(--cobalt); }
+.live-preview b { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
+[data-theme="dark"] .live-preview b { color: var(--text); }
+.atz-mat { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.atz-row { display: flex; align-items: center; gap: 10px; }
+.atz-row input { flex: 1; }
+.atz-unid { font-size: 12px; color: #7D6B77; font-weight: 600; white-space: nowrap; }
+.atz-note { font-size: 11.5px; color: var(--muted); margin-top: 12px; line-height: 1.5; }
+
 .empty-inline { padding: 30px 8px; color: var(--muted); font-size: 13px; font-style: italic; text-align: center; }
 .empty-inline a { color: var(--cobalt); font-weight: 600; font-style: normal; }
 [data-theme="dark"] .empty-inline a { color: var(--acid); }
@@ -295,7 +329,7 @@
 <div class="box" style="margin-top:18px" id="ritmoBox">
   <div class="box-head">
     <div><h2>Ritmo de estudo & <i>projeções</i></h2>
-    <div class="box-sub">Sua velocidade real por tipo de recurso — medida nos avanços registrados ao encerrar as sessões no Histórico — e a previsão personalizada de quanto falta pra concluir cada material.</div></div>
+    <div class="box-sub">Sua velocidade real por tipo de recurso — medida nos avanços registrados ao encerrar as sessões no Histórico — e a previsão personalizada de quanto falta pra concluir cada material. Leu fora de uma sessão? Use <b>✎ atualizar progresso</b> no material pra informar até onde chegou.</div></div>
   </div>
   <div class="vel-cards" id="velCards"></div>
   <div id="ritmoMats"></div>
@@ -311,6 +345,36 @@
 <div class="parecer" id="parecer"></div>
 
 </main></div>
+
+<!-- Modal: atualização MANUAL do progresso de leitura. Pra quando o aluno
+     avançou fora de uma sessão cronometrada: informa a posição em que parou
+     (página, minuto, %…) e o progresso acumulado é atualizado com base nela —
+     sem depender das horas ou sessões registradas. O registro não leva tempo
+     de sessão (sessaoMin), então NÃO entra no cálculo de velocidade (págs/h);
+     só o progresso, o ritmo diário e as previsões são atualizados. -->
+<div class="modal-backdrop" id="atzModal" onclick="if(event.target===this) fecharAtz()">
+  <div class="modal-box" style="width:460px">
+    <button class="mbtn-close" onclick="fecharAtz()" aria-label="Fechar">×</button>
+    <h2>Atualizar <i>progresso</i></h2>
+    <div class="modal-sub">Avançou fora de uma sessão cronometrada? Informe até onde você chegou — o progresso da leitura é atualizado na hora, sem depender do cronômetro.</div>
+    <div class="atz-mat" id="atzMatNome">—</div>
+    <div class="rit-bar"><i id="atzFill" style="width:0%"></i></div>
+    <div class="rit-bar-lbl" id="atzBarLbl"></div>
+    <div class="mfield" style="margin-top:16px">
+      <label id="atzLbl">Em que página você está agora?</label>
+      <div class="atz-row">
+        <input type="number" id="atzVal" min="0" step="any" placeholder="ex: 128" oninput="atzPreview()">
+        <span class="atz-unid" id="atzUnid">págs</span>
+      </div>
+    </div>
+    <div class="live-preview" id="atzPreview">—</div>
+    <div class="atz-note">Só a diferença pra posição já registrada conta como avanço. Como não há tempo de sessão, esta atualização não entra no cálculo da sua velocidade (págs/h) — pra medir velocidade, registre sessões cronometradas no Histórico.</div>
+    <div class="mactions">
+      <button type="button" class="mbtn-cancel" onclick="fecharAtz()">Cancelar</button>
+      <button type="button" class="mbtn-save" onclick="salvarAtz()">Salvar progresso</button>
+    </div>
+  </div>
+</div>
 
 <div class="tooltip" id="tooltip"></div>
 
@@ -830,6 +894,89 @@ function ritAplicarMeta(id, idx) {
   renderAll();
 }
 
+/* ---------- atualização manual de progresso ---------------------------- */
+// Avanço feito FORA de uma sessão cronometrada: o aluno informa a posição em
+// que parou (página, minuto, %… ou o total acumulado, nas unidades avulsas) e
+// o avanço registrado é a diferença pra última posição — nunca o número em si.
+// O lançamento vai sem sessaoMin, então não contamina a velocidade (págs/h):
+// só progresso, ritmo diário e previsões mudam.
+// id do material vem via JSON.stringify (aspas → &quot;) no onclick — mesmo
+// esquema do "+ avanço" do Histórico, seguro pra qualquer id.
+const midAttr = id => JSON.stringify(id).replace(/"/g, '&quot;');
+// Última posição registrada; fallback pro theme.js antigo em cache (sem
+// posAtual), em que a soma dos avanços equivale à posição.
+const atzPos = m => (MATE.posAtual ? MATE.posAtual(m) : MATE.stats(m).feito);
+// Pergunta por unidade: posição (página/minuto/%) ou acumulado (avulsas).
+const ATZ_PERGUNTAS = {
+  paginas: 'Em que página você está agora?',
+  minutos: 'Em que minuto você parou?',
+  percentual: 'Em que percentual do material você está agora?',
+  capitulos: 'Quantos capítulos você já concluiu, no total?',
+  aulas: 'Quantas aulas você já concluiu, no total?',
+  questoes: 'Quantas questões você já fez, no total?',
+  itens: 'Quantos itens você já concluiu, no total?'
+};
+let atzMatId = null;
+function abrirAtz(id) {
+  const m = MATE.get(id);
+  if (!m) return;
+  atzMatId = id;
+  const st = MATE.stats(m), u = m.unidade;
+  document.getElementById('atzMatNome').innerHTML =
+    `${MATE.tipoIcon(m.tipo)} ${esc(m.nome)}${m.discNome ? ` <span class="rm-disc">· ${esc(m.discNome)}</span>` : ''}`;
+  document.getElementById('atzFill').style.width = st.pct + '%';
+  document.getElementById('atzBarLbl').innerHTML =
+    `<span>${esc(MATE.fmtCurto(st.feito, u))} de ${esc(MATE.fmtUnid(st.total, u))} · ${st.pct}%</span><span>restam ${esc(MATE.fmtUnid(st.restante, u))}</span>`;
+  document.getElementById('atzLbl').textContent = ATZ_PERGUNTAS[u] || 'Até onde você chegou, no total?';
+  document.getElementById('atzUnid').textContent = u === 'percentual' ? '%' : ((MATE.UNIDADES[u] || {}).abbr || '');
+  const inp = document.getElementById('atzVal');
+  inp.value = '';
+  atzPreview();
+  document.getElementById('atzModal').classList.add('open');
+  setTimeout(() => inp.focus(), 60);
+}
+function atzPreview() {
+  const box = document.getElementById('atzPreview');
+  const m = MATE.get(atzMatId);
+  if (!m) return;
+  const st = MATE.stats(m), pos = atzPos(m), u = m.unidade;
+  const v = parseFloat(document.getElementById('atzVal').value);
+  box.classList.remove('on');
+  if (isNaN(v)) {
+    box.textContent = `Você parou em ${MATE.fmtQtd(pos)}${u === 'percentual' ? '%' : ''} — informe onde está agora; só a diferença conta como avanço.`;
+    return;
+  }
+  if (v <= pos) { box.textContent = `Informe um valor maior que o já registrado (${MATE.fmtQtd(pos)}${u === 'percentual' ? '%' : ''}).`; return; }
+  if (st.total > 0 && v > st.total) { box.textContent = `O valor não pode passar do total do material (${MATE.fmtUnid(st.total, u)}).`; return; }
+  const novoPct = st.total > 0 ? Math.min(100, Math.round((v / st.total) * 100)) : 0;
+  box.classList.add('on');
+  box.innerHTML = `Avanço: <b>${esc(MATE.fmtUnid(v - pos, u))}</b> · novo progresso: <b>${esc(MATE.fmtCurto(v, u))}</b> de ${esc(MATE.fmtUnid(st.total, u))} · ${novoPct}% · restam ${esc(MATE.fmtUnid(Math.max(0, st.total - v), u))}`
+    + (st.total > 0 && v >= st.total ? ' · <b>material será concluído ✓</b>' : '');
+}
+function salvarAtz() {
+  const m = MATE.get(atzMatId);
+  if (!m) { fecharAtz(); return; }
+  const st = MATE.stats(m), pos = atzPos(m), u = m.unidade;
+  const inp = document.getElementById('atzVal');
+  const v = parseFloat(inp.value);
+  if (isNaN(v) || v <= pos) {
+    alert(`Informe onde você está agora — um valor maior que o já registrado (${MATE.fmtQtd(pos)}${u === 'percentual' ? '%' : ''}).`);
+    inp.focus();
+    return;
+  }
+  if (st.total > 0 && v > st.total) {
+    alert(`O valor informado (${MATE.fmtQtd(v)}) não pode passar do total do material (${MATE.fmtQtd(st.total)}).`);
+    inp.focus();
+    return;
+  }
+  // `ate` fixa a posição alcançada; sem sessaoMin o registro fica fora das
+  // amostras de velocidade. Chegando ao total, o motor conclui o material.
+  MATE.addAvanco(m.id, v - pos, undefined, { de: pos, ate: v, manual: true });
+  fecharAtz();
+  renderAll();
+}
+function fecharAtz() { document.getElementById('atzModal').classList.remove('open'); atzMatId = null; }
+
 /* mini-gráficos SVG (linha, barras, linha do tempo com projeção) */
 function ritSvgLine(vals, tips, yFmt) {
   const W = 340, H = 110, pL = 38, pR = 8, pT = 10, pB = 18;
@@ -956,7 +1103,7 @@ function ritMatCard(ri, idx) {
     </details>`;
   }
   return `<div class="rit-mat">
-    <div class="rm-head"><div class="rm-nome">${icon} ${esc(m.nome)}${disc}</div>${badge}</div>
+    <div class="rm-head"><div class="rm-nome">${icon} ${esc(m.nome)}${disc}</div>${badge}<button type="button" class="rm-upd" onclick="abrirAtz(${midAttr(m.id)})" title="Informar manualmente até onde você chegou — sem precisar de sessão cronometrada">✎ atualizar progresso</button></div>
     <div class="rit-bar"><i style="width:${st.pct}%"></i></div>
     <div class="rit-bar-lbl"><span>${esc(MATE.fmtCurto(st.feito, u))} de ${esc(fmtQtdU(st.total, u))} · ${st.pct}%</span><span>restam ${esc(fmtQtdU(st.restante, u))}</span></div>
     <div class="rit-stats">${stats}</div>
