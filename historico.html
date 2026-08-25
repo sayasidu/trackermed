@@ -288,7 +288,7 @@ html[data-theme="dark"] .ma-tipo-btn.active { background: var(--cobalt); color: 
   <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
     <div>
       <h2>Materiais <i>em andamento</i></h2>
-      <div class="help">Capítulos, artigos, videoaulas e áudios que você conclui aos poucos. Registre quanto avançou em cada sessão — a previsão de conclusão se ajusta ao seu ritmo.</div>
+      <div class="help">Capítulos, artigos, videoaulas e áudios que você conclui aos poucos. Registre quanto avançou em cada sessão — e, se leu fora de uma sessão cronometrada, use <b>+ avanço</b> pra informar até onde chegou: o progresso é atualizado sem depender das horas registradas. A previsão de conclusão se ajusta ao seu ritmo.</div>
     </div>
     <a href="disciplinas.html" style="font-size:12px;color:var(--cobalt);font-weight:600;text-decoration:none">gerenciar materiais ›</a>
   </div>
@@ -2264,7 +2264,7 @@ function abrirMatAvanco(opts) {
     maSubCampos = 'Tempo de estudo registrado — o conteúdo segue em andamento. Informe o material usado e a progressão pra atualizar o acumulado.';
   } else {
     document.getElementById('maTitulo').innerHTML = 'Avanço no <i>material</i>';
-    maSubCampos = 'Registre quanto você avançou — o material só é concluído quando você marcar ✓.';
+    maSubCampos = 'Registre quanto você avançou — vale também pra leitura feita fora de uma sessão cronometrada, sem depender das horas registradas. O material é concluído ao atingir o total ou quando você marcar ✓.';
   }
   maMontarTipos();
   document.getElementById('maNome').value = (maCtx && maCtx.conteudo) || '';
