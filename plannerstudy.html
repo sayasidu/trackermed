@@ -1161,7 +1161,10 @@ function calcularAlocacaoPeriodo(ativas, diasLivresWdsCount, totalDisponivel) {
 }
 
 // Distribui blocos no período respeitando prioridade, aulas, blocos manuais,
-// limite diário (disp[dayKey]) e meta semanal por disciplina.
+// limite diário (disp[dayKey]), meta semanal e dias fixos por disciplina.
+// A distribuição é intercalada entre as matérias: cada uma espalha sua carga
+// pelos dias permitidos aproveitando a folga de cada dia, em vez de concentrar
+// tudo no primeiro dia vazio que encontrar.
 // Quando metas > disponibilidade do período, faz distribuição proporcional ponderada por prioridade.
 function gerarAuto() {
   const discList = loadDisc();
@@ -1254,79 +1257,147 @@ function gerarAuto() {
 
   const novosPorWk = {};
   const toHHMM = (h) => String(Math.floor(h)).padStart(2, '0') + ':' + (h % 1 ? '30' : '00');
+  const dKeyOf = (dd) => ocupKey(dd.wkKey, dd.wd);
 
-  alvoOrdem.forEach(item => {
+  // Estado por matéria: quanto ainda falta distribuir (descontando o que já está
+  // agendado no período — blocos manuais e blocos preservados de outras matérias)
+  // e em quais dias do período ela pode entrar (dias fixos, quando definidos).
+  const estado = alvoOrdem.map(item => {
     const d = item.disc;
     const jaAgendado = wksTocadas.reduce((s, wk) =>
       s + (plan[wk] || [])
         .filter(b => b.discId === d.id && b.tipo === 'estudo')
         .reduce((ss, b) => ss + (parseTime(b.fim) - parseTime(b.ini)), 0)
     , 0);
-    let falta = item.alvo - jaAgendado;
-    if (falta <= 0.1) return;
-    const faixas = FAIXAS[d.prioridade || 'media'] || FAIXAS.media;
+    let falta = Math.max(0, item.alvo - jaAgendado);
+    // Arredonda pra cima em meias-horas (granularidade dos blocos)
+    falta = falta <= 0.1 ? 0 : Math.ceil(falta * 2 - 0.002) / 2;
+    const temFixos = d.diasFixos && d.diasFixos.length > 0;
+    return {
+      disc: d,
+      falta,
+      diasPermitidos: dias.filter(dd => !temFixos || d.diasFixos.includes(dd.wd))
+    };
+  }).filter(e => e.falta >= 0.5 - 0.001 && e.diasPermitidos.length > 0);
 
-    let guarda = 400;
-    while (falta > 0.1 && guarda-- > 0) {
-      // Candidatos: dias do período com folga (não ultrapassam o limite diário)
-      // Se a disciplina tem diasFixos, filtra apenas dias correspondentes
-      const temFixos = d.diasFixos && d.diasFixos.length > 0;
-      const candidatos = dias
-        .filter(dd => {
-          if (temFixos && !d.diasFixos.includes(dd.wd)) return false;
-          return (dd.capHoras - usoDia[ocupKey(dd.wkKey, dd.wd)]) >= 0.5 - 0.001;
-        })
+  // ---- Fase 1: reserva de quotas por (matéria, dia) ----
+  // Distribuição intercalada: em rodadas, cada matéria reserva meia hora no dia
+  // permitido com melhor folga, descontada a "pressão" das demais matérias que
+  // ainda dependem daquele dia. Assim uma matéria com dias fixos espalha a carga
+  // pelos seus dias aproveitando o tempo livre de cada um, e deixa espaço nos
+  // dias de que outra matéria precisa com mais urgência.
+  const reservado = {};
+  const folgaDia = (dd) => dd.capHoras - usoDia[dKeyOf(dd)] - (reservado[dKeyOf(dd)] || 0);
+  const quota = {};
+  let mudou = true, guardaQ = 400;
+  while (mudou && guardaQ-- > 0) {
+    mudou = false;
+    // Pressão por dia nesta rodada: demanda restante das matérias, repartida
+    // igualmente entre os dias com folga que cada uma ainda pode usar.
+    const pressao = {};
+    const contribPropria = new Map();
+    for (const e of estado) {
+      if (e.falta < 0.5 - 0.001) continue;
+      const opcoes = e.diasPermitidos.filter(dd => folgaDia(dd) >= 0.5 - 0.001);
+      if (opcoes.length === 0) continue;
+      const c = e.falta / opcoes.length;
+      const mapa = {};
+      opcoes.forEach(dd => {
+        const k = dKeyOf(dd);
+        pressao[k] = (pressao[k] || 0) + c;
+        mapa[k] = c;
+      });
+      contribPropria.set(e, mapa);
+    }
+    for (const e of estado) {
+      if (e.falta < 0.5 - 0.001) continue;
+      const propria = contribPropria.get(e) || {};
+      let melhor = null, melhorScore = -Infinity;
+      for (const dd of e.diasPermitidos) { // já em ordem de data — empate fica com o dia mais cedo
+        const f = folgaDia(dd);
+        if (f < 0.5 - 0.001) continue;
+        const k = dKeyOf(dd);
+        const score = f - ((pressao[k] || 0) - (propria[k] || 0));
+        if (score > melhorScore + 0.001) { melhor = dd; melhorScore = score; }
+      }
+      if (!melhor) continue;
+      const k = dKeyOf(melhor);
+      quota[e.disc.id] = quota[e.disc.id] || {};
+      quota[e.disc.id][k] = (quota[e.disc.id][k] || 0) + 0.5;
+      reservado[k] = (reservado[k] || 0) + 0.5;
+      e.falta -= 0.5;
+      mudou = true;
+    }
+  }
+
+  // Tenta colocar um bloco da matéria d no dia dd (1h quando cabe, senão 30min),
+  // respeitando o limite diário e os horários já ocupados nas faixas da prioridade.
+  // Retorna as horas colocadas (0 se não houver folga ou horário livre).
+  const tentarColocar = (dd, d, durMax) => {
+    const dKey = dKeyOf(dd);
+    const folga = dd.capHoras - usoDia[dKey];
+    if (folga < 0.5 - 0.001) return 0;
+    const ocupSet = ensureOcup(dd.wkKey, dd.wd);
+    const faixas = FAIXAS[d.prioridade || 'media'] || FAIXAS.media;
+    for (const [h1, h2] of faixas) {
+      for (let t = h1; t + 0.5 <= h2 + 0.001; t += 0.5) {
+        const s1 = Math.round(t * 2) / 2;
+        if (ocupSet.has(s1)) continue;
+        const cabeHora = folga >= 1 - 0.001 && durMax >= 1 - 0.001 &&
+          t + 1 <= h2 + 0.001 && !ocupSet.has(s1 + 0.5);
+        const dur = cabeHora ? 1 : 0.5;
+        ocupSet.add(s1);
+        if (cabeHora) ocupSet.add(s1 + 0.5);
+        (novosPorWk[dd.wkKey] = novosPorWk[dd.wkKey] || []).push({
+          id: uid(), tipo: 'estudo', discId: d.id, dia: dd.wd,
+          ini: toHHMM(t), fim: toHHMM(t + dur), feito: false, auto: true
+        });
+        usoDia[dKey] += dur;
+        return dur;
+      }
+    }
+    return 0;
+  };
+
+  // ---- Fase 2: converte as quotas em blocos de horário ----
+  // Percorre em ordem de prioridade; o que não couber no relógio de um dia
+  // (conflito com aulas, rotina ou blocos manuais) vira sobra e é reencaixado
+  // em qualquer outro dia permitido com folga.
+  const sobras = [];
+  for (const e of estado) {
+    let sobra = e.falta; // o que a fase 1 não conseguiu reservar
+    for (const dd of e.diasPermitidos) {
+      let q = (quota[e.disc.id] || {})[dKeyOf(dd)] || 0;
+      let guardaB = 200;
+      while (q >= 0.5 - 0.001 && guardaB-- > 0) {
+        const dur = tentarColocar(dd, e.disc, q);
+        if (dur <= 0) break;
+        q -= dur;
+      }
+      sobra += Math.max(0, q);
+    }
+    if (sobra >= 0.5 - 0.001) sobras.push({ disc: e.disc, diasPermitidos: e.diasPermitidos, horas: sobra });
+  }
+  for (const s of sobras) {
+    let falta = s.horas, guardaS = 400;
+    while (falta >= 0.5 - 0.001 && guardaS-- > 0) {
+      const cands = s.diasPermitidos
+        .filter(dd => dd.capHoras - usoDia[dKeyOf(dd)] >= 0.5 - 0.001)
         .sort((a, b) => {
-          const ua = usoDia[ocupKey(a.wkKey, a.wd)];
-          const ub = usoDia[ocupKey(b.wkKey, b.wd)];
-          if (ua !== ub) return ua - ub;
+          const fa = a.capHoras - usoDia[dKeyOf(a)];
+          const fb = b.capHoras - usoDia[dKeyOf(b)];
+          if (fa !== fb) return fb - fa;
           return a.date - b.date;
         });
-      if (candidatos.length === 0) break;
-      let colocou = false;
-      for (const dd of candidatos) {
-        const dKey = ocupKey(dd.wkKey, dd.wd);
-        const folga = dd.capHoras - usoDia[dKey];
-        if (folga < 0.5 - 0.001) continue;
-        const ocupSet = ensureOcup(dd.wkKey, dd.wd);
-        for (const [h1, h2] of faixas) {
-          for (let t = h1; t + 0.5 <= h2 + 0.001; t += 0.5) {
-            const s1 = Math.round(t * 2) / 2;
-            const podeHora = (folga >= 1 - 0.001) && (falta >= 1 - 0.001) && (t + 1 <= h2 + 0.001);
-            if (podeHora) {
-              const s2 = s1 + 0.5;
-              if (ocupSet.has(s1) || ocupSet.has(s2)) continue;
-              ocupSet.add(s1); ocupSet.add(s2);
-              const novo = {
-                id: uid(), tipo: 'estudo', discId: d.id, dia: dd.wd,
-                ini: toHHMM(t), fim: toHHMM(t + 1), feito: false, auto: true
-              };
-              (novosPorWk[dd.wkKey] = novosPorWk[dd.wkKey] || []).push(novo);
-              falta -= 1;
-              usoDia[dKey] += 1;
-              colocou = true;
-              break;
-            } else {
-              if (ocupSet.has(s1)) continue;
-              ocupSet.add(s1);
-              const novo = {
-                id: uid(), tipo: 'estudo', discId: d.id, dia: dd.wd,
-                ini: toHHMM(t), fim: toHHMM(t + 0.5), feito: false, auto: true
-              };
-              (novosPorWk[dd.wkKey] = novosPorWk[dd.wkKey] || []).push(novo);
-              falta -= 0.5;
-              usoDia[dKey] += 0.5;
-              colocou = true;
-              break;
-            }
-          }
-          if (colocou) break;
-        }
-        if (colocou) break;
+      let dur = 0;
+      for (const dd of cands) {
+        dur = tentarColocar(dd, s.disc, falta);
+        if (dur > 0) break;
       }
-      if (!colocou) break;
+      if (dur <= 0) break;
+      falta -= dur;
     }
-  });
+  }
 
   const todosNovos = Object.values(novosPorWk).flat();
   if (todosNovos.length === 0) {
@@ -2080,7 +2151,7 @@ function render() {
     metaBatida = faltaTot < 0.1;
     blocosParaLimpar = (plan[wk] || []).filter(b => b.tipo === 'estudo').length;
     cardH3 = 'Gerar <i>sugestão</i> de estudo';
-    cardHelp = 'Distribui blocos no período respeitando prioridade (alta → manhã, baixa → noite), meta semanal, limite diário, horários já ocupados e a sua rotina fixa (almoço, jantar e academia). Se as metas excederem a disponibilidade do período, a distribuição é feita proporcionalmente, com peso maior para prioridades altas.';
+    cardHelp = 'Distribui blocos no período respeitando prioridade (alta → manhã, baixa → noite), meta semanal, limite diário, horários já ocupados e a sua rotina fixa (almoço, jantar e academia). Matérias com dias fixos são espalhadas entre esses dias, aproveitando o tempo livre de cada um antes de concentrar a carga em um só. Se as metas excederem a disponibilidade do período, a distribuição é feita proporcionalmente, com peso maior para prioridades altas.';
     statusLine = metaBatida
       ? 'Meta da semana batida — todas as horas já estão no calendário.'
       : `Faltam ${faltaTot.toFixed(1)}h p/ bater a meta${urgs ? ` · ${urgs} prova${urgs!==1?'s':''} próxima${urgs!==1?'s':''}` : ''}.`;
