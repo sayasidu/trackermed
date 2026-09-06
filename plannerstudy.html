@@ -160,11 +160,19 @@
 .disp-sugerir:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(194,37,92,.45); }
 /* Rotina fixa (almoço, jantar, academia) */
 .rotina-grid { display: flex; flex-direction: column; gap: 10px; }
-.rotina-row { display: grid; grid-template-columns: 130px auto 1fr; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+.rotina-row { display: grid; grid-template-columns: 130px 1fr; align-items: start; gap: 14px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
 .rotina-row:last-child { border-bottom: none; }
 @media (max-width: 720px) { .rotina-row { grid-template-columns: 1fr; gap: 8px; } }
-.rotina-nome { font-size: 14px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 7px; }
+.rotina-nome { font-size: 14px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 7px; min-height: 30px; }
 .rotina-nome .dot { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.rotina-body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+/* Alternância "mesmo horário todos os dias" × "horário por dia" */
+.rotina-modo { display: inline-flex; align-self: flex-start; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.rotina-modo button { border: none; background: var(--paper); color: var(--muted); padding: 6px 11px; font-size: 11px; font-weight: 600; font-family: inherit; cursor: pointer; letter-spacing: 0.04em; text-transform: uppercase; }
+.rotina-modo button + button { border-left: 1px solid var(--line); }
+.rotina-modo button:hover { color: var(--cobalt); }
+.rotina-modo button.active { background: var(--ink); color: var(--paper); }
+.rotina-unico { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .rotina-times { display: flex; align-items: center; gap: 6px; }
 .rotina-times input { padding: 8px; border: 1px solid var(--line); background: var(--paper); font-size: 14px; font-family: inherit; font-variant-numeric: tabular-nums; border-radius: 8px; transition: border-color .2s var(--ease), box-shadow .2s var(--ease); }
 .rotina-times input:focus { outline: none; border-color: var(--cobalt); box-shadow: var(--ring); }
@@ -173,6 +181,21 @@
 .rotina-dias button { border: 1px solid var(--line); background: var(--paper); color: var(--muted); padding: 6px 9px; font-size: 11px; font-weight: 600; font-family: inherit; cursor: pointer; letter-spacing: 0.04em; text-transform: uppercase; }
 .rotina-dias button:hover { border-color: var(--cobalt); }
 .rotina-dias button.active { background: var(--cobalt); border-color: var(--cobalt); color: #fff; }
+/* Modo "horário por dia": cada dia da semana com o seu próprio início/fim */
+.rotina-pordia { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px; }
+.rotina-pordia .dia-slot { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid var(--line); background: var(--paper); border-radius: 8px; transition: border-color .2s var(--ease); }
+.rotina-pordia .dia-slot .dia-lbl { width: 32px; flex: none; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.rotina-pordia .dia-slot.on { border-color: var(--cobalt); }
+.rotina-pordia .dia-slot.on .dia-lbl { color: var(--cobalt); }
+.rotina-pordia .dia-slot.invalid { border-color: var(--rose); }
+.rotina-pordia .dia-slot.invalid .dia-lbl { color: var(--rose); }
+.rotina-pordia .rotina-times { flex: 1 1 auto; min-width: 0; }
+.rotina-pordia .rotina-times input { padding: 6px 7px; font-size: 13px; background: #fff; flex: 1 1 0; min-width: 0; width: 100%; }
+.rotina-pordia .limpar { flex: none; margin-left: auto; border: none; background: transparent; color: var(--muted); font-size: 17px; line-height: 1; cursor: pointer; padding: 2px 5px; font-family: inherit; visibility: hidden; }
+.rotina-pordia .dia-slot.on .limpar, .rotina-pordia .dia-slot.invalid .limpar { visibility: visible; }
+.rotina-pordia .limpar:hover { color: var(--rose); }
+.rotina-hint { font-size: 12px; color: var(--muted); }
+.rotina-hint b { color: var(--rose); font-weight: 600; }
 .bloco.rotina { border-left-width: 3px; border-left-style: solid; cursor: default; }
 .bloco.rotina .nome { font-weight: 600; font-size: 12px; }
 .bloco.rotina .tempo { opacity: 0.8; font-size: 11px; margin-top: 1px; font-variant-numeric: tabular-nums; }
@@ -458,7 +481,7 @@
 
 <div class="disp-setup">
   <h3>Sua <i>rotina</i> fixa</h3>
-  <div class="help">Informe os horários que você reserva pra <b>almoço</b>, <b>jantar</b> e <b>academia</b> em cada dia da semana. Esses horários ficam bloqueados e o gerador de sugestão encaixa os estudos ao redor deles, deixando o cronograma compatível com a sua rotina. Deixe o horário em branco pra ignorar uma atividade.</div>
+  <div class="help">Informe os horários que você reserva pra <b>almoço</b>, <b>jantar</b> e <b>academia</b> em cada dia da semana. Se o horário muda conforme o dia (treino das 10h às 11h na segunda e das 14h às 15h na quarta, por exemplo), troque pra <b>Horário por dia</b> e defina cada dia separadamente. Esses horários ficam bloqueados e o gerador de sugestão encaixa os estudos ao redor deles, deixando o cronograma compatível com a sua rotina. Deixe o horário em branco pra ignorar uma atividade (ou um dia).</div>
   <div class="rotina-grid" id="rotinaGrid"></div>
 </div>
 
@@ -759,30 +782,88 @@ function renderDisp() {
   });
 }
 
+// Cada atividade da rotina pode ter o horário definido de dois jeitos:
+//   modo 'unico'  → um só `inicio`/`fim`, repetido em todos os `dias` marcados;
+//   modo 'porDia' → `porDia[dia] = { inicio, fim }`, um horário próprio pra cada
+//                   dia da semana (treino às 10h na segunda e às 14h na quarta, p.ex.).
+// Um dia sem horário (ou com fim <= início) é ignorado. Dados antigos, salvos
+// sem `modo`/`porDia`, continuam valendo como modo 'unico'.
+function rotinaPorDiaVazio() {
+  const o = {};
+  DISP_DAYS.forEach(d => o[d.k] = { inicio: '', fim: '' });
+  return o;
+}
+function rotinaNorm(r, a) {
+  const out = { modo: 'unico', inicio: a.defIni, fim: a.defFim, dias: a.defDias.slice(), porDia: rotinaPorDiaVazio() };
+  if (!r || typeof r !== 'object') return out;
+  out.modo = r.modo === 'porDia' ? 'porDia' : 'unico';
+  out.inicio = typeof r.inicio === 'string' ? r.inicio : '';
+  out.fim = typeof r.fim === 'string' ? r.fim : '';
+  out.dias = Array.isArray(r.dias) ? r.dias.filter(k => DIA_IDX[k] !== undefined) : [];
+  if (r.porDia && typeof r.porDia === 'object') {
+    DISP_DAYS.forEach(d => {
+      const s = r.porDia[d.k];
+      if (s && typeof s === 'object') {
+        out.porDia[d.k] = { inicio: typeof s.inicio === 'string' ? s.inicio : '', fim: typeof s.fim === 'string' ? s.fim : '' };
+      }
+    });
+  }
+  return out;
+}
 function loadRotina() {
+  let raw = null;
+  try { raw = JSON.parse(localStorage.getItem(ROTINA_KEY) || 'null'); } catch {}
+  if (!raw || typeof raw !== 'object') raw = {};
   const base = {};
-  ROTINA_ATIVS.forEach(a => base[a.k] = { inicio: a.defIni, fim: a.defFim, dias: a.defDias.slice() });
-  try {
-    const raw = JSON.parse(localStorage.getItem(ROTINA_KEY) || 'null');
-    if (raw && typeof raw === 'object') {
-      ROTINA_ATIVS.forEach(a => {
-        const r = raw[a.k];
-        if (r && typeof r === 'object') {
-          base[a.k] = {
-            inicio: typeof r.inicio === 'string' ? r.inicio : '',
-            fim: typeof r.fim === 'string' ? r.fim : '',
-            dias: Array.isArray(r.dias) ? r.dias.filter(k => DIA_IDX[k] !== undefined) : []
-          };
-        }
-      });
-    }
-  } catch {}
+  ROTINA_ATIVS.forEach(a => base[a.k] = rotinaNorm(raw[a.k], a));
   return base;
 }
 function saveRotina(r) { localStorage.setItem(ROTINA_KEY, JSON.stringify(r)); }
-// Uma atividade só vale na geração se tem horário válido (fim > início) e ao menos um dia marcado.
-function rotinaItemAtivo(r) {
-  return !!(r && r.inicio && r.fim && parseTime(r.fim) > parseTime(r.inicio) && Array.isArray(r.dias) && r.dias.length > 0);
+function horarioValido(ini, fim) { return !!(ini && fim && parseTime(fim) > parseTime(ini)); }
+// Horários efetivos de uma atividade, um por dia da semana em que ela acontece:
+// [{ dia: 'seg', inicio: '10:00', fim: '11:00' }, ...]. É isso que o gerador de
+// sugestão bloqueia e que o calendário desenha.
+function rotinaSlots(r) {
+  if (!r) return [];
+  if (r.modo === 'porDia') {
+    return DISP_DAYS
+      .filter(d => { const s = r.porDia && r.porDia[d.k]; return s && horarioValido(s.inicio, s.fim); })
+      .map(d => ({ dia: d.k, inicio: r.porDia[d.k].inicio, fim: r.porDia[d.k].fim }));
+  }
+  if (!horarioValido(r.inicio, r.fim)) return [];
+  return (r.dias || []).map(k => ({ dia: k, inicio: r.inicio, fim: r.fim }));
+}
+// Classe visual de um dia no modo "por dia": vazio, válido ('on') ou inválido (fim <= início / só um lado preenchido).
+function rotinaSlotClasse(s) {
+  if (!s || (!s.inicio && !s.fim)) return '';
+  return horarioValido(s.inicio, s.fim) ? 'on' : 'invalid';
+}
+function trocarModoRotina(k, modo) {
+  const atual = loadRotina();
+  const r = atual[k];
+  if (!r || r.modo === modo) return;
+  if (modo === 'porDia') {
+    // Leva o horário único pros dias marcados que ainda não têm horário próprio,
+    // pra pessoa só ajustar os dias que fogem do padrão.
+    if (horarioValido(r.inicio, r.fim)) {
+      r.dias.forEach(dk => {
+        const s = r.porDia[dk];
+        if (s && !s.inicio && !s.fim) r.porDia[dk] = { inicio: r.inicio, fim: r.fim };
+      });
+    }
+  } else {
+    // Volta pro horário único: os dias marcados passam a ser os que tinham horário
+    // e, se o horário único estava vazio, adota o do primeiro dia configurado.
+    const slots = rotinaSlots(r);
+    if (slots.length) {
+      r.dias = slots.map(s => s.dia);
+      if (!r.inicio && !r.fim) { r.inicio = slots[0].inicio; r.fim = slots[0].fim; }
+    }
+  }
+  r.modo = modo;
+  saveRotina(atual);
+  renderRotina();
+  render();
 }
 function renderRotina() {
   const grid = document.getElementById('rotinaGrid');
@@ -790,23 +871,60 @@ function renderRotina() {
   const data = loadRotina();
   grid.innerHTML = ROTINA_ATIVS.map(a => {
     const r = data[a.k];
-    const dias = DISP_DAYS.map(day =>
-      `<button type="button" data-rot="${a.k}" data-dia="${day.k}" class="${r.dias.includes(day.k) ? 'active' : ''}">${day.lbl}</button>`
-    ).join('');
+    const porDia = r.modo === 'porDia';
+    const modo = `<div class="rotina-modo" role="group" aria-label="${a.lbl}: como definir o horário">
+        <button type="button" data-rot="${a.k}" data-modo="unico" class="${porDia ? '' : 'active'}" aria-pressed="${!porDia}" title="O mesmo horário em todos os dias marcados">Mesmo horário</button>
+        <button type="button" data-rot="${a.k}" data-modo="porDia" class="${porDia ? 'active' : ''}" aria-pressed="${porDia}" title="Um horário diferente pra cada dia da semana">Horário por dia</button>
+      </div>`;
+    let corpo;
+    if (porDia) {
+      const slots = DISP_DAYS.map(day => {
+        const s = r.porDia[day.k];
+        return `<div class="dia-slot ${rotinaSlotClasse(s)}">
+          <span class="dia-lbl">${day.lbl}</span>
+          <div class="rotina-times">
+            <input type="time" data-rot="${a.k}" data-dia="${day.k}" data-field="inicio" value="${s.inicio}" aria-label="${a.lbl} ${day.lbl} início">
+            <span class="sep">—</span>
+            <input type="time" data-rot="${a.k}" data-dia="${day.k}" data-field="fim" value="${s.fim}" aria-label="${a.lbl} ${day.lbl} fim">
+          </div>
+          <button type="button" class="limpar" data-rot="${a.k}" data-dia="${day.k}" title="Limpar ${day.lbl}" aria-label="Limpar horário de ${a.lbl} em ${day.lbl}">×</button>
+        </div>`;
+      }).join('');
+      corpo = `<div class="rotina-pordia">${slots}</div>
+        <div class="rotina-hint">Deixe em branco os dias sem ${a.lbl.toLowerCase()}. O fim precisa ser depois do início — um dia em <b>vermelho</b> é ignorado até você corrigir.</div>`;
+    } else {
+      const dias = DISP_DAYS.map(day =>
+        `<button type="button" data-rot="${a.k}" data-dia="${day.k}" class="${r.dias.includes(day.k) ? 'active' : ''}">${day.lbl}</button>`
+      ).join('');
+      corpo = `<div class="rotina-unico">
+        <div class="rotina-times">
+          <input type="time" data-rot="${a.k}" data-field="inicio" value="${r.inicio}" aria-label="${a.lbl} início">
+          <span class="sep">—</span>
+          <input type="time" data-rot="${a.k}" data-field="fim" value="${r.fim}" aria-label="${a.lbl} fim">
+        </div>
+        <div class="rotina-dias">${dias}</div>
+      </div>`;
+    }
     return `<div class="rotina-row">
       <div class="rotina-nome"><span class="dot" style="background:${a.cor}"></span>${a.icon} ${a.lbl}</div>
-      <div class="rotina-times">
-        <input type="time" data-rot="${a.k}" data-field="inicio" value="${r.inicio}" aria-label="${a.lbl} início">
-        <span class="sep">—</span>
-        <input type="time" data-rot="${a.k}" data-field="fim" value="${r.fim}" aria-label="${a.lbl} fim">
-      </div>
-      <div class="rotina-dias">${dias}</div>
+      <div class="rotina-body">${modo}${corpo}</div>
     </div>`;
   }).join('');
+  grid.querySelectorAll('.rotina-modo button').forEach(btn => {
+    btn.addEventListener('click', () => trocarModoRotina(btn.dataset.rot, btn.dataset.modo));
+  });
   grid.querySelectorAll('input[type="time"]').forEach(inp => {
     inp.addEventListener('input', () => {
       const atual = loadRotina();
-      atual[inp.dataset.rot][inp.dataset.field] = inp.value;
+      const r = atual[inp.dataset.rot];
+      if (inp.dataset.dia) {
+        const s = r.porDia[inp.dataset.dia];
+        s[inp.dataset.field] = inp.value;
+        const slot = inp.closest('.dia-slot');
+        if (slot) slot.className = 'dia-slot ' + rotinaSlotClasse(s);
+      } else {
+        r[inp.dataset.field] = inp.value;
+      }
       saveRotina(atual);
       render();
     });
@@ -820,6 +938,15 @@ function renderRotina() {
       if (i >= 0) { dias.splice(i, 1); btn.classList.remove('active'); }
       else { dias.push(dia); btn.classList.add('active'); }
       saveRotina(atual);
+      render();
+    });
+  });
+  grid.querySelectorAll('.rotina-pordia .limpar').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const atual = loadRotina();
+      atual[btn.dataset.rot].porDia[btn.dataset.dia] = { inicio: '', fim: '' };
+      saveRotina(atual);
+      renderRotina();
       render();
     });
   });
@@ -1228,11 +1355,9 @@ function gerarAuto() {
       if (a.inicio && a.fim) marcar(wk, dia, parseTime(a.inicio), parseTime(a.fim));
     }));
     (plan[wk] || []).forEach(b => marcar(wk, b.dia, parseTime(b.ini), parseTime(b.fim)));
-    ROTINA_ATIVS.forEach(a => {
-      const r = rotina[a.k];
-      if (!rotinaItemAtivo(r)) return;
-      r.dias.forEach(dk => marcar(wk, DIA_IDX[dk], parseTime(r.inicio), parseTime(r.fim)));
-    });
+    ROTINA_ATIVS.forEach(a => rotinaSlots(rotina[a.k]).forEach(s =>
+      marcar(wk, DIA_IDX[s.dia], parseTime(s.inicio), parseTime(s.fim))
+    ));
   });
 
   // Uso por dia (em horas), conta blocos manuais existentes
@@ -1634,15 +1759,15 @@ function renderGrade(discList) {
     // Rotina fixa (almoço, jantar, academia)
     const diaKey = (DISP_DAYS.find(x => x.wd === d.getDay()) || {}).k;
     ROTINA_ATIVS.forEach(a => {
-      const r = rotina[a.k];
-      if (!rotinaItemAtivo(r) || !r.dias.includes(diaKey)) return;
-      const ini = parseTime(r.inicio), fim = parseTime(r.fim);
+      const s = rotinaSlots(rotina[a.k]).find(x => x.dia === diaKey);
+      if (!s) return;
+      const ini = parseTime(s.inicio), fim = parseTime(s.fim);
       if (fim <= HORA_INI || ini >= HORA_FIM+1) return;
       const top = Math.max(0, ini - HORA_INI) * 50;
       const h = (fim - ini) * 50;
       body += `<div class="bloco rotina" style="top:${top}px;height:${h}px;background:${a.cor}1A;color:${hexDarken(a.cor,40)};border-left-color:${a.cor}" title="${a.lbl} — rotina fixa">
         <div class="nome">${a.icon} ${escH(a.lbl)}</div>
-        <div class="tempo">${escH(r.inicio)}—${escH(r.fim)}</div>
+        <div class="tempo">${escH(s.inicio)}—${escH(s.fim)}</div>
       </div>`;
     });
 
