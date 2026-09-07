@@ -904,7 +904,7 @@ function pickMeme(seed, lista) {
 
 // Timer state
 function makeTimerState() {
-  return { discId: null, discNome: '', conteudo: '', conteudoId: null, topicoId: null, focusSec: 0, pauseSec: 0, sections: 1, currentSection: 1, mode: 'focus', leftSec: 0, running: false, intervalId: null, linkedBlocoId: null, fromModal: false, revisar: false, studiedSec: 0, freeMode: false, elapsedSec: 0, revHistId: null, extraFlow: false, plannedTotalMin: 0, pomodoroMin: 0, accumStudiedMin: 0, accumStudiedSec: 0 };
+  return { discId: null, discNome: '', conteudo: '', conteudoId: null, topicoId: null, focusSec: 0, pauseSec: 0, sections: 1, currentSection: 1, mode: 'focus', leftSec: 0, running: false, intervalId: null, anchorMs: null, anchorSec: 0, fracMs: 0, linkedBlocoId: null, fromModal: false, revisar: false, studiedSec: 0, freeMode: false, elapsedSec: 0, revHistId: null, extraFlow: false, plannedTotalMin: 0, pomodoroMin: 0, accumStudiedMin: 0, accumStudiedSec: 0 };
 }
 let timerState = makeTimerState();
 function beep() {
@@ -913,7 +913,7 @@ function beep() {
 function timerOpen(discId, discNome, mins, linkedBlocoId, opts) {
   opts = opts || {};
   if (timerState.running && !confirm('Já tem um cronômetro rodando. Substituir?')) return;
-  if (timerState.intervalId) clearInterval(timerState.intervalId);
+  timerStop();
   const sections = Math.max(1, Math.min(5, parseInt(opts.sections) || 1));
   const pauseMins = sections > 1 ? Math.max(0, parseInt(opts.pauseMins) || 0) : 0;
   timerState = {
@@ -923,7 +923,7 @@ function timerOpen(discId, discNome, mins, linkedBlocoId, opts) {
     focusSec: mins*60, pauseSec: pauseMins*60,
     sections, currentSection: 1, mode: 'focus',
     leftSec: mins*60,
-    running: false, intervalId: null,
+    running: false, intervalId: null, anchorMs: null, anchorSec: 0, fracMs: 0,
     linkedBlocoId: linkedBlocoId || null,
     fromModal: !!opts.fromModal, revisar: !!opts.revisar,
     studiedSec: 0,
@@ -945,7 +945,7 @@ function timerOpen(discId, discNome, mins, linkedBlocoId, opts) {
 function timerOpenFree(discId, discNome, linkedBlocoId, opts) {
   opts = opts || {};
   if (timerState.running && !confirm('Já tem um cronômetro rodando. Substituir?')) return;
-  if (timerState.intervalId) clearInterval(timerState.intervalId);
+  timerStop();
   timerState = {
     discId, discNome,
     conteudo: opts.conteudo || '',
@@ -953,7 +953,7 @@ function timerOpenFree(discId, discNome, linkedBlocoId, opts) {
     focusSec: 0, pauseSec: 0,
     sections: 1, currentSection: 1, mode: 'focus',
     leftSec: 0,
-    running: false, intervalId: null,
+    running: false, intervalId: null, anchorMs: null, anchorSec: 0, fracMs: 0,
     linkedBlocoId: linkedBlocoId || null,
     fromModal: !!opts.fromModal, revisar: !!opts.revisar,
     studiedSec: 0,
@@ -1017,57 +1017,99 @@ function updateClock() {
   }
 }
 function timerClose() {
-  if (timerState.intervalId) clearInterval(timerState.intervalId);
+  timerStop();
   timerState = makeTimerState();
   const fl = document.getElementById('timerFloat');
   fl.classList.remove('open', 'pausing');
   document.getElementById('tPhase').classList.remove('show', 'pause');
   document.title = 'Histórico · TrackerMed';
 }
+// ===== Contagem baseada no relógio =====
+// Em vez de somar/subtrair 1s a cada disparo do setInterval, o tempo é
+// calculado a partir de um instante de referência (anchorMs, via Date.now()).
+// Navegadores limitam ou suspendem o setInterval em abas/janelas em segundo
+// plano (Chrome passa a disparar 1x/min; iOS pausa o JS por completo), então
+// contar disparos perdia tempo. O relógio do sistema não para: ao voltar, o
+// valor exibido já é o real, e as fases (foco/pausa) que venceram enquanto a
+// página estava escondida são fechadas na ordem, sem perder nada.
+function timerAnchor(sec, atMs) {
+  timerState.anchorMs = atMs != null ? atMs : Date.now();
+  timerState.anchorSec = sec;
+}
+function timerStart() {
+  if (timerState.intervalId) clearInterval(timerState.intervalId);
+  // fracMs devolve a fração de segundo já consumida antes de uma pausa, pra
+  // não perder até 1s a cada pausar/retomar.
+  timerAnchor(timerState.freeMode ? timerState.elapsedSec : timerState.leftSec, Date.now() - (timerState.fracMs || 0));
+  timerState.fracMs = 0;
+  timerState.running = true;
+  timerState.intervalId = setInterval(onTick, 500);
+}
+function timerStop() {
+  if (timerState.intervalId) clearInterval(timerState.intervalId);
+  timerState.intervalId = null;
+  timerState.anchorMs = null;
+  timerState.fracMs = 0;
+  timerState.running = false;
+}
+// Recalcula elapsedSec/leftSec a partir do relógio. Chamar antes de ler esses
+// campos (pausar, concluir, fim de sessão) garante o valor real mesmo que o
+// último tick tenha ficado preso em segundo plano.
+function syncTimer(nowMs) {
+  if (!timerState.running || timerState.anchorMs == null) return;
+  const now = nowMs != null ? nowMs : Date.now();
+  const elapsed = Math.floor(Math.max(0, now - timerState.anchorMs) / 1000);
+  if (timerState.freeMode) timerState.elapsedSec = timerState.anchorSec + elapsed;
+  else timerState.leftSec = timerState.anchorSec - elapsed;
+}
 function timerToggle() {
   if (!timerState.running) {
-    timerState.running = true;
+    timerStart();
     document.getElementById('tPlayBtn').textContent = 'Pausar';
-    timerState.intervalId = setInterval(onTick, 1000);
   } else {
-    clearInterval(timerState.intervalId);
-    timerState.running = false;
+    const now = Date.now();
+    syncTimer(now);
+    const frac = Math.max(0, now - timerState.anchorMs) % 1000;
+    timerStop();
+    timerState.fracMs = frac;
     document.getElementById('tPlayBtn').textContent = 'Retomar';
   }
+  updateClock();
 }
 function onTick() {
-  if (timerState.freeMode) {
-    timerState.elapsedSec++;
-    updateClock();
-    return;
+  if (!timerState.running) return;
+  syncTimer();
+  if (!timerState.freeMode) {
+    // Pode ter vencido mais de uma fase enquanto a aba estava em segundo
+    // plano: fecha uma por vez, ancorando a seguinte no instante exato em que
+    // a anterior terminou — o excedente já conta pra próxima fase.
+    let guard = 0;
+    while (timerState.running && timerState.leftSec <= 0 && guard < 20) {
+      const phaseEndMs = timerState.anchorMs + timerState.anchorSec * 1000;
+      timerPhaseEnded(phaseEndMs, guard > 0);
+      syncTimer();
+      guard++;
+    }
   }
-  timerState.leftSec--;
-  updateClock();
-  if (timerState.leftSec <= 0) {
-    clearInterval(timerState.intervalId);
-    timerState.running = false;
-    beep();
-    if (timerState.mode === 'focus') {
-      if (timerState.currentSection < timerState.sections) {
-        timerState.studiedSec += timerState.focusSec;
-        if (timerState.pauseSec > 0) {
-          timerState.mode = 'pause';
-          timerState.leftSec = timerState.pauseSec;
-          updatePhaseUI();
-          updateClock();
-          document.getElementById('tPlayBtn').textContent = 'Pausar';
-          timerState.running = true;
-          timerState.intervalId = setInterval(onTick, 1000);
-        } else {
-          timerState.currentSection++;
-          timerState.leftSec = timerState.focusSec;
-          updatePhaseUI();
-          updateClock();
-          document.getElementById('tPlayBtn').textContent = 'Pausar';
-          timerState.running = true;
-          timerState.intervalId = setInterval(onTick, 1000);
-        }
-      } else if (timerState.extraFlow && timerState.plannedTotalMin > 0) {
+  if (timerState.running) updateClock();
+}
+// Fim de uma fase (foco ou pausa): avança pra próxima ou encerra a sessão.
+// `silent` evita empilhar beeps quando várias fases venceram de uma vez.
+function timerPhaseEnded(phaseEndMs, silent) {
+  if (!silent) beep();
+  if (timerState.mode === 'focus') {
+    if (timerState.currentSection < timerState.sections) {
+      timerState.studiedSec += timerState.focusSec;
+      if (timerState.pauseSec > 0) {
+        timerState.mode = 'pause';
+        timerState.leftSec = timerState.pauseSec;
+      } else {
+        timerState.currentSection++;
+        timerState.leftSec = timerState.focusSec;
+      }
+    } else {
+      timerStop();
+      if (timerState.extraFlow && timerState.plannedTotalMin > 0) {
         // Estudo extra com tempo planejado: não inicia a próxima sessão
         // sozinho — acumula o tempo e pergunta se o aluno quer continuar.
         extraSessionDone();
@@ -1075,22 +1117,21 @@ function onTick() {
         // última seção: timerFinish soma o tempo restante (focusSec - 0 = focusSec)
         timerFinish(true);
       }
-    } else {
-      // fim da pausa -> próxima seção de foco
-      timerState.mode = 'focus';
-      timerState.currentSection++;
-      timerState.leftSec = timerState.focusSec;
-      updatePhaseUI();
-      updateClock();
-      document.getElementById('tPlayBtn').textContent = 'Pausar';
-      timerState.running = true;
-      timerState.intervalId = setInterval(onTick, 1000);
+      return;
     }
+  } else {
+    // fim da pausa -> próxima seção de foco
+    timerState.mode = 'focus';
+    timerState.currentSection++;
+    timerState.leftSec = timerState.focusSec;
   }
+  timerAnchor(timerState.leftSec, phaseEndMs);
+  updatePhaseUI();
+  updateClock();
+  document.getElementById('tPlayBtn').textContent = 'Pausar';
 }
 function timerReset() {
-  if (timerState.intervalId) clearInterval(timerState.intervalId);
-  timerState.running = false;
+  timerStop();
   timerState.mode = 'focus';
   timerState.currentSection = 1;
   timerState.studiedSec = 0;
@@ -1101,8 +1142,8 @@ function timerReset() {
   document.getElementById('tPlayBtn').textContent = 'Iniciar';
 }
 function timerFinish(auto) {
-  if (timerState.intervalId) clearInterval(timerState.intervalId);
-  timerState.running = false;
+  syncTimer();
+  timerStop();
   // exatoSec preserva a duração medida em SEGUNDOS: é ela que alimenta o
   // cálculo de velocidade (págs/h) via sessaoCtx.segundos. `studied` são os
   // minutos inteiros consolidados que o resto do app usa (blocos, histórico,
@@ -1274,8 +1315,8 @@ function timerFinish(auto) {
 // estudado e abre o modal que mostra o % concluído em relação ao tempo máximo
 // planejado, deixando o aluno decidir se continua ou encerra o estudo.
 function extraSessionDone() {
-  if (timerState.intervalId) clearInterval(timerState.intervalId);
-  timerState.running = false;
+  syncTimer();
+  timerStop();
   // Tempo desta sessão (na última seção o leftSec chega a 0 => sessão completa).
   let sessaoSec = timerState.studiedSec;
   if (timerState.mode === 'focus') sessaoSec += Math.max(0, timerState.focusSec - Math.max(0, timerState.leftSec));
@@ -2572,6 +2613,14 @@ function fecharMatAvanco() { document.getElementById('matAvancoModal').classList
 
 render();
 setInterval(() => { if (!timerState.running) render(); }, 60000);
+
+// Ao voltar pra aba/janela (ou restaurar a página do bfcache), redesenha o
+// cronômetro na hora com o tempo real, sem esperar o próximo tick — que pode
+// ter ficado preso pela limitação de segundo plano do navegador.
+function timerResync() { if (timerState.running) onTick(); }
+document.addEventListener('visibilitychange', () => { if (!document.hidden) timerResync(); });
+window.addEventListener('focus', timerResync);
+window.addEventListener('pageshow', timerResync);
 
 // Atualiza ao detectar mudança no plano ou no feed de revisões em outra aba
 // (por exemplo, quando uma revisão é concluída em revisoes.html).
