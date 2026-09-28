@@ -95,6 +95,10 @@ html[data-theme="dark"] .blk-item .blk-prog .lbl { color: #9AA0AA; }
 
 .extra-btn { background-image: var(--grad-brand); color: var(--paper); border: none; padding: 11px 20px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; letter-spacing: 0.02em; border-radius: 8px; box-shadow: var(--sh-glow); transition: transform .2s var(--ease), box-shadow .2s var(--ease); }
 .extra-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(194,37,92,.45); }
+.extra-btn.secondary { background-image: none; background: var(--card); color: var(--cobalt); border: 1px solid var(--cobalt); box-shadow: none; }
+.extra-btn.secondary:hover { background: var(--cobalt); color: #fff; box-shadow: var(--sh-glow); }
+.sec-acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.opt-grid.c5 { grid-template-columns: repeat(5, 1fr); }
 
 .hist-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; padding: 12px 0; border-bottom: 1px solid #F1F1F1; gap: 14px; }
 .hist-row:last-child { border: none; }
@@ -277,9 +281,12 @@ html[data-theme="dark"] .ma-tipo-btn.active { background: var(--cobalt); color: 
   <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
     <div>
       <h2>Planejado <i>pra hoje</i></h2>
-      <div class="help">Vindos do seu planejamento semanal. Clica ▶ pra iniciar o cronômetro.</div>
+      <div class="help">Vindos do seu planejamento semanal — ou registrados aqui à mão com <b>+ Planejar sessão</b> (matéria, horário de início e tempo planejado). Clica ▶ pra iniciar o cronômetro.</div>
     </div>
-    <button class="extra-btn" onclick="abrirExtra()">+ Estudo extra</button>
+    <div class="sec-acts">
+      <button class="extra-btn secondary" onclick="abrirManual()" title="Registrar à mão uma sessão que você vai (ou já começou a) estudar: matéria, horário de início e tempo planejado">+ Planejar sessão</button>
+      <button class="extra-btn" onclick="abrirExtra()" title="Registrar um estudo já feito ou iniciar o cronômetro fora do planejamento">+ Estudo extra</button>
+    </div>
   </div>
   <div id="planList" class="blk-list" style="margin-top:14px"></div>
 </div>
@@ -455,6 +462,58 @@ html[data-theme="dark"] .ma-tipo-btn.active { background: var(--cobalt); color: 
         <button type="button" class="mbtn-save" onclick="salvarExtraManual()">Registrar agora</button>
         <button type="button" class="mbtn-timer" onclick="salvarExtraTimer()">▶ Cronômetro</button>
         <button type="button" class="mbtn-timer-free" onclick="salvarExtraTimerLivre()" title="Cronômetro livre (sem limite, conta a vontade)">▶ Livre</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: planejar sessão à mão — matéria + horário de início + tempo
+     planejado. Cria um bloco de estudo comum em trackermed.plan.v1 (feito:false,
+     auto:false, manual:true), o mesmo formato dos blocos vindos do Planejamento:
+     entra em "Planejado pra hoje" com ▶ cronômetro, progresso e conclusão, e
+     aparece na grade e no calendário do Planejamento. -->
+<div class="modal-backdrop" id="manualModal" onclick="if(event.target===this) fecharManual()">
+  <div class="modal-box">
+    <button class="mbtn-close" onclick="fecharManual()">×</button>
+    <h2>Planejar <i>sessão</i></h2>
+    <div class="modal-sub">Diga a matéria, quando você começa e quanto tempo pretende estudar. A sessão entra aqui em <b>Planejado pra hoje</b> e no Planejamento, como as sessões geradas automaticamente.</div>
+    <form onsubmit="event.preventDefault(); salvarManual(false);">
+      <div class="mfield"><label>Matéria</label>
+        <select id="mDisc" onchange="mDiscChange()"></select>
+      </div>
+      <div class="mfield" id="mDiscOutraWrap" style="display:none"><label>Nome da matéria</label>
+        <input type="text" id="mDiscOutra" maxlength="80" placeholder="ex: Inglês, Programação, Direito…">
+      </div>
+      <div id="mConteudoWrap">
+        <div class="mfield row2" id="mConteudoSelWrap" style="display:none">
+          <div><label>Conteúdo / Área (opcional)</label><select id="mConteudoSel" onchange="mHier.onConteudoChange()"></select></div>
+          <div><label>Tópico (opcional)</label><select id="mTopicoSel"></select></div>
+        </div>
+        <div class="mfield" id="mConteudoLivreWrap" style="display:none">
+          <label>Conteúdo (opcional)</label>
+          <input type="text" id="mConteudo" maxlength="160" placeholder="ex: capítulo 3, sistema cardiovascular…">
+          <div id="mConteudoHint" style="display:none;font-size:11px;color:#7D6B77;margin-top:6px">Cadastre conteúdos e tópicos em <a href="disciplinas.html" style="color:var(--cobalt);font-weight:600">Disciplinas</a> pra escolher aqui sem digitar.</div>
+        </div>
+      </div>
+      <div class="mfield row2">
+        <div><label>Data</label><input type="date" id="mData" onchange="atualizarManualPreview()"></div>
+        <div><label>Horário de início</label><input type="time" id="mIni" step="300" oninput="atualizarManualPreview()"></div>
+      </div>
+      <div class="mfield"><label>Tempo planejado de estudo</label>
+        <div class="opt-grid c5" id="mDurBtns">
+          <button type="button" class="opt-btn" data-min="30" onclick="setManualDur(30)">30min</button>
+          <button type="button" class="opt-btn" data-min="45" onclick="setManualDur(45)">45min</button>
+          <button type="button" class="opt-btn active" data-min="60" onclick="setManualDur(60)">1h</button>
+          <button type="button" class="opt-btn" data-min="90" onclick="setManualDur(90)">1h30</button>
+          <button type="button" class="opt-btn" data-min="120" onclick="setManualDur(120)">2h</button>
+        </div>
+        <div class="dur-custom" style="margin-top:8px"><input type="number" id="mDurCustom" min="5" max="720" step="5" placeholder="outro valor, em minutos (ex: 100)" oninput="onManualDurCustom()"></div>
+      </div>
+      <div class="live-preview" id="mPreview">Informe o horário de início e o tempo planejado.</div>
+      <div class="mactions">
+        <button type="button" class="mbtn-cancel" onclick="fecharManual()">Cancelar</button>
+        <button type="submit" class="mbtn-save">Salvar</button>
+        <button type="button" class="mbtn-timer" id="mSalvarIniciar" onclick="salvarManual(true)" title="Salva a sessão e já abre o cronômetro pra ela">▶ Salvar e iniciar</button>
       </div>
     </form>
   </div>
@@ -847,13 +906,17 @@ function renderTodayItem(it, plansCount) {
   }
   if (interactive) {
     const editBtn = (b.feito || isRev) ? '' : `<button class="edit-btn" onclick="abrirEditarDuracao('${wk}','${b.id}', ${discNomeAttr}, ${mins})" title="Editar duração">✎</button>`;
-    const playBtn = (!isRev && b.discId)
-      ? `<button class="play-btn" onclick="abrirPlayDuracao('${b.discId}', ${discNomeAttr}, '${b.id}')" title="Iniciar cronômetro">▶</button>`
+    // Sessão que ainda não começou (nada estudado) pode ser removida daqui mesmo.
+    const delBtn = (b.feito || isRev || studiedMin > 0) ? '' : `<button class="edit-btn" onclick="apagarBloco('${wk}','${b.id}')" title="Remover essa sessão do planejamento">🗑</button>`;
+    // ▶ vale pra disciplina cadastrada e pra matéria avulsa (só matNome).
+    const discIdArg = b.discId ? `'${escHtml(b.discId)}'` : 'null';
+    const playBtn = (!isRev && (b.discId || b.matNome))
+      ? `<button class="play-btn" onclick="abrirPlayDuracao(${discIdArg}, ${discNomeAttr}, '${b.id}')" title="Iniciar cronômetro">▶</button>`
       : '<div></div>';
     return `<div class="blk-item ${cls}">
       <div class="horario">${escHtml(b.ini)}—${escHtml(b.fim)}</div>
       <div><div class="nome">${prefix}${escHtml(discNome)}${tag}</div><div class="motivo">${motivoBase}${b.extra && !isRev?' · extra':''}${conteudoLine}</div></div>
-      <div class="mins"><span class="mins-wrap">${minsLabel}${editBtn}</span></div>
+      <div class="mins"><span class="mins-wrap">${minsLabel}${editBtn}${delBtn}</span></div>
       ${playBtn}
       <button class="check-btn" onclick="toggleFeito('${wk}', '${b.id}')" title="${isRev?'Marcar revisão como feita':'Alternar concluído'}">${b.feito?'✓':'○'}</button>
       ${progHTML}
@@ -1633,7 +1696,7 @@ function toggleFeito(wk, blocoId) {
   render();
 }
 function apagarBloco(wk, blocoId) {
-  if (!confirm('Apagar esse registro?')) return;
+  if (!confirm('Remover essa sessão do planejamento?')) return;
   const plan = loadPlan();
   const alvo = (plan[wk]||[]).find(b => b.id === blocoId);
   plan[wk] = (plan[wk]||[]).filter(b => b.id !== blocoId);
@@ -1827,6 +1890,155 @@ function salvarExtraTimerLivre() {
   const revisar = getRevisarSelected();
   fecharExtra();
   timerOpenFree(mat.discId, mat.nome, null, { fromModal: true, revisar, conteudo: cont.conteudo, conteudoId: cont.conteudoId, topicoId: cont.topicoId });
+}
+
+// ===== Planejar sessão à mão (matéria + início + tempo planejado) =========
+// Mesmo formato do Planejamento: vira um bloco de estudo comum em PLAN_KEY
+// (feito:false, auto:false, manual:true). Por isso entra na lista de hoje com
+// ▶/✎/○ e barra de progresso, e a conclusão segue o fluxo normal (cronômetro →
+// recurso utilizado → feed do histórico), igual aos blocos gerados automaticamente.
+const mHier = conteudosEngine().ctrl({ sel: 'mConteudoSel', topico: 'mTopicoSel', selWrap: 'mConteudoSelWrap', livreWrap: 'mConteudoLivreWrap', livre: 'mConteudo', hint: 'mConteudoHint' });
+const MANUAL_DUR_OPTS = [30, 45, 60, 90, 120];
+let manualDur = 60;
+function hhmmToMin(t) {
+  if (!t || typeof t !== 'string') return NaN;
+  const [h, m] = t.split(':').map(Number);
+  if (isNaN(h) || isNaN(m)) return NaN;
+  return h * 60 + m;
+}
+function minToHHMM(min) { return String(Math.floor(min / 60)).padStart(2, '0') + ':' + String(min % 60).padStart(2, '0'); }
+function manualParseDate(s) {
+  if (!s) return null;
+  const [y, m, d] = s.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d, 12, 0, 0);
+}
+// Hora atual (Cuiabá) arredondada pra baixo em 5min — sugestão de início.
+function horaAgoraArredondada() {
+  const n = nowCuiaba();
+  return minToHHMM(n.getHours() * 60 + Math.floor(n.getMinutes() / 5) * 5);
+}
+function abrirManual(pre) {
+  pre = pre || {};
+  const sel = document.getElementById('mDisc');
+  const discList = loadDisc().filter(d => d.status === 'em-curso' || !d.status);
+  sel.innerHTML = discList.map(d => `<option value="${escHtml(d.id)}">${escHtml(d.nome || 'Sem nome')}</option>`).join('')
+    + '<option value="__outra__">+ Outra matéria…</option>';
+  if (pre.discId && discList.some(d => d.id === pre.discId)) sel.value = pre.discId;
+  document.getElementById('mDiscOutra').value = '';
+  mDiscChange();
+  document.getElementById('mData').value = pre.data || todayKey();
+  document.getElementById('mIni').value = pre.ini || horaAgoraArredondada();
+  document.getElementById('mDurCustom').value = '';
+  setManualDur(pre.dur || 60);
+  document.getElementById('manualModal').classList.add('open');
+  setTimeout(() => sel.focus(), 50);
+}
+function fecharManual() { document.getElementById('manualModal').classList.remove('open'); }
+function mDiscChange() {
+  const v = document.getElementById('mDisc').value;
+  const outra = v === '__outra__';
+  document.getElementById('mDiscOutraWrap').style.display = outra ? '' : 'none';
+  mHier.montar(outra ? null : v, {});
+  if (outra) setTimeout(() => document.getElementById('mDiscOutra').focus(), 30);
+}
+function setManualDur(min, viaCustom) {
+  manualDur = min;
+  document.querySelectorAll('#mDurBtns .opt-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.min) === min));
+  if (!viaCustom) document.getElementById('mDurCustom').value = MANUAL_DUR_OPTS.includes(min) ? '' : min;
+  atualizarManualPreview();
+}
+function onManualDurCustom() {
+  const v = parseInt(document.getElementById('mDurCustom').value);
+  if (v > 0) setManualDur(v, true);
+  else atualizarManualPreview();
+}
+function atualizarManualPreview() {
+  const box = document.getElementById('mPreview');
+  const dataStr = document.getElementById('mData').value;
+  // "Salvar e iniciar" só faz sentido pra sessão de hoje.
+  const btnIniciar = document.getElementById('mSalvarIniciar');
+  if (btnIniciar) btnIniciar.style.display = (dataStr === todayKey()) ? '' : 'none';
+  const iniMin = hhmmToMin(document.getElementById('mIni').value);
+  if (isNaN(iniMin) || !(manualDur > 0)) {
+    box.classList.remove('on');
+    box.textContent = 'Informe o horário de início e o tempo planejado.';
+    return;
+  }
+  const fimMin = iniMin + manualDur;
+  if (fimMin > 24 * 60) {
+    box.classList.remove('on');
+    box.innerHTML = '<span style="color:var(--rose)">A sessão passaria da meia-noite — reduza o tempo ou ajuste o início.</span>';
+    return;
+  }
+  const dt = manualParseDate(dataStr);
+  let diaLbl = '';
+  if (dt) diaLbl = (dataStr === todayKey() ? 'Hoje' : dt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })) + ' · ';
+  box.classList.add('on');
+  box.innerHTML = `${escHtml(diaLbl)}começa às <b>${minToHHMM(iniMin)}</b>, termina às <b>${minToHHMM(fimMin)}</b> · <b>${fmtHrange(manualDur)}</b> de estudo planejado.`;
+}
+// O que já ocupa o mesmo horário naquele dia (blocos e aulas) — só pra avisar.
+function conflitosNoDia(wk, dia, iniH, fimH) {
+  const out = [];
+  const discList = loadDisc();
+  const discById = {}; discList.forEach(d => { discById[d.id] = d; });
+  const cruza = (a1, a2) => parseTime(a1) < fimH && parseTime(a2) > iniH;
+  ((loadPlan()[wk]) || []).forEach(b => {
+    if (!b || b.dia !== dia || !b.ini || !b.fim || !cruza(b.ini, b.fim)) return;
+    const d = b.discId ? discById[b.discId] : null;
+    const isRev = b.tipo === 'revisao' || b.revisao;
+    out.push(`${(d && d.nome) || b.matNome || (isRev ? 'Revisão' : 'Estudo')} (${b.ini}–${b.fim})`);
+  });
+  const DIA_IDX = { dom:0, seg:1, ter:2, qua:3, qui:4, sex:5, sab:6 };
+  discList.forEach(d => (d.aulas || []).forEach(a => {
+    if (DIA_IDX[a.dia] !== dia || !a.inicio || !a.fim || !cruza(a.inicio, a.fim)) return;
+    out.push(`aula de ${d.nome} (${a.inicio}–${a.fim})`);
+  }));
+  return out;
+}
+function salvarManual(iniciar) {
+  const discVal = document.getElementById('mDisc').value;
+  let discId = null, matNome = null, nome;
+  if (discVal === '__outra__') {
+    matNome = (document.getElementById('mDiscOutra').value || '').trim();
+    if (!matNome) { alert('Informe o nome da matéria.'); document.getElementById('mDiscOutra').focus(); return; }
+    nome = matNome;
+  } else {
+    const d = loadDisc().find(x => x.id === discVal);
+    if (!d) { alert('Selecione uma matéria.'); return; }
+    discId = d.id; nome = d.nome;
+  }
+  const dataStr = document.getElementById('mData').value;
+  const dt = manualParseDate(dataStr);
+  if (!dt) { alert('Informe a data da sessão.'); return; }
+  const iniMin = hhmmToMin(document.getElementById('mIni').value);
+  if (isNaN(iniMin)) { alert('Informe o horário de início.'); return; }
+  if (!(manualDur > 0)) { alert('Informe o tempo planejado de estudo.'); return; }
+  const fimMin = iniMin + manualDur;
+  if (fimMin > 24 * 60) { alert('A sessão passaria da meia-noite — reduza o tempo ou ajuste o início.'); return; }
+  const ini = minToHHMM(iniMin), fim = minToHHMM(fimMin);
+  const wk = weekKey(dt), dia = dt.getDay();
+  const conf = conflitosNoDia(wk, dia, iniMin / 60, fimMin / 60);
+  if (conf.length && !confirm(`Esse horário já tem: ${conf.join(', ')}.\n\nAdicionar a sessão mesmo assim?`)) return;
+  const cont = mHier.ler();
+  const plan = loadPlan();
+  if (!plan[wk]) plan[wk] = [];
+  const bloco = {
+    id: uid(), tipo: 'estudo', discId,
+    conteudo: cont.conteudo, conteudoId: cont.conteudoId, topicoId: cont.topicoId,
+    dia, ini, fim, feito: false, auto: false, manual: true, criadoEm: new Date().toISOString()
+  };
+  if (matNome) bloco.matNome = matNome;
+  plan[wk].push(bloco);
+  savePlan(plan);
+  fecharManual();
+  render();
+  const hoje = dataStr === todayKey();
+  if (iniciar && hoje) { abrirPlayDuracao(discId, nome, bloco.id); return; }
+  if (!hoje) {
+    const lbl = dt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
+    alert(`Sessão de ${nome} registrada pra ${lbl}, ${ini}–${fim}. Ela já aparece no Planejamento e, no dia, aqui em "Planejado pra hoje".`);
+  }
 }
 
 // Modal duração (escolher antes do play, ou editar duração planejada)
@@ -2080,7 +2292,7 @@ function render() {
   const plEl = document.getElementById('planList');
   const sess = loadSess();
   if (todayItems.length === 0 && aulasHoje.length === 0) {
-    plEl.innerHTML = `<div class="empty-state">Nada planejado pra hoje. <br><a href="plannerstudy.html">Ir ao planejamento →</a> ou adiciona um estudo extra aqui em cima.</div>`;
+    plEl.innerHTML = `<div class="empty-state">Nada planejado pra hoje. <br><a href="plannerstudy.html">Ir ao planejamento →</a>, <a href="#" onclick="event.preventDefault(); abrirManual()">planejar uma sessão</a> ou adicionar um estudo extra aqui em cima.</div>`;
   } else {
     const itens = [];
     // aulas fixas primeiro (read-only)

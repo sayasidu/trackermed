@@ -19,6 +19,13 @@ Atalhos de personalização e manutenção:
 - **Excluir leituras individualmente**: nas listas "Materiais em andamento"
   do Histórico e do Planejamento, o botão 🗑 remove só aquela leitura (as
   sessões já registradas no histórico ficam).
+- **Sessão manual**: além da sugestão automática, dá pra registrar à mão a
+  matéria que vai estudar no dia, com horário de início e tempo planejado —
+  em **Planejamento** (botão "+ Sessão manual" ou clique num horário vazio da
+  grade) e em **Histórico** ("+ Planejar sessão", com a opção "Salvar e
+  iniciar" o cronômetro). O registro é o mesmo bloco de estudo dos gerados
+  automaticamente, então aparece nas duas telas, no calendário geral e segue o
+  fluxo normal de cronômetro, progresso e conclusão.
 
 ## App no iPhone e iPad (PWA)
 
