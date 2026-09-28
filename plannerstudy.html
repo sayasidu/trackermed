@@ -305,6 +305,23 @@
 .mfield.check-row label { margin: 0; letter-spacing: 0; text-transform: none; font-size: 13px; color: var(--ink); font-weight: 500; cursor: pointer; }
 .mbtn-delete { background: transparent; border: none; color: var(--rose); padding: 10px 0; font-size: 12px; cursor: pointer; font-family: inherit; font-weight: 600; }
 
+/* Sessão manual (matéria + horário de início + tempo planejado) */
+.manual-btn { background: rgba(250,240,238,0.08); color: var(--paper); border: 1px solid var(--acid); padding: 14px 18px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; transition: background-color .15s var(--ease), color .15s var(--ease); }
+.manual-btn:hover { background: var(--acid); color: var(--ink); }
+.opt-grid { display: grid; gap: 6px; }
+.opt-grid.c5 { grid-template-columns: repeat(5, 1fr); }
+.opt-btn { background: var(--paper); border: 1px solid var(--line); padding: 10px 6px; font-family: inherit; font-size: 13px; cursor: pointer; font-weight: 600; color: var(--ink2); transition: all 0.12s; border-radius: 8px; }
+.opt-btn:hover { border-color: var(--cobalt); color: var(--cobalt); }
+.opt-btn.active { background: var(--cobalt); color: #fff; border-color: var(--cobalt); }
+.dur-custom { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+.dur-custom input { flex: 1; padding: 10px 12px; border: 1px solid var(--line); background: var(--paper); font-size: 14px; font-family: inherit; border-radius: 8px; transition: border-color .2s var(--ease), box-shadow .2s var(--ease); }
+.dur-custom input:focus { outline: none; border-color: var(--cobalt); box-shadow: var(--ring); }
+.live-preview { margin-top: 6px; padding: 14px 16px; background: var(--paper); border-left: 3px solid var(--line); font-size: 13px; color: var(--muted); border-radius: 0 8px 8px 0; }
+.live-preview.on { border-left-color: var(--cobalt); }
+.live-preview b { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
+.col-dia .hora-tick { cursor: copy; transition: background-color .12s; }
+.col-dia .hora-tick:hover { background: rgba(194,37,92,0.05); }
+
 /* Modal: configurar dias fixos */
 .fixar-radio { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
 .fixar-radio label { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--paper); border: 1px solid var(--line); cursor: pointer; font-size: 13px; font-weight: 500; }
@@ -496,7 +513,7 @@
 <div class="planner-wrap">
   <div>
     <div id="gradeContainer"></div>
-    <div class="legenda"><span class="a"><b></b>Aula</span><span class="e"><b></b>Estudo</span><span class="r"><b></b>Revisão (cadastrada em <a href="revisoes.html" style="color:#FB8C00;font-weight:600">Revisões</a>)</span><span class="d"><b></b>Feito</span><span><b style="display:inline-block;width:11px;height:11px;background:#7C3AED;vertical-align:-1px;margin-right:5px"></b>Rotina fixa (almoço, jantar, academia)</span><span>(clica num bloco pra editar · arrasta pra mover · borda inferior pra redimensionar)</span></div>
+    <div class="legenda"><span class="a"><b></b>Aula</span><span class="e"><b></b>Estudo</span><span class="r"><b></b>Revisão (cadastrada em <a href="revisoes.html" style="color:#FB8C00;font-weight:600">Revisões</a>)</span><span class="d"><b></b>Feito</span><span><b style="display:inline-block;width:11px;height:11px;background:#7C3AED;vertical-align:-1px;margin-right:5px"></b>Rotina fixa (almoço, jantar, academia)</span><span>(clica num horário vazio pra adicionar uma sessão · clica num bloco pra editar · arrasta pra mover · borda inferior pra redimensionar)</span></div>
   </div>
   <aside class="hist-panel">
     <h3>Histórico <i>de sugestões</i></h3>
@@ -548,6 +565,57 @@
           <button type="button" class="mbtn-cancel" onclick="fecharAdd()">Cancelar</button>
           <button type="submit" class="mbtn-save" id="btnSaveBloco">Adicionar</button>
         </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: sessão manual — matéria + horário de início + tempo planejado.
+     Cria um bloco de estudo comum em trackermed.plan.v1 (feito:false, auto:false,
+     manual:true): entra na grade da semana, no calendário geral e aparece em
+     "Planejado pra hoje" no Histórico exatamente como os blocos gerados
+     automaticamente (▶ cronômetro, progresso, conclusão). -->
+<div class="modal-backdrop" id="manualModal" onclick="if(event.target===this) fecharManual()">
+  <div class="modal-box">
+    <button class="mbtn-close" onclick="fecharManual()">×</button>
+    <h2>Registrar <i>sessão manual</i></h2>
+    <div class="modal-sub">Diga a matéria, quando você começa e quanto tempo pretende estudar. A sessão entra no calendário e aparece em <b>Planejado pra hoje</b>, no Histórico, como as sessões geradas automaticamente.</div>
+    <form onsubmit="event.preventDefault(); salvarManual();">
+      <div class="mfield"><label>Matéria</label>
+        <select id="mDisc" onchange="mDiscChange()"></select>
+      </div>
+      <div class="mfield" id="mDiscOutraWrap" style="display:none"><label>Nome da matéria</label>
+        <input type="text" id="mDiscOutra" maxlength="80" placeholder="ex: Inglês, Programação, Direito…">
+      </div>
+      <div id="mConteudoWrap">
+        <div class="mfield row2" id="mConteudoSelWrap" style="display:none">
+          <div><label>Conteúdo / Área (opcional)</label><select id="mConteudoSel" onchange="mHier.onConteudoChange()"></select></div>
+          <div><label>Tópico (opcional)</label><select id="mTopicoSel"></select></div>
+        </div>
+        <div class="mfield" id="mConteudoLivreWrap" style="display:none">
+          <label>Conteúdo (opcional)</label>
+          <input type="text" id="mConteudo" maxlength="160" placeholder="ex: capítulo 3, sistema cardiovascular…">
+          <div id="mConteudoHint" style="display:none;font-size:11px;color:var(--muted);margin-top:6px">Cadastre conteúdos e tópicos em <a href="disciplinas.html" style="color:var(--cobalt);font-weight:600">Disciplinas</a> pra escolher aqui sem digitar.</div>
+        </div>
+      </div>
+      <div class="mfield row2">
+        <div><label>Data</label><input type="date" id="mData" onchange="atualizarManualPreview()"></div>
+        <div><label>Horário de início</label><input type="time" id="mIni" step="300" oninput="atualizarManualPreview()"></div>
+      </div>
+      <div class="mfield"><label>Tempo planejado de estudo</label>
+        <div class="opt-grid c5" id="mDurBtns">
+          <button type="button" class="opt-btn" data-min="30" onclick="setManualDur(30)">30min</button>
+          <button type="button" class="opt-btn" data-min="45" onclick="setManualDur(45)">45min</button>
+          <button type="button" class="opt-btn active" data-min="60" onclick="setManualDur(60)">1h</button>
+          <button type="button" class="opt-btn" data-min="90" onclick="setManualDur(90)">1h30</button>
+          <button type="button" class="opt-btn" data-min="120" onclick="setManualDur(120)">2h</button>
+        </div>
+        <div class="dur-custom"><input type="number" id="mDurCustom" min="5" max="720" step="5" placeholder="outro valor, em minutos (ex: 100)" oninput="onManualDurCustom()"></div>
+      </div>
+      <div class="live-preview" id="mPreview">Informe o horário de início e o tempo planejado.</div>
+      <div class="mactions">
+        <button type="button" class="mbtn-cancel" onclick="fecharManual()">Cancelar</button>
+        <button type="submit" class="mbtn-save">Adicionar ao planejamento</button>
       </div>
     </form>
   </div>
@@ -1599,7 +1667,7 @@ function abrirEditBloco(blocoId) {
   document.getElementById('aFeitoBox').style.display = 'flex';
   document.getElementById('aFeito').checked = !!b.feito;
   document.getElementById('aId').value = blocoId;
-  popularSelectDisc(b.discId);
+  popularSelectDisc(b.discId, b.discId ? null : (b.matNome || null));
   // Conteúdo/tópico cadastrados em disciplinas.html — o que já foi definido no
   // bloco aparece pré-selecionado (texto livre antigo é casado por nome).
   aHier.montar(b.discId, { conteudoId: b.conteudoId, topicoId: b.topicoId, texto: b.conteudo || '' });
@@ -1609,10 +1677,15 @@ function abrirEditBloco(blocoId) {
   document.getElementById('addModal').classList.add('open');
 }
 
-function popularSelectDisc(selected) {
+// avulsaNome: bloco de matéria avulsa (sem discId, só matNome — registrado no
+// Histórico ou numa sessão manual). Ganha uma opção própria pra edição não
+// trocar a matéria por engano nem perder o nome.
+function popularSelectDisc(selected, avulsaNome) {
   const sel = document.getElementById('aDisc');
   const discList = loadDisc().filter(d => d.status === 'em-curso' || !d.status);
-  sel.innerHTML = discList.map(d => `<option value="${d.id}"${d.id===selected?' selected':''}>${d.nome || 'Sem nome'}</option>`).join('');
+  let html = discList.map(d => `<option value="${d.id}"${d.id===selected?' selected':''}>${escH(d.nome || 'Sem nome')}</option>`).join('');
+  if (avulsaNome) html += `<option value="__outra__" selected>${escH(avulsaNome)} (avulsa)</option>`;
+  sel.innerHTML = html;
 }
 
 // Selects dependentes de conteúdo/tópico (motor compartilhado em theme.js).
@@ -1638,7 +1711,7 @@ function conteudosEngine() {
   return { OUTRO: '__outro__', daDisciplina: () => [], rotulo: (c, t) => t ? c + ' — ' + t : (c || ''), acharPorTexto: () => null, ctrl };
 }
 const aHier = conteudosEngine().ctrl({ sel: 'aConteudoSel', topico: 'aTopicoSel', selWrap: 'aConteudoSelWrap', livreWrap: 'aConteudoLivreWrap', livre: 'aConteudo', hint: 'aConteudoHint' });
-function aDiscChange() { aHier.montar(document.getElementById('aDisc').value, {}); }
+function aDiscChange() { const v = document.getElementById('aDisc').value; aHier.montar(v === '__outra__' ? null : v, {}); }
 
 function fecharAdd() { document.getElementById('addModal').classList.remove('open'); editSlot = null; }
 
@@ -1651,11 +1724,16 @@ function salvarBloco() {
   const fim = document.getElementById('aFim').value;
   if (!ini || !fim || parseTime(fim) <= parseTime(ini)) { alert('Horário inválido.'); return; }
   const cont = aHier.ler();
+  const discVal = document.getElementById('aDisc').value;
+  const avulsa = discVal === '__outra__';
   if (editSlot && editSlot.id) {
     plan[wk] = plan[wk].map(b => b.id === editSlot.id ? {
-      ...b, discId: document.getElementById('aDisc').value,
+      ...b, discId: avulsa ? null : discVal,
+      matNome: avulsa ? (b.matNome || 'Estudo') : undefined,
       dia, ini, fim, feito: document.getElementById('aFeito').checked,
       conteudo: cont.conteudo, conteudoId: cont.conteudoId, topicoId: cont.topicoId,
+      // blocos com data explícita (registrados pelo Histórico) acompanham o dia escolhido
+      data: b.data ? blocoDataReal(wk, { dia }) : undefined,
       auto: false // edição manual protege o bloco em futuras regenerações
     } : b);
   } else {
@@ -1679,6 +1757,145 @@ function apagarBlocoAtual() {
   plan[wk] = (plan[wk]||[]).filter(b => b.id !== editSlot.id);
   savePlan(plan);
   fecharAdd();
+  render();
+}
+
+// ============ Sessão manual ============
+// Registro à mão de uma sessão de estudo: matéria (cadastrada ou avulsa),
+// data, horário de início e tempo planejado. Vira um bloco de estudo comum em
+// PLAN_KEY — o mesmo formato dos blocos gerados pela sugestão — e por isso
+// aparece na grade, no calendário geral e em "Planejado pra hoje" do
+// Histórico (com ▶ cronômetro, barra de progresso e conclusão).
+const mHier = conteudosEngine().ctrl({ sel: 'mConteudoSel', topico: 'mTopicoSel', selWrap: 'mConteudoSelWrap', livreWrap: 'mConteudoLivreWrap', livre: 'mConteudo', hint: 'mConteudoHint' });
+const MANUAL_DUR_OPTS = [30, 45, 60, 90, 120];
+let manualDur = 60;
+function hhmmToMin(t) {
+  if (!t || typeof t !== 'string') return NaN;
+  const [h, m] = t.split(':').map(Number);
+  if (isNaN(h) || isNaN(m)) return NaN;
+  return h * 60 + m;
+}
+function minToHHMM(min) { return String(Math.floor(min / 60)).padStart(2, '0') + ':' + String(min % 60).padStart(2, '0'); }
+// Hora atual (Cuiabá) arredondada pra baixo em 5min — sugestão de início.
+function horaAgoraArredondada() {
+  const n = nowCuiaba();
+  return minToHHMM(n.getHours() * 60 + Math.floor(n.getMinutes() / 5) * 5);
+}
+function abrirManual(pre) {
+  pre = pre || {};
+  const sel = document.getElementById('mDisc');
+  const discList = loadDisc().filter(d => d.status === 'em-curso' || !d.status);
+  sel.innerHTML = discList.map(d => `<option value="${escH(d.id)}">${escH(d.nome || 'Sem nome')}</option>`).join('')
+    + '<option value="__outra__">+ Outra matéria…</option>';
+  if (pre.discId && discList.some(d => d.id === pre.discId)) sel.value = pre.discId;
+  document.getElementById('mDiscOutra').value = '';
+  mDiscChange();
+  document.getElementById('mData').value = pre.data || toISODate(nowCuiaba());
+  document.getElementById('mIni').value = pre.ini || horaAgoraArredondada();
+  document.getElementById('mDurCustom').value = '';
+  setManualDur(pre.dur || 60);
+  document.getElementById('manualModal').classList.add('open');
+  setTimeout(() => sel.focus(), 50);
+}
+function fecharManual() { document.getElementById('manualModal').classList.remove('open'); }
+function mDiscChange() {
+  const v = document.getElementById('mDisc').value;
+  const outra = v === '__outra__';
+  document.getElementById('mDiscOutraWrap').style.display = outra ? '' : 'none';
+  mHier.montar(outra ? null : v, {});
+  if (outra) setTimeout(() => document.getElementById('mDiscOutra').focus(), 30);
+}
+function setManualDur(min, viaCustom) {
+  manualDur = min;
+  document.querySelectorAll('#mDurBtns .opt-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.min) === min));
+  if (!viaCustom) document.getElementById('mDurCustom').value = MANUAL_DUR_OPTS.includes(min) ? '' : min;
+  atualizarManualPreview();
+}
+function onManualDurCustom() {
+  const v = parseInt(document.getElementById('mDurCustom').value);
+  if (v > 0) setManualDur(v, true);
+  else atualizarManualPreview();
+}
+function atualizarManualPreview() {
+  const box = document.getElementById('mPreview');
+  const iniMin = hhmmToMin(document.getElementById('mIni').value);
+  if (isNaN(iniMin) || !(manualDur > 0)) {
+    box.classList.remove('on');
+    box.textContent = 'Informe o horário de início e o tempo planejado.';
+    return;
+  }
+  const fimMin = iniMin + manualDur;
+  if (fimMin > 24 * 60) {
+    box.classList.remove('on');
+    box.innerHTML = '<span style="color:var(--rose)">A sessão passaria da meia-noite — reduza o tempo ou ajuste o início.</span>';
+    return;
+  }
+  const dt = fromISODate(document.getElementById('mData').value);
+  const diaLbl = dt ? `${DIAS_LONG[dt.getDay()]}, ${dt.getDate()}/${dt.getMonth() + 1} · ` : '';
+  box.classList.add('on');
+  box.innerHTML = `${escH(diaLbl)}começa às <b>${minToHHMM(iniMin)}</b>, termina às <b>${minToHHMM(fimMin)}</b> · <b>${fmtMinTransfer(manualDur)}</b> de estudo planejado.`;
+}
+// O que já ocupa o mesmo horário naquele dia (blocos, aulas e rotina fixa) —
+// só pra avisar; a sessão pode ser adicionada mesmo assim.
+function conflitosNoDia(wk, dia, iniH, fimH) {
+  const out = [];
+  const discList = loadDisc();
+  const discById = {}; discList.forEach(d => { discById[d.id] = d; });
+  const cruza = (a1, a2) => parseTime(a1) < fimH && parseTime(a2) > iniH;
+  ((loadPlan()[wk]) || []).forEach(b => {
+    if (!b || b.dia !== dia || !b.ini || !b.fim || !cruza(b.ini, b.fim)) return;
+    const d = b.discId ? discById[b.discId] : null;
+    const isRev = b.tipo === 'revisao' || b.revisao;
+    out.push(`${(d && d.nome) || b.matNome || (isRev ? 'Revisão' : 'Estudo')} (${b.ini}–${b.fim})`);
+  });
+  discList.forEach(d => (d.aulas || []).forEach(a => {
+    if (DIA_IDX[a.dia] !== dia || !a.inicio || !a.fim || !cruza(a.inicio, a.fim)) return;
+    out.push(`aula de ${d.nome} (${a.inicio}–${a.fim})`);
+  }));
+  const diaKey = (DISP_DAYS.find(x => x.wd === dia) || {}).k;
+  const rotina = loadRotina();
+  ROTINA_ATIVS.forEach(a => rotinaSlots(rotina[a.k]).forEach(s => {
+    if (s.dia !== diaKey || !cruza(s.inicio, s.fim)) return;
+    out.push(`${a.lbl} (${s.inicio}–${s.fim})`);
+  }));
+  return out;
+}
+function salvarManual() {
+  const discVal = document.getElementById('mDisc').value;
+  let discId = null, matNome = null;
+  if (discVal === '__outra__') {
+    matNome = (document.getElementById('mDiscOutra').value || '').trim();
+    if (!matNome) { alert('Informe o nome da matéria.'); document.getElementById('mDiscOutra').focus(); return; }
+  } else {
+    const d = loadDisc().find(x => x.id === discVal);
+    if (!d) { alert('Selecione uma matéria.'); return; }
+    discId = d.id;
+  }
+  const dt = fromISODate(document.getElementById('mData').value);
+  if (!dt) { alert('Informe a data da sessão.'); return; }
+  const iniMin = hhmmToMin(document.getElementById('mIni').value);
+  if (isNaN(iniMin)) { alert('Informe o horário de início.'); return; }
+  if (!(manualDur > 0)) { alert('Informe o tempo planejado de estudo.'); return; }
+  const fimMin = iniMin + manualDur;
+  if (fimMin > 24 * 60) { alert('A sessão passaria da meia-noite — reduza o tempo ou ajuste o início.'); return; }
+  const ini = minToHHMM(iniMin), fim = minToHHMM(fimMin);
+  const wk = weekKey(dt), dia = dt.getDay();
+  const conf = conflitosNoDia(wk, dia, iniMin / 60, fimMin / 60);
+  if (conf.length && !confirm(`Esse horário já tem: ${conf.join(', ')}.\n\nAdicionar a sessão mesmo assim?`)) return;
+  const cont = mHier.ler();
+  const plan = loadPlan();
+  if (!plan[wk]) plan[wk] = [];
+  const bloco = {
+    id: uid(), tipo: 'estudo', discId,
+    conteudo: cont.conteudo, conteudoId: cont.conteudoId, topicoId: cont.topicoId,
+    dia, ini, fim, feito: false, auto: false, manual: true, criadoEm: new Date().toISOString()
+  };
+  if (matNome) bloco.matNome = matNome;
+  plan[wk].push(bloco);
+  savePlan(plan);
+  fecharManual();
+  // Mostra a semana da sessão recém-criada, pra ela aparecer na grade na hora.
+  anchorDate = new Date(dt);
   render();
 }
 
@@ -1824,6 +2041,19 @@ function bindBlocoInteracoes() {
     });
     el.addEventListener('pointerdown', (e) => startDragOrResize(e, el, id));
   });
+  // Clique num horário vazio abre a sessão manual já com o dia e a hora
+  // daquele ponto da grade (arredondados a 30min).
+  grade.querySelectorAll('.col-dia').forEach(col => {
+    col.addEventListener('click', (e) => {
+      if (dragState || e.target.closest('.bloco')) return;
+      const y = e.clientY - col.getBoundingClientRect().top;
+      const hora = HORA_INI + Math.floor(y / 25) * 0.5;
+      if (hora < HORA_INI || hora >= HORA_FIM + 1) return;
+      const dia = parseInt(col.dataset.dia);
+      const d = addDays(startOfWeek(anchorDate), dia === 0 ? 6 : dia - 1);
+      abrirManual({ data: toISODate(d), ini: minToHHMM(Math.round(hora * 60)) });
+    });
+  });
 }
 
 let dragState = null;
@@ -1900,7 +2130,11 @@ function onDragEnd(e) {
     plan[wk][idx] = { ...plan[wk][idx], fim: toHHMM(dragState.novoFim) };
   } else if (mode === 'move' && dragState.novoIni != null) {
     const dur = parseTime(plan[wk][idx].fim) - parseTime(plan[wk][idx].ini);
-    plan[wk][idx] = { ...plan[wk][idx], dia: dragState.novoDia, ini: toHHMM(dragState.novoIni), fim: toHHMM(dragState.novoIni + dur) };
+    const movido = { ...plan[wk][idx], dia: dragState.novoDia, ini: toHHMM(dragState.novoIni), fim: toHHMM(dragState.novoIni + dur) };
+    // Bloco com data explícita (registrado pelo Histórico): a data acompanha o
+    // novo dia, senão o Histórico continuaria mostrando o bloco no dia antigo.
+    if (movido.data) movido.data = blocoDataReal(wk, { dia: dragState.novoDia });
+    plan[wk][idx] = movido;
   }
   savePlan(plan);
   dragState = null;
@@ -2305,6 +2539,7 @@ function render() {
       ${avisoPeriodo}
     </div>
     <div class="g-acts">
+      <button class="manual-btn" onclick="abrirManual()" title="Registrar à mão uma sessão de estudo: matéria, horário de início e tempo planejado">+ Sessão manual</button>
       <button class="limpar-btn" onclick="limparSemana()" ${blocosParaLimpar===0?'disabled':''} title="${escH(limparTitle)}">${limparLbl}</button>
       <button class="gerar-btn" onclick="gerarAuto()" ${gerarDisabled?'disabled':''}>${metaBatida ? '↻ Regenerar' : '✦ Gerar sugestão'}</button>
     </div>
