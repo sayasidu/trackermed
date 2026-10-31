@@ -275,9 +275,9 @@ const PROVA_KEY = 'trackermed.prova.v1';
 const DISC_KEY = 'trackermed.disciplinas.v1';
 const PLAN_KEY = 'trackermed.plan.v1';
 const ERR_KEY = 'trackermed.erros.v1';
-const HIST_KEY = 'trackermed.planner.historico.v1';
+const HIST_KEY = 'historicoEstudos';   // feed de sessões/revisões (mesma chave do Histórico e das Revisões)
 const TIMER_KEY = 'trackermed.app.timer.v1';
-const BACKUP_EXTRA_KEYS = ['planejamento.disponibilidade'];
+const BACKUP_EXTRA_KEYS = ['planejamento.disponibilidade', 'historicoEstudos'];
 
 function loadJSON(k, d) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(d)); } catch { return d; } }
 function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }

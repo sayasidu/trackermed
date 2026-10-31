@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=7"></script>
+<script src="theme.js?v=8"></script>
 <style>
 .hoje-head { display: grid; grid-template-columns: 1fr auto auto auto; gap: 12px; margin-bottom: 20px; }
 .hoje-head .stat-card { background: #fff; border: 1px solid #E0E0E0; padding: 18px 20px; min-width: 140px; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); }
@@ -34,7 +34,7 @@ html[data-theme="dark"] .hoje-head .stat-card:not(.dark) .sub { color: var(--tex
 .blk-item:hover { transform: translateX(3px); }
 .blk-item.done { opacity: 0.65; background: #E8F5E9; border-left-color: #43A047; }
 .blk-item.done .nome { text-decoration: line-through; }
-.blk-item.done .motivo { text-decoration: line-through; }
+.blk-item.done .motivo { text-decoration: none; opacity: .9; }
 .blk-item.revisao { background: #FFF8EE; border-left-color: #FB8C00; }
 .blk-item.revisao .mins { color: #B26A00; }
 .blk-item.done.revisao { background: #E8F5E9; border-left-color: #43A047; }
@@ -63,7 +63,6 @@ html[data-theme="dark"] .blk-item.done.revisao .mins { color: #7BD389; }
 .blk-item .mins-wrap { display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end; }
 .blk-item .edit-btn { background: transparent; border: none; color: #b5b5b5; font-size: 13px; cursor: pointer; padding: 2px 4px; line-height: 1; }
 .blk-item .edit-btn:hover { color: var(--cobalt); }
-.blk-item.done .edit-btn { display: none; }
 /* Barra de progresso: quanto do tempo planejado já foi cumprido */
 .blk-item .blk-prog { grid-column: 1 / -1; margin-top: 8px; }
 .blk-item .blk-prog .bar { height: 7px; background: rgba(43,15,38,0.10); border-radius: 999px; overflow: hidden; }
@@ -157,7 +156,7 @@ html[data-theme="dark"] .plano-tag { background: var(--surface-soft); border-col
 /* Modal extra */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(43,15,38,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
 .modal-backdrop.open { display: flex; }
-.modal-box { background: #fff; border: 1px solid #E0E0E0; width: 480px; max-width: 100%; padding: 30px; position: relative; border-radius: 14px; box-shadow: var(--sh-3); }
+.modal-box { background: #fff; border: 1px solid #E0E0E0; width: 480px; max-width: 100%; max-height: calc(100vh - 40px); overflow-y: auto; padding: 30px; position: relative; border-radius: 14px; box-shadow: var(--sh-3); }
 @media (prefers-reduced-motion: no-preference) { .modal-backdrop.open .modal-box { animation: modalIn .28s var(--ease) both; } @keyframes modalIn { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } } }
 .modal-box h2 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
 .modal-box h2 i { color: var(--cobalt); font-style: italic; }
@@ -239,6 +238,97 @@ html[data-theme="dark"] .plano-tag { background: var(--surface-soft); border-col
 .ma-tipo-btn.active { background: var(--cobalt); border-color: var(--cobalt); color: #fff; }
 html[data-theme="dark"] .ma-tipo-btn { border-color: var(--border); }
 html[data-theme="dark"] .ma-tipo-btn.active { background: var(--cobalt); color: #fff; }
+/* Semana: faixa de dias com planejado × realizado; clicar seleciona o dia */
+.semana-wrap { margin-bottom: 20px; }
+.semana-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.semana-lbl { font-size: 12px; color: #7D6B77; }
+.semana-lbl a { color: var(--cobalt); font-weight: 600; }
+.semana-strip { display: grid; grid-template-columns: 28px repeat(7, minmax(0, 1fr)) 28px; gap: 6px; align-items: stretch; }
+.sem-nav { background: transparent; border: 1px solid #E0E0E0; border-radius: 8px; color: #7D6B77; font-size: 18px; cursor: pointer; font-family: inherit; }
+.sem-nav:hover { border-color: var(--cobalt); color: var(--cobalt); }
+.sem-dia { display: flex; flex-direction: column; gap: 3px; align-items: stretch; text-align: left; background: #fff; border: 1px solid #E0E0E0; border-radius: 10px; padding: 8px 9px; cursor: pointer; font-family: inherit; color: var(--ink); min-width: 0; transition: transform .15s var(--ease), border-color .15s var(--ease), box-shadow .15s var(--ease); }
+.sem-dia:hover { border-color: var(--cobalt); transform: translateY(-2px); box-shadow: var(--sh-1); }
+.sem-dia.sel { border-color: var(--cobalt); box-shadow: 0 0 0 2px rgba(194,37,92,.18); }
+.sem-dia.hoje .sd-dia { color: var(--cobalt); }
+.sem-dia.passado { opacity: .85; }
+.sem-dia .sd-dia { font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: #7D6B77; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sem-dia .sd-num { font-family: 'Fraunces', serif; font-size: 20px; line-height: 1; }
+.sem-dia .sd-bar { height: 5px; background: rgba(43,15,38,.10); border-radius: 99px; overflow: hidden; display: block; }
+.sem-dia .sd-bar i { display: block; height: 100%; background-image: var(--grad-brand); }
+.sem-dia .sd-txt { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sem-dia .sd-txt .sep { color: #7D6B77; }
+.sem-dia .sd-dots { display: flex; gap: 4px; min-height: 7px; }
+.sem-dia .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.sem-dia .dot.pend { background: var(--rose); }
+.sem-dia .dot.rev { background: #FB8C00; }
+.sem-dia .dot.ok { background: var(--mint); }
+html[data-theme="dark"] .sem-dia { background: var(--surface); border-color: var(--border); color: var(--text); }
+html[data-theme="dark"] .sem-dia .sd-txt { color: var(--text); }
+html[data-theme="dark"] .sem-dia .sd-bar { background: rgba(250,240,238,0.14); }
+html[data-theme="dark"] .sem-nav { border-color: var(--border); }
+.blk-item .sem-hora { font-size: 11px; color: #7D6B77; font-weight: 600; font-style: italic; }
+.blk-item .nota { color: var(--ink2); font-style: italic; }
+/* Atividades em andamento: cartão da atividade + uma linha por etapa */
+.atv-card { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+.atv-card.done { opacity: .75; }
+.atv-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.atv-title { flex: 1; min-width: 0; font-weight: 700; font-size: 15px; color: var(--ink); }
+.atv-title .atv-sub { color: #7D6B77; font-weight: 500; font-size: 12px; }
+.atv-acts { display: flex; gap: 6px; align-items: center; }
+.etapa-row { border-top: 1px dashed var(--line); padding: 10px 0 4px; }
+.etapa-row .mi-top { display: flex; align-items: baseline; gap: 10px; }
+.etapa-row .mi-nome { flex: 1; min-width: 0; font-weight: 600; font-size: 13.5px; color: var(--ink); }
+.etapa-row .mi-num { font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 600; color: var(--cobalt); }
+.etapa-row .mi-bar { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+.etapa-row .mi-bar i { display: block; height: 100%; background-image: var(--grad-brand); border-radius: 99px; }
+.etapa-row.concluida .mi-bar i { background: var(--mint); }
+.etapa-row .mi-sub { font-size: 12px; color: #7D6B77; margin-top: 5px; }
+.etapa-row .mi-sub b { color: var(--ink); font-weight: 600; }
+.etapa-row .atv-fonte { font-size: 11px; font-style: italic; }
+.etapa-acts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+.etapa-acts .mi-btn, .atv-acts .mi-btn { background: transparent; border: 1px dashed var(--cobalt); color: var(--cobalt); border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.etapa-acts .mi-btn:hover, .atv-acts .mi-btn:hover { background: var(--cobalt); color: #fff; }
+.etapa-acts .mi-btn.primary { background: var(--cobalt); color: #fff; border-style: solid; }
+.etapa-acts .mi-btn.primary:hover { background: var(--ink); border-color: var(--ink); }
+.etapa-acts .mi-btn.ghost { border-color: var(--line); color: #7D6B77; }
+.etapa-acts .mi-btn.ghost:hover { background: var(--line); color: var(--ink); }
+.etapa-acts .mi-del, .atv-acts .mi-del { background: transparent; border: 1px solid var(--line); color: var(--rose); border-radius: 999px; padding: 4px 9px; font-size: 12px; cursor: pointer; font-family: inherit; line-height: 1; margin-left: auto; }
+.etapa-acts .mi-del:hover, .atv-acts .mi-del:hover { background: var(--rose); border-color: var(--rose); color: #fff; }
+.sit-chip { display: inline-block; font-size: 9.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; margin-left: 6px; vertical-align: 1px; background: #EFEFEF; color: #7D6B77; }
+.sit-chip.em-andamento { background: rgba(194,37,92,.12); color: var(--cobalt); }
+.sit-chip.concluida { background: rgba(31,194,138,.16); color: #107A55; }
+html[data-theme="dark"] .sit-chip { background: rgba(250,240,238,.10); color: var(--text-mute); }
+.reg-list { margin-top: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); padding: 2px 10px; }
+.reg-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+.reg-row:last-child { border-bottom: none; }
+.reg-row .reg-data { min-width: 72px; font-weight: 600; color: var(--ink2); white-space: nowrap; }
+.reg-row .reg-txt { flex: 1; min-width: 0; color: var(--ink); }
+.reg-row .reg-txt .sep, .reg-row .reg-txt i { color: #7D6B77; }
+.reg-row .reg-acts { display: flex; gap: 2px; }
+/* Modal de registro: detalhes opcionais */
+.rg-toggle { width: 100%; text-align: left; background: transparent; border: 1px dashed var(--line); border-radius: 8px; padding: 9px 12px; font-size: 12px; font-weight: 600; color: var(--cobalt); cursor: pointer; font-family: inherit; margin: 2px 0 14px; }
+.rg-toggle:hover { border-color: var(--cobalt); }
+.rg-hint { font-size: 11px; color: #7D6B77; margin-top: 6px; }
+.rg-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.rg-chips button { background: var(--paper); border: 1px solid #E0E0E0; border-radius: 999px; padding: 5px 11px; font-size: 12px; font-weight: 600; color: var(--ink2); cursor: pointer; font-family: inherit; }
+.rg-chips button:hover { border-color: var(--cobalt); color: var(--cobalt); }
+.mbtn-delete { background: transparent; border: none; color: var(--rose); font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; padding: 8px 0; }
+.mfield.row3 { display: grid; grid-template-columns: 1.2fr 1fr .8fr; gap: 12px; }
+@media (max-width: 640px) {
+  /* Lista do dia no celular: horário numa linha própria; nome, tempo e botões na seguinte. */
+  .blk-item { grid-template-columns: 1fr auto auto auto; gap: 6px 10px; padding: 10px 12px; }
+  .blk-item .horario { grid-column: 1 / -1; min-width: 0; font-size: 12px; }
+  .blk-item .mins { font-size: 16px; min-width: 0; }
+  .blk-item .motivo { white-space: normal; }
+  .hist-row .bar { width: 90px; }
+}
+@media (max-width: 900px) {
+  .semana-strip { grid-template-columns: 24px repeat(7, minmax(0, 1fr)) 24px; gap: 4px; }
+  .sem-dia { padding: 6px 5px; }
+  .sem-dia .sd-txt .sep { display: none; }
+  .hoje-head { grid-template-columns: 1fr 1fr; }
+  .mfield.row3 { grid-template-columns: 1fr; }
+}
 </style></head><body>
 <div class="app">
 <aside class="sidebar">
@@ -264,7 +354,7 @@ html[data-theme="dark"] .ma-tipo-btn.active { background: var(--cobalt); color: 
 <div>
   <div class="kicker">Hoje</div>
   <h1 class="page-title">Seu <i>estudo</i> de hoje.</h1>
-  <p class="page-lede">Comece pelo que foi planejado — ou registre um estudo extra. O cronômetro fica flutuante pra você seguir com a página aberta.</p>
+  <p class="page-lede">Planejador e diário no mesmo lugar: veja o dia e a semana, registre o que estudou em poucos passos (hoje ou em qualquer data) e acompanhe cada atividade — feito, falta, tempo e previsão.</p>
 </div>
 
 <div id="planoFiltro" class="plano-filtros" style="display:none"></div>
@@ -272,34 +362,43 @@ html[data-theme="dark"] .ma-tipo-btn.active { background: var(--cobalt); color: 
 <div id="metaMeme" class="meta-meme" style="display:none"></div>
 
 <div class="hoje-head">
-  <div class="stat-card"><div class="lbl">Estudado hoje</div><div class="val cobalt" id="totHoje" style="color:var(--cobalt)">0<span style="font-size:16px;color:#7D6B77">h00</span></div><div class="sub" id="subHoje">0 sessões</div></div>
-  <div class="stat-card"><div class="lbl">Planejado hoje</div><div class="val" id="totPlan">0<span style="font-size:16px;color:#7D6B77">h00</span></div><div class="sub" id="subPlan">—</div></div>
+  <div class="stat-card"><div class="lbl" id="lblHoje">Estudado hoje</div><div class="val cobalt" id="totHoje" style="color:var(--cobalt)">0<span style="font-size:16px;color:#7D6B77">h00</span></div><div class="sub" id="subHoje">0 sessões</div></div>
+  <div class="stat-card"><div class="lbl" id="lblPlan">Planejado hoje</div><div class="val" id="totPlan">0<span style="font-size:16px;color:#7D6B77">h00</span></div><div class="sub" id="subPlan">—</div></div>
   <div class="stat-card dark"><div class="lbl">Streak</div><div class="val" id="streak">0</div><div class="sub" id="subStreak">dias seguidos</div></div>
+</div>
+
+<div class="semana-wrap">
+  <div class="semana-head"><span class="kicker">Semana</span><span class="semana-lbl" id="semanaLbl">—</span></div>
+  <div class="semana-strip" id="semanaStrip"></div>
 </div>
 
 <div class="section-box">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
     <div>
-      <h2>Planejado <i>pra hoje</i></h2>
-      <div class="help">Vindos do seu planejamento semanal — ou registrados aqui à mão com <b>+ Planejar sessão</b> (matéria, horário de início e tempo planejado). Clica ▶ pra iniciar o cronômetro.</div>
+      <h2 id="diaTitulo">Planejado <i>pra hoje</i></h2>
+      <div class="help">O que está reservado pro dia, o que já foi feito e o que falta. <b>+ Registrar estudo</b> grava em poucos passos (matéria, data e tempo — detalhes só se quiser); <b>+ Reservar sessão</b> só marca um horário; ▶ inicia o cronômetro. Em cada item: ✎ corrige, ⇄ reagenda, ○ encerra.</div>
     </div>
     <div class="sec-acts">
-      <button class="extra-btn secondary" onclick="abrirManual()" title="Registrar à mão uma sessão que você vai (ou já começou a) estudar: matéria, horário de início e tempo planejado">+ Planejar sessão</button>
-      <button class="extra-btn" onclick="abrirExtra()" title="Registrar um estudo já feito ou iniciar o cronômetro fora do planejamento">+ Estudo extra</button>
+      <button class="extra-btn secondary" onclick="abrirManual({ data: selectedDay })" title="Reservar um horário de estudo, sem registrar tempo realizado">+ Reservar sessão</button>
+      <button class="extra-btn secondary" onclick="abrirExtra()" title="Iniciar o cronômetro fora do planejamento">▶ Cronômetro</button>
+      <button class="extra-btn" onclick="abrirRegistro({ data: selectedDay })" title="Registrar um estudo já feito — hoje ou em outra data">+ Registrar estudo</button>
     </div>
   </div>
   <div id="planList" class="blk-list" style="margin-top:14px"></div>
 </div>
 
-<div class="section-box" id="matHojeBox" style="display:none">
+<div class="section-box" id="atvBox">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
     <div>
-      <h2>Materiais <i>em andamento</i></h2>
-      <div class="help">Capítulos, artigos, videoaulas e áudios que você conclui aos poucos. Registre quanto avançou em cada sessão — e, se leu fora de uma sessão cronometrada, use <b>+ avanço</b> pra informar até onde chegou: o progresso é atualizado sem depender das horas registradas. A previsão de conclusão se ajusta ao seu ritmo.</div>
+      <h2>Atividades <i>em andamento</i></h2>
+      <div class="help">O que você conclui aos poucos — capítulos, aulas, listas. Cada etapa (leitura, resumo, questões, revisão…) tem progresso próprio: o site soma as sessões, calcula o que falta e estima o tempo restante. Corrija qualquer registro quando precisar; os totais são recalculados.</div>
     </div>
-    <a href="disciplinas.html" style="font-size:12px;color:var(--cobalt);font-weight:600;text-decoration:none">gerenciar materiais ›</a>
+    <div class="sec-acts">
+      <a href="disciplinas.html" style="font-size:12px;color:var(--cobalt);font-weight:600;text-decoration:none">cadastro completo ›</a>
+      <button class="extra-btn secondary" onclick="abrirAtividade({})">+ Nova atividade</button>
+    </div>
   </div>
-  <div id="matHojeList" style="margin-top:14px"></div>
+  <div id="atvList" style="margin-top:14px"></div>
 </div>
 
 <div class="section-box">
@@ -361,7 +460,7 @@ html[data-theme="dark"] .ma-tipo-btn.active { background: var(--cobalt); color: 
         <input type="number" id="durStudied" min="0" max="600" placeholder="ex: 30">
         <button type="button" onclick="aplicarTempoEstudado()">Salvar</button>
       </div>
-      <div style="font-size:11px;color:#7D6B77;margin-top:6px">Marca como concluído se o tempo estudado for ≥ a duração planejada.</div>
+      <div style="font-size:11px;color:#7D6B77;margin-top:6px">Só o tempo muda — a sessão não é encerrada por isso. Pra encerrar, use ○ na lista ou ✎.</div>
     </div>
     <div id="secOptsWrap">
       <div class="mfield">
@@ -390,7 +489,7 @@ html[data-theme="dark"] .ma-tipo-btn.active { background: var(--cobalt); color: 
   <div class="modal-box">
     <button class="mbtn-close" onclick="fecharExtra()">×</button>
     <h2>Estudo <i>extra</i></h2>
-    <div class="modal-sub">Registre um bloco fora do planejamento — manual ou com cronômetro.</div>
+    <div class="modal-sub">Inicie o cronômetro fora do planejamento. Pra lançar um estudo já feito (hoje ou em outra data), use <b>Registrar sem cronômetro</b>.</div>
     <form id="extraForm" onsubmit="event.preventDefault();">
       <div class="mfield"><label>Matéria</label>
         <select id="eDisc" required onchange="onDiscChangeExtra()"></select>
@@ -459,7 +558,7 @@ html[data-theme="dark"] .ma-tipo-btn.active { background: var(--cobalt); color: 
       </div>
       <div class="mactions">
         <button type="button" class="mbtn-cancel" onclick="fecharExtra()">Cancelar</button>
-        <button type="button" class="mbtn-save" onclick="salvarExtraManual()">Registrar agora</button>
+        <button type="button" class="mbtn-save" onclick="abrirRegistroDoExtra()">Registrar sem cronômetro</button>
         <button type="button" class="mbtn-timer" onclick="salvarExtraTimer()">▶ Cronômetro</button>
         <button type="button" class="mbtn-timer-free" onclick="salvarExtraTimerLivre()" title="Cronômetro livre (sem limite, conta a vontade)">▶ Livre</button>
       </div>
@@ -484,6 +583,7 @@ html[data-theme="dark"] .ma-tipo-btn.active { background: var(--cobalt); color: 
       <div class="mfield" id="mDiscOutraWrap" style="display:none"><label>Nome da matéria</label>
         <input type="text" id="mDiscOutra" maxlength="80" placeholder="ex: Inglês, Programação, Direito…">
       </div>
+      <div class="mfield"><label>Atividade / etapa (opcional)</label><select id="mMaterial"></select></div>
       <div id="mConteudoWrap">
         <div class="mfield row2" id="mConteudoSelWrap" style="display:none">
           <div><label>Conteúdo / Área (opcional)</label><select id="mConteudoSel" onchange="mHier.onConteudoChange()"></select></div>
@@ -561,26 +661,6 @@ html[data-theme="dark"] .ma-tipo-btn.active { background: var(--cobalt); color: 
   </div>
 </div>
 
-<!-- Modal: conteúdo concluído? (após confirmar a conclusão da sessão) -->
-<div class="modal-backdrop" id="conclusaoContModal" onclick="if(event.target===this) responderConclusaoConteudo(false)">
-  <div class="modal-box" style="width:460px">
-    <button class="mbtn-close" onclick="responderConclusaoConteudo(false)">×</button>
-    <h2>Sessão <i>concluída</i></h2>
-    <div class="modal-sub">Sessão registrada e marcada como concluída. Agora diga se o conteúdo estudado também foi finalizado.</div>
-    <div class="conc-resumo">
-      <div class="conc-linha"><span class="conc-lbl">Matéria estudada</span><span class="conc-val" id="concMateria">—</span></div>
-      <div class="conc-linha"><span class="conc-lbl">Tempo de estudo</span><span class="conc-val" id="concTempo">—</span></div>
-      <div class="conc-linha" id="concConteudoWrap"><span class="conc-lbl">Conteúdo estudado</span><span class="conc-val" id="concConteudo">—</span></div>
-    </div>
-    <div class="conc-pergunta">Você concluiu este conteúdo?</div>
-    <div class="conc-help" id="concHelp">“Sim” envia o conteúdo para as <b>revisões</b> espaçadas. “Não” o mantém apenas no <b>histórico</b> — a sessão continua concluída e o tempo estudado registrado.</div>
-    <div class="mactions" style="justify-content:space-between">
-      <button type="button" class="mbtn-cancel conc-btn" onclick="responderConclusaoConteudo(false)">Não</button>
-      <button type="button" class="mbtn-save conc-btn" onclick="responderConclusaoConteudo(true)">Sim, concluí</button>
-    </div>
-  </div>
-</div>
-
 <!-- Modal: continuar estudo extra? (após cada sessão de Pomodoro) -->
 <div class="modal-backdrop" id="continuarExtraModal" onclick="if(event.target===this) encerrarExtra()">
   <div class="modal-box" style="width:460px">
@@ -604,63 +684,175 @@ html[data-theme="dark"] .ma-tipo-btn.active { background: var(--cobalt); color: 
   </div>
 </div>
 
-<!-- Modal: registrar o recurso utilizado na sessão / avanço em material.
-     Abre ao encerrar o tempo de estudo. A leitura é OPCIONAL: a etapa 1
-     pergunta se o aluno quer atualizar o progresso de um livro/material —
-     "Não" salva o estudo normalmente, sem pedir nada sobre livros; "Sim"
-     mostra os campos pra escolher o material (existente ou cadastrado na
-     hora) e informar a progressão conforme o tipo. A abertura direta pelo
-     "+ avanço" da lista de materiais pula a pergunta. -->
-<div class="modal-backdrop" id="matAvancoModal" onclick="if(event.target===this) fecharMatAvanco()">
-  <div class="modal-box" style="width:540px">
-    <button class="mbtn-close" onclick="fecharMatAvanco()">×</button>
-    <h2 id="maTitulo">Recurso <i>utilizado</i></h2>
-    <div class="modal-sub" id="maSub">Registre o material usado na sessão e quanto você avançou.</div>
-    <div id="maStep1" style="display:none">
-      <div class="conc-pergunta">Deseja atualizar o progresso de leitura de um livro?</div>
-      <div class="conc-help" id="maStep1Help">“Sim” abre os campos pra escolher o livro ou material e registrar o avanço. “Não” salva o estudo normalmente.</div>
-      <div class="mactions" style="justify-content:space-between">
-        <button type="button" class="mbtn-cancel conc-btn" onclick="maResponderLeitura(false)">Não</button>
-        <button type="button" class="mbtn-save conc-btn" onclick="maResponderLeitura(true)">Sim</button>
+<!-- Modal: registrar / editar estudo — o caminho curto do diário. Só matéria,
+     data e tempo são necessários; atividade/etapa, quantidade, conteúdo,
+     horário e reserva são opcionais. Serve pra registrar depois (inclusive em
+     datas passadas), pra encerrar uma sessão do cronômetro/planejamento e pra
+     corrigir qualquer registro. -->
+<div class="modal-backdrop" id="registroModal" onclick="if(event.target===this) fecharRegistro()">
+  <div class="modal-box" style="width:560px">
+    <button class="mbtn-close" onclick="fecharRegistro()">×</button>
+    <h2 id="rgTitulo">Registrar <i>estudo</i></h2>
+    <div class="modal-sub" id="rgSub">Só o essencial: matéria, data e tempo. O resto é opcional.</div>
+    <form onsubmit="event.preventDefault(); salvarRegistro();">
+      <input type="hidden" id="rgWk"><input type="hidden" id="rgBlocoId">
+      <div class="mfield row2">
+        <div><label>Matéria</label><select id="rgDisc" onchange="rgDiscChange()"></select></div>
+        <div><label>Data</label><input type="date" id="rgData" onchange="rgAtualizar()"></div>
       </div>
-    </div>
-    <div id="maStep2">
-      <div class="mfield"><label>Material de estudo</label><select id="maMaterial" onchange="maOnChange()"></select></div>
-      <div id="maNovoWrap" style="display:none">
-        <div class="mfield"><label>Tipo de material</label>
-          <div class="ma-tipo-grid" id="maTipoBtns"></div>
+      <div class="mfield" id="rgDiscOutraWrap" style="display:none"><label>Nome da matéria</label><input type="text" id="rgDiscOutra" maxlength="80" placeholder="ex: Inglês, Programação…" oninput="rgAtualizar()"></div>
+      <div class="mfield"><label>Tempo estudado</label>
+        <div class="opt-grid c5" id="rgDurBtns">
+          <button type="button" class="opt-btn" data-min="30" onclick="rgSetMin(30)">30min</button>
+          <button type="button" class="opt-btn" data-min="45" onclick="rgSetMin(45)">45min</button>
+          <button type="button" class="opt-btn" data-min="60" onclick="rgSetMin(60)">1h</button>
+          <button type="button" class="opt-btn" data-min="90" onclick="rgSetMin(90)">1h30</button>
+          <button type="button" class="opt-btn" data-min="120" onclick="rgSetMin(120)">2h</button>
         </div>
-        <div class="mfield"><label>Nome do material</label>
-          <input type="text" id="maNome" maxlength="140" placeholder="ex: Capítulo 12 — Insuficiência Cardíaca">
+        <div class="dur-custom" style="margin-top:8px"><input type="number" id="rgMin" min="0" max="720" step="5" placeholder="outro valor, em minutos (ex: 100)" oninput="rgMinInput()"><span class="ma-unid">min</span></div>
+      </div>
+      <button type="button" class="rg-toggle" id="rgDetToggle" onclick="rgToggleDetalhes()">+ Detalhes opcionais — atividade, quantidade, conteúdo, horário…</button>
+      <div id="rgDetalhes" style="display:none">
+        <div class="mfield"><label>Atividade / etapa</label><select id="rgMaterial" onchange="rgMaterialChange()"></select></div>
+        <div id="rgNovoWrap" style="display:none">
+          <div class="mfield"><label>Nome da atividade</label><input type="text" id="rgNovoNome" maxlength="140" placeholder="ex: Harrison — cap. 12, Insuficiência cardíaca"></div>
+          <div class="mfield row3">
+            <div><label>Etapa</label><select id="rgNovoEtapa" onchange="rgNovoEtapaChange()"></select></div>
+            <div><label>Acompanhar por</label><select id="rgNovoUnid" onchange="rgNovoUnidChange()"></select></div>
+            <div><label id="rgNovoTotalLbl">Total</label><input type="number" id="rgNovoTotal" min="0" step="any" placeholder="ex: 20" oninput="rgAtualizar()"></div>
+          </div>
+        </div>
+        <div class="mfield" id="rgQtdWrap" style="display:none">
+          <label id="rgQtdLbl">Parou em que página?</label>
+          <div class="ma-qtd-row"><input type="number" id="rgQtd" min="0" step="any" placeholder="opcional" oninput="rgAtualizar()"><span class="ma-unid" id="rgQtdUnid">págs</span></div>
+          <div class="rg-hint" id="rgQtdHint"></div>
+        </div>
+        <div id="rgConteudoWrap">
+          <div class="mfield row2" id="rgConteudoSelWrap" style="display:none">
+            <div><label>Conteúdo / Área (opcional)</label><select id="rgConteudoSel" onchange="rgHier.onConteudoChange()"></select></div>
+            <div><label>Tópico (opcional)</label><select id="rgTopicoSel"></select></div>
+          </div>
+          <div class="mfield" id="rgConteudoLivreWrap" style="display:none">
+            <label>Conteúdo (opcional)</label>
+            <input type="text" id="rgConteudo" maxlength="160" placeholder="ex: capítulo 3, sistema cardiovascular…">
+            <div id="rgConteudoHint" style="display:none;font-size:11px;color:#7D6B77;margin-top:6px">Cadastre conteúdos e tópicos em <a href="disciplinas.html" style="color:var(--cobalt);font-weight:600">Disciplinas</a> pra escolher aqui sem digitar.</div>
+          </div>
+        </div>
+        <div class="mfield"><label>Anotações (opcional)</label><input type="text" id="rgNotas" maxlength="200" placeholder="ex: faltou revisar o tratamento"></div>
+        <div class="mfield row2">
+          <div><label>Tempo reservado (opcional)</label><input type="number" id="rgPlanMin" min="0" max="720" step="5" placeholder="= tempo estudado" oninput="rgAtualizar()"></div>
+          <div><label>Horário de início (opcional)</label><input type="time" id="rgIni" step="300"></div>
+        </div>
+        <div class="mfield row2">
+          <div><label>Sessão encerrada?</label><select id="rgFeito" onchange="rgAtualizar()"><option value="sim">Sim</option><option value="nao">Não — continuo depois</option></select></div>
+          <div><label>Mandar pras revisões?</label><select id="rgRevisar"><option value="nao">Não</option><option value="sim">Sim, revisar depois</option></select></div>
         </div>
       </div>
-      <div id="maProgWrap">
-        <div class="cont-extra-bar" style="margin:2px 0 0"><div class="cont-extra-fill" id="maFill"></div></div>
-        <div class="ma-progtxt" id="maProgTxt">—</div>
-      </div>
-      <div class="mfield ma-range" id="maRangeWrap" style="display:none">
-        <div id="maIniCol"><label id="maIniLbl">Página inicial</label><input type="number" id="maIni" min="0" step="any" oninput="maPreview()"></div>
-        <div><label id="maFimLbl">Página final</label><input type="number" id="maFim" min="0" step="any" oninput="maPreview()"></div>
-        <div id="maTotCol"><label id="maTotLbl">Total de páginas</label><input type="number" id="maTot" min="0" step="any" oninput="maPreview()"></div>
-      </div>
-      <div class="mfield" id="maQtdWrap" style="margin-top:14px">
-        <label id="maPergunta">Quantas páginas você leu?</label>
-        <div class="ma-qtd-row">
-          <input type="number" id="maQtd" min="0" step="any" placeholder="ex: 10" oninput="maPreview()">
-          <span class="ma-unid" id="maUnid">págs</span>
+      <div class="live-preview" id="rgPreview">Informe a matéria, a data e o tempo.</div>
+      <div class="mactions">
+        <button type="button" class="mbtn-delete" id="rgDel" onclick="excluirRegistroAtual()" style="display:none">Excluir registro</button>
+        <div style="display:flex;gap:10px;margin-left:auto">
+          <button type="button" class="mbtn-cancel" onclick="fecharRegistro()">Cancelar</button>
+          <button type="submit" class="mbtn-save" id="rgSalvar">Salvar</button>
         </div>
       </div>
-      <div class="live-preview" id="maPreviewBox">Informe quanto você avançou nesta sessão.</div>
-      <div class="mactions" style="justify-content:space-between">
-        <button type="button" class="mbtn-cancel" id="maPularBtn" onclick="maPularOuVoltar()">Pular</button>
-        <div style="display:flex;gap:10px">
-          <button type="button" class="mbtn-timer" onclick="concluirMatAvanco()" title="Marca o material inteiro como finalizado">✓ Concluí o material</button>
-          <button type="button" class="mbtn-save" onclick="salvarMatAvanco()">Salvar avanço</button>
-        </div>
-      </div>
-    </div>
+    </form>
   </div>
 </div>
+
+<!-- Modal: reagendar sessão. Sem tempo estudado, a sessão é movida; com
+     tempo, o que foi feito fica no dia original (encerrado) e só o restante
+     vai pra nova data — nada é contado duas vezes. -->
+<div class="modal-backdrop" id="reagModal" onclick="if(event.target===this) fecharReagendar()">
+  <div class="modal-box" style="width:460px">
+    <button class="mbtn-close" onclick="fecharReagendar()">×</button>
+    <h2>Reagendar <i>sessão</i></h2>
+    <div class="modal-sub" id="reagNome">—</div>
+    <div class="live-preview on" id="reagInfo" style="margin-bottom:14px">—</div>
+    <form onsubmit="event.preventDefault(); salvarReagendar();">
+      <div class="mfield row2">
+        <div><label>Nova data</label><input type="date" id="reagData"></div>
+        <div><label>Horário de início (opcional)</label><input type="time" id="reagIni" step="300"></div>
+      </div>
+      <div class="mactions">
+        <button type="button" class="mbtn-cancel" onclick="fecharReagendar()">Cancelar</button>
+        <button type="submit" class="mbtn-save">Reagendar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: nova atividade (material + primeira etapa) ou nova etapa numa
+     atividade existente. -->
+<div class="modal-backdrop" id="atividadeModal" onclick="if(event.target===this) fecharAtividade()">
+  <div class="modal-box" style="width:540px">
+    <button class="mbtn-close" onclick="fecharAtividade()">×</button>
+    <h2 id="atTitulo">Nova <i>atividade</i></h2>
+    <div class="modal-sub" id="atSub">—</div>
+    <form onsubmit="event.preventDefault(); salvarAtividade();">
+      <div id="atBaseWrap">
+        <div class="mfield row2">
+          <div><label>Matéria</label><select id="atDisc" onchange="atDiscChange()"></select></div>
+          <div><label>Tipo de material</label><select id="atTipo">
+            <option value="livro">📖 Livro / capítulo</option><option value="artigo">📄 Artigo científico</option><option value="resumo">📝 Resumo / apostila</option>
+            <option value="video">🎬 Videoaula</option><option value="gravacao">🎥 Gravação de aula</option><option value="audio">🎧 Podcast / áudio</option><option value="outro">📚 Outros materiais</option>
+          </select></div>
+        </div>
+        <div class="mfield"><label>Nome da atividade / material</label><input type="text" id="atNome" maxlength="140" placeholder="ex: Harrison — cap. 12, Insuficiência cardíaca"></div>
+        <div id="atConteudoWrap">
+          <div class="mfield row2" id="atConteudoSelWrap" style="display:none">
+            <div><label>Conteúdo / Área (opcional)</label><select id="atConteudoSel" onchange="atvHier.onConteudoChange()"></select></div>
+            <div><label>Tópico (opcional)</label><select id="atTopicoSel"></select></div>
+          </div>
+          <div class="mfield" id="atConteudoLivreWrap" style="display:none">
+            <label>Conteúdo (opcional)</label>
+            <input type="text" id="atConteudo" maxlength="160" placeholder="ex: insuficiência cardíaca">
+            <div id="atConteudoHint" style="display:none;font-size:11px;color:#7D6B77;margin-top:6px">Cadastre conteúdos e tópicos em <a href="disciplinas.html" style="color:var(--cobalt);font-weight:600">Disciplinas</a> pra escolher aqui sem digitar.</div>
+          </div>
+        </div>
+        <div class="mfield"><label>Prazo pra concluir (opcional)</label><input type="date" id="atPrazo"></div>
+      </div>
+      <div class="mfield row3">
+        <div><label>Etapa</label><select id="atEtapa" onchange="atEtapaChange()"></select></div>
+        <div><label>Acompanhar por</label><select id="atUnid" onchange="atUnidChange()">
+          <option value="paginas">Páginas</option><option value="minutos">Minutos</option><option value="capitulos">Capítulos</option><option value="aulas">Aulas</option><option value="questoes">Questões</option><option value="itens">Itens</option><option value="percentual">Percentual (%)</option>
+        </select></div>
+        <div><label id="atTotalLbl">Total</label><input type="number" id="atTotal" min="0" step="any" placeholder="ex: 20"></div>
+      </div>
+      <div class="mfield" id="atEtapaNomeWrap" style="display:none"><label>Nome da etapa</label><input type="text" id="atEtapaNome" maxlength="60" placeholder="ex: Mapa mental"></div>
+      <div class="mfield"><label>Estimativa de tempo pra concluir (opcional, em minutos)</label><input type="number" id="atEst" min="0" step="15" placeholder="ex: 180 — sem isso, o site estima pelo seu ritmo"></div>
+      <div class="mactions">
+        <button type="button" class="mbtn-cancel" onclick="fecharAtividade()">Cancelar</button>
+        <button type="submit" class="mbtn-save">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: estimativa de tempo restante definida pela aluna -->
+<div class="modal-backdrop" id="estModal" onclick="if(event.target===this) fecharEstimativa()">
+  <div class="modal-box" style="width:440px">
+    <button class="mbtn-close" onclick="fecharEstimativa()">×</button>
+    <h2>Tempo <i>restante</i></h2>
+    <div class="modal-sub" id="estNome">—</div>
+    <div class="live-preview on" id="estAtual" style="margin-bottom:14px">—</div>
+    <form onsubmit="event.preventDefault(); salvarEstimativa();">
+      <div class="mfield"><label>Sua estimativa (minutos)</label>
+        <div class="dur-custom"><input type="number" id="estMin" min="0" step="15" placeholder="ex: 120"><span class="ma-unid">min</span></div>
+        <div class="rg-chips"><button type="button" onclick="estSet(30)">30min</button><button type="button" onclick="estSet(60)">1h</button><button type="button" onclick="estSet(120)">2h</button><button type="button" onclick="estSet(180)">3h</button><button type="button" onclick="estSet(300)">5h</button></div>
+        <div class="rg-hint">O site desconta dessa estimativa o que você estudar daqui pra frente. Deixe em branco pra voltar à previsão automática pelo ritmo.</div>
+      </div>
+      <div class="mactions">
+        <button type="button" class="mbtn-delete" onclick="limparEstimativa()">Usar previsão automática</button>
+        <div style="display:flex;gap:10px;margin-left:auto">
+          <button type="button" class="mbtn-cancel" onclick="fecharEstimativa()">Cancelar</button>
+          <button type="submit" class="mbtn-save">Salvar</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
 
 <script>
 const DISC_KEY = 'trackermed.disciplinas.v1';
@@ -863,13 +1055,22 @@ function renderTodayItem(it, plansCount) {
   const excedeu = b.feito && studiedMin > mins;
   const discNome = it.discNome;
   const discNomeAttr = JSON.stringify(discNome).replace(/"/g,'&quot;');
+  const horarioTxt = b.horaEstimada ? '<span class="sem-hora">sem horário</span>' : `${escHtml(b.ini)}—${escHtml(b.fim)}`;
   let conteudoLine = b.conteudo ? ` · ${escHtml(b.conteudo)}` : '';
-  // Recurso registrado na sessão (livro, videoaula…) + quanto se avançou nele.
-  if (b.recurso && b.recurso.nome) {
+  // Atividade/etapa ligada à sessão (ou, no legado, o recurso gravado) + avanço.
+  const matLig = (b.materialId && MAT) ? MAT.get(b.materialId) : null;
+  if (matLig) {
+    const e = (matLig.log || []).find(x => x && x.blocoId === b.id);
+    const qtdTxt = (e && e.qtd > 0) ? ` (${escHtml(MAT.fmtUnid(e.qtd, matLig.unidade))}${e.ate != null ? `, até ${escHtml(MAT.fmtQtd(e.ate))}` : ''})` : '';
+    const etapa = MAT.etapaLabel ? ` — ${escHtml(MAT.etapaLabel(matLig))}` : '';
+    conteudoLine += ` · ${MAT.etapaIcon ? MAT.etapaIcon(matLig) : MAT.tipoIcon(matLig.tipo)} ${escHtml(matLig.nome)}${etapa}${qtdTxt}${matLig.concluido ? ' ✓' : ''}`;
+  } else if (b.recurso && b.recurso.nome) {
     const rIcon = MAT ? MAT.tipoIcon(b.recurso.tipo) : '📚';
     const rQtd = (b.recurso.qtd > 0 && MAT) ? ` (${escHtml(MAT.fmtUnid(b.recurso.qtd, b.recurso.unidade))})` : '';
     conteudoLine += ` · ${rIcon} ${escHtml(b.recurso.nome)}${rQtd}${b.recurso.materialConcluido ? ' ✓' : ''}`;
   }
+  if (b.notas) conteudoLine += ` · <span class="nota">“${escHtml(b.notas)}”</span>`;
+  if (b.reagendadoPara) conteudoLine += ` · restante reagendado pra ${escHtml(fmtDiaCurto(b.reagendadoPara))}`;
   const tag = planoTagHTML(it, plansCount);
   let motivoBase;
   if (isRev) {
@@ -877,7 +1078,7 @@ function renderTodayItem(it, plansCount) {
     const status = b.feito ? (excedeu ? ` · concluído · <span class="super">superou em ${fmtHrange(studiedMin-mins)}</span>` : ' · concluído') : '';
     motivoBase = `revisão programada${ord?` · ${ord}`:''}${b.revisaoOffset?` · ${escHtml(b.revisaoOffset)}`:''}${status} · vinda das <a href="revisoes.html" style="color:#FB8C00;font-weight:600">Revisões</a>`;
   } else if (b.feito) {
-    motivoBase = excedeu ? `concluído · <span class="super">superou meta em ${fmtHrange(studiedMin - mins)}</span>` : 'concluído';
+    motivoBase = b.reagendadoPara ? 'sessão encerrada' : (excedeu ? `concluído · <span class="super">superou meta em ${fmtHrange(studiedMin - mins)}</span>` : 'concluído');
   } else if (parcial) {
     motivoBase = `parcial · ${fmtHrange(studiedMin)} de ${fmtHrange(mins)}`;
   } else {
@@ -905,25 +1106,27 @@ function renderTodayItem(it, plansCount) {
     </div>`;
   }
   if (interactive) {
-    const editBtn = (b.feito || isRev) ? '' : `<button class="edit-btn" onclick="abrirEditarDuracao('${wk}','${b.id}', ${discNomeAttr}, ${mins})" title="Editar duração">✎</button>`;
+    const bId = escHtml(b.id), wkA = escHtml(wk);
+    const editBtn = isRev ? '' : `<button class="edit-btn" onclick="abrirRegistro({ wk: '${wkA}', blocoId: '${bId}' })" title="Corrigir registro (tempo, data, atividade, quantidade)">✎</button>`;
+    const reagBtn = (isRev || b.feito) ? '' : `<button class="edit-btn" onclick="abrirReagendar('${wkA}','${bId}')" title="Reagendar pra outro dia">⇄</button>`;
     // Sessão que ainda não começou (nada estudado) pode ser removida daqui mesmo.
-    const delBtn = (b.feito || isRev || studiedMin > 0) ? '' : `<button class="edit-btn" onclick="apagarBloco('${wk}','${b.id}')" title="Remover essa sessão do planejamento">🗑</button>`;
+    const delBtn = (b.feito || isRev || studiedMin > 0) ? '' : `<button class="edit-btn" onclick="apagarBloco('${wkA}','${bId}')" title="Remover essa sessão do planejamento">🗑</button>`;
     // ▶ vale pra disciplina cadastrada e pra matéria avulsa (só matNome).
     const discIdArg = b.discId ? `'${escHtml(b.discId)}'` : 'null';
     const playBtn = (!isRev && (b.discId || b.matNome))
-      ? `<button class="play-btn" onclick="abrirPlayDuracao(${discIdArg}, ${discNomeAttr}, '${b.id}')" title="Iniciar cronômetro">▶</button>`
+      ? `<button class="play-btn" onclick="abrirPlayDuracao(${discIdArg}, ${discNomeAttr}, '${bId}')" title="Iniciar cronômetro">▶</button>`
       : '<div></div>';
     return `<div class="blk-item ${cls}">
-      <div class="horario">${escHtml(b.ini)}—${escHtml(b.fim)}</div>
+      <div class="horario">${horarioTxt}</div>
       <div><div class="nome">${prefix}${escHtml(discNome)}${tag}</div><div class="motivo">${motivoBase}${b.extra && !isRev?' · extra':''}${conteudoLine}</div></div>
-      <div class="mins"><span class="mins-wrap">${minsLabel}${editBtn}${delBtn}</span></div>
+      <div class="mins"><span class="mins-wrap">${minsLabel}${editBtn}${reagBtn}${delBtn}</span></div>
       ${playBtn}
-      <button class="check-btn" onclick="toggleFeito('${wk}', '${b.id}')" title="${isRev?'Marcar revisão como feita':'Alternar concluído'}">${b.feito?'✓':'○'}</button>
+      <button class="check-btn" onclick="toggleFeito('${wkA}', '${bId}')" title="${isRev?'Marcar revisão como feita':(b.feito?'Reabrir sessão':'Encerrar sessão')}">${b.feito?'✓':'○'}</button>
       ${progHTML}
     </div>`;
   }
   return `<div class="blk-item ${cls}">
-    <div class="horario">${escHtml(b.ini)}—${escHtml(b.fim)}</div>
+    <div class="horario">${horarioTxt}</div>
     <div><div class="nome">${prefix}${escHtml(discNome)}${tag}</div><div class="motivo">${motivoBase}${conteudoLine} · <a href="planos.html" title="Trocar o plano em foco pra editar" style="color:var(--cobalt);font-weight:600">focar pra editar</a></div></div>
     <div class="mins">${minsLabel}</div>
     <div></div><div></div>
@@ -1272,8 +1475,8 @@ function timerFinish(auto) {
     } else {
       // Estudo planejado: acumula o tempo estudado como progresso, mas NÃO marca
       // "concluído" — nem quando o total alcança o tempo planejado. A conclusão
-      // da sessão só é confirmada quando o aluno salva o modal "recurso
-      // utilizado" que abre a seguir (confirmarConclusaoSessao). Percorre todas
+      // da sessão só é confirmada quando a aluna salva o modal
+      // de registro que abre a seguir (abrirRegistro, modo concluir). Percorre todas
       // as semanas porque o bloco pode estar guardado em outra weekKey.
       Object.keys(plan).forEach(wk => {
         plan[wk] = (plan[wk]||[]).map(b => {
@@ -1349,28 +1552,13 @@ function timerFinish(auto) {
     return;
   }
 
-  // Estudo comum: o tempo da sessão já está salvo no bloco acima, mas a sessão
-  // ainda NÃO está marcada como concluída. Abre o modal "recurso utilizado",
-  // que primeiro pergunta se o aluno quer atualizar a leitura de um livro:
-  // "Não" salva e conclui direto; "Sim" pede material e progressão (páginas,
-  // minutos de vídeo/áudio, capítulos…) e conclui ao salvar. Fechar o modal
-  // sem responder mantém o tempo registrado sem confirmar a conclusão.
-  const sessaoCtx = {
-    discId: sessaoDiscId,
-    discNome: sessaoMateria || 'Estudo',
-    conteudo: sessaoConteudo,
-    conteudoId: sessaoConteudoId,
-    topicoId: sessaoTopicoId,
-    minutos: studied,
-    segundos: exatoSec,
-    histId: null,
-    blocoId: estudoBlocoRef ? estudoBlocoRef.id : null,
-    bloco: estudoBlocoRef,
-    pendenteConclusao: true
-  };
+  // Estudo comum: o tempo já está salvo no bloco, mas a sessão ainda não está
+  // encerrada. Abre o registro da sessão já preenchido (matéria, hoje, tempo)
+  // pra confirmar em um passo — com atividade/quantidade opcionais. Fechar sem
+  // salvar mantém o tempo registrado e a sessão em aberto.
   timerClose();
   render();
-  abrirMatAvancoAposSessao(sessaoCtx);
+  if (estudoBlocoRef) abrirRegistro({ wk: estudoBlocoRef.wk, blocoId: estudoBlocoRef.id, modo: 'concluir', segundos: exatoSec });
 }
 
 // ===== Estudo extra: continuar ou encerrar após cada sessão de Pomodoro =====
@@ -1440,86 +1628,7 @@ function encerrarExtra() {
   timerFinish(false);
 }
 
-// ===== Modal: conteúdo concluído? =====
-// Abre DEPOIS que a conclusão da sessão foi confirmada (modal de recurso
-// salvo). A resposta decide apenas o destino do conteúdo: "Sim" o envia para
-// as revisões espaçadas (revisar:true no feed → revisoes.html); "Não" o
-// mantém apenas no histórico. A sessão e o tempo estudado não mudam aqui.
-let conclusaoCtx = null;   // { histId, materia, conteudo, minutos }
-function abrirConclusaoConteudo(ctx) {
-  conclusaoCtx = ctx;
-  document.getElementById('concMateria').textContent = ctx.materia || 'Estudo';
-  document.getElementById('concTempo').textContent = fmtHrange(ctx.minutos || 0);
-  const conteudo = (ctx.conteudo || '').trim();
-  document.getElementById('concConteudo').textContent = conteudo || '—';
-  document.getElementById('concConteudoWrap').style.display = conteudo ? '' : 'none';
-  document.getElementById('conclusaoContModal').classList.add('open');
-}
-function responderConclusaoConteudo(concluiu) {
-  const ctx = conclusaoCtx;
-  conclusaoCtx = null;
-  document.getElementById('conclusaoContModal').classList.remove('open');
-  if (!ctx || !ctx.histId) return;
-  // O conteúdo entra como base aguardando o aluno configurar as revisões
-  // espaçadas (revConfigured:false) — não como "revisão pendente". Fechar o
-  // modal equivale a "Não": a entrada permanece só no histórico.
-  if (concluiu) {
-    const arr = loadHist().map(r => (r && r.id === ctx.histId) ? { ...r, revisar: true } : r);
-    saveHist(arr);
-    render();
-  }
-}
-
-// ===== Conclusão da sessão (confirmada pelo modal de recurso) ==============
-// Entrada da sessão no feed do histórico. `revisar` nasce false — quem decide
-// se o conteúdo vai pras revisões é o modal "conteúdo concluído?" na sequência.
-function criarHistSessao(ctx) {
-  const histId = uid();
-  pushHist({
-    id: histId,
-    data: fmtDataBR(nowCuiaba()),
-    materia: ctx.discNome || 'Estudo',
-    conteudo: ctx.conteudo || '',
-    conteudoId: ctx.conteudoId || null,
-    topicoId: ctx.topicoId || null,
-    minutos: ctx.minutos || 0,
-    concluido: false,
-    revisar: false,
-    revConfigured: false,
-    auto: true
-  });
-  return histId;
-}
-// Confirma a conclusão da SESSÃO — chamada quando o aluno SALVA o modal de
-// recurso utilizado (ou direto, no fallback sem o motor de materiais). Marca o
-// bloco como feito (o check ✓ aparece), garante a entrada no feed e pergunta
-// se o CONTEÚDO também foi concluído. Fechar o modal de recurso sem salvar não
-// passa por aqui: o tempo estudado permanece, mas a sessão segue pendente.
-function confirmarConclusaoSessao(ctx) {
-  if (!ctx) return;
-  const alvoId = (ctx.bloco && ctx.bloco.id) || ctx.blocoId;
-  if (alvoId) {
-    const plan = loadPlan();
-    const wksBusca = (ctx.bloco && ctx.bloco.wk) ? [ctx.bloco.wk] : Object.keys(plan);
-    let salvar = false;
-    wksBusca.forEach(wk => {
-      plan[wk] = (plan[wk]||[]).map(b => {
-        if (!b || b.id !== alvoId || b.feito) return b;
-        salvar = true;
-        return { ...b, feito: true, data: b.data || todayKey() };
-      });
-    });
-    if (salvar) savePlan(plan);
-  }
-  if (!ctx.histId) ctx.histId = criarHistSessao(ctx);
-  render();
-  abrirConclusaoConteudo({
-    histId: ctx.histId,
-    materia: ctx.discNome || 'Estudo',
-    conteudo: ctx.conteudo || '',
-    minutos: ctx.minutos || 0
-  });
-}
+// (feed do histórico por sessão: upsertHistSessao / removerHistSessao, mais abaixo)
 
 // ===== Modal de método de revisão =====
 const SIM_KEY = 'trackermed.simulados.v2';
@@ -1642,34 +1751,20 @@ function toggleFeito(wk, blocoId) {
   const atual = (plan[wk]||[]).find(b => b.id === blocoId);
   if (!atual) return;
   const isRevAtual = atual.tipo === 'revisao' || atual.revisao;
-  // Concluir um ESTUDO manualmente (bolinha ○ / check) passa pelo mesmo modal
-  // do cronômetro: primeiro a pergunta de leitura — "Não" conclui o bloco
-  // direto (confirmarConclusaoSessao); "Sim" pede material e progressão e
-  // conclui ao salvar. Fechar/cancelar o modal mantém o progresso como está,
-  // sem concluir. Desmarcar (✓→○) e blocos de revisão seguem o caminho
-  // direto de sempre.
-  if (!isRevAtual && !atual.feito) {
-    const d = atual.discId ? loadDisc().find(x => x.id === atual.discId) : null;
-    const studiedMin = getStudiedMin(atual);
-    abrirMatAvancoAposSessao({
-      discId: atual.discId || null,
-      discNome: (d && d.nome) || atual.matNome || 'Estudo',
-      conteudo: atual.conteudo || '',
-      conteudoId: atual.conteudoId || null,
-      topicoId: atual.topicoId || null,
-      minutos: studiedMin > 0 ? studiedMin : getPlannedMin(atual),
-      histId: null,
-      blocoId,
-      bloco: { wk, id: blocoId },
-      pendenteConclusao: true
-    });
+  // Encerrar um ESTUDO (○ → ✓) sem tempo registrado abre o registro já
+  // preenchido com o planejado, pra confirmar (ou corrigir) o tempo e, se
+  // quiser, o avanço — um passo só. Com tempo já registrado, encerra na hora.
+  // Reabrir (✓ → ○) e blocos de revisão seguem o caminho direto.
+  if (!isRevAtual && !atual.feito && getStudiedMin(atual) <= 0) {
+    abrirRegistro({ wk, blocoId, modo: 'concluir', minutos: getPlannedMin(atual) });
     return;
   }
   let alvo = null;
   plan[wk] = (plan[wk]||[]).map(b => {
     if (b.id !== blocoId) return b;
     const feito = !b.feito;
-    alvo = { ...b, feito, data: feito ? todayKey() : b.data };
+    // A data da sessão não muda ao encerrar: fica no dia em que ela está.
+    alvo = { ...b, feito, data: feito ? (b.data || todayKey()) : b.data };
     return alvo;
   });
   savePlan(plan);
@@ -1809,61 +1904,8 @@ function getPlanoMinSelected() {
 }
 function getConcluidoSelected() { return document.getElementById('eConcluido').value === 'sim'; }
 function getRevisarSelected() { return document.getElementById('eRevisar').value === 'sim'; }
-function salvarExtraManual() {
-  const mat = getMateriaExtra();
-  if (!mat) return;
-  const cont = getConteudoExtra();
-  const mins = getMinsSelected();
-  const planoMin = getPlanoMinSelected();
-  const concluido = getConcluidoSelected();
-  const revisar = getRevisarSelected();
-  const sessoesReg = extraMulti === 'sim' ? extraSecoes : 1;
-  const pausaReg = extraMulti === 'sim' ? extraPausa : 0;
-  // tempo realmente estudado (Pomodoro × sessões); se não houver plano, plano = atual
-  const minsAtuais = mins * sessoesReg;
-  const minsPlanejado = planoMin || minsAtuais;
-  const plan = loadPlan();
-  const wk = weekKey(nowCuiaba());
-  if (!plan[wk]) plan[wk] = [];
-  const now = nowCuiaba();
-  const totalRange = Math.max(minsPlanejado, minsAtuais);
-  const endH = now.getHours() + now.getMinutes()/60;
-  const startH = Math.max(0, endH - totalRange/60);
-  const blocoId = uid();
-  plan[wk].push({ id: blocoId, tipo:'estudo', discId: mat.discId, matNome: mat.nome, conteudo: cont.conteudo, conteudoId: cont.conteudoId, topicoId: cont.topicoId, dia: now.getDay(), ini: toHHMM(startH), fim: toHHMM(endH), feito: concluido, minutos: minsPlanejado, minutosFeitos: minsAtuais, extra: true, data: todayKey(), revisar, planoMin, sessoes: sessoesReg, pausaMin: pausaReg });
-  savePlan(plan);
-
-  // Feed de revisões
-  const histId = uid();
-  pushHist({
-    id: histId,
-    data: fmtDataBR(now),
-    materia: mat.nome,
-    conteudo: cont.conteudo,
-    conteudoId: cont.conteudoId,
-    topicoId: cont.topicoId,
-    minutos: minsAtuais,
-    minutosPlanejado: minsPlanejado,
-    concluido,
-    revisar,
-    planoMin,
-    sessoes: sessoesReg,
-    pausaMin: pausaReg
-  });
-
-  fecharExtra();
-  render();
-  abrirMatAvancoAposSessao({
-    discId: mat.discId || null,
-    discNome: mat.nome,
-    conteudo: cont.conteudo || '',
-    conteudoId: cont.conteudoId || null,
-    minutos: minsAtuais,
-    histId,
-    blocoId,
-    concluded: concluido
-  });
-}
+// "Registrar agora" do estudo extra virou o modal de registro (abrirRegistroDoExtra,
+// mais abaixo): matéria, data e tempo em um passo, com detalhes opcionais.
 function salvarExtraTimer() {
   const mat = getMateriaExtra();
   if (!mat) return;
@@ -1927,6 +1969,7 @@ function abrirManual(pre) {
   if (pre.discId && discList.some(d => d.id === pre.discId)) sel.value = pre.discId;
   document.getElementById('mDiscOutra').value = '';
   mDiscChange();
+  mMontarMateriais(pre.materialId || null);
   document.getElementById('mData').value = pre.data || todayKey();
   document.getElementById('mIni').value = pre.ini || horaAgoraArredondada();
   document.getElementById('mDurCustom').value = '';
@@ -1940,6 +1983,7 @@ function mDiscChange() {
   const outra = v === '__outra__';
   document.getElementById('mDiscOutraWrap').style.display = outra ? '' : 'none';
   mHier.montar(outra ? null : v, {});
+  mMontarMateriais(null);
   if (outra) setTimeout(() => document.getElementById('mDiscOutra').focus(), 30);
 }
 function setManualDur(min, viaCustom) {
@@ -2029,9 +2073,12 @@ function salvarManual(iniciar) {
     dia, ini, fim, feito: false, auto: false, manual: true, criadoEm: new Date().toISOString()
   };
   if (matNome) bloco.matNome = matNome;
+  const materialId = (document.getElementById('mMaterial') || {}).value || null;
+  if (materialId) bloco.materialId = materialId;
   plan[wk].push(bloco);
   savePlan(plan);
   fecharManual();
+  selectedDay = dataStr; semanaAnchor = null;
   render();
   const hoje = dataStr === todayKey();
   if (iniciar && hoje) { abrirPlayDuracao(discId, nome, bloco.id); return; }
@@ -2142,38 +2189,16 @@ function aplicarEdicaoDuracao(mins) {
 }
 function aplicarTempoEstudado() {
   if (!durCtx || durCtx.modo !== 'edit') return;
-  const raw = document.getElementById('durStudied').value;
-  const v = parseInt(raw);
+  const v = parseInt(document.getElementById('durStudied').value);
   if (isNaN(v) || v < 0) { alert('Informe um número de minutos válido.'); return; }
-  const { wk, blocoId, discNome } = durCtx;
+  const { wk, blocoId } = durCtx;
   const plan = loadPlan();
-  let alvo = null, deltaMin = 0;
-  plan[wk] = (plan[wk]||[]).map(b => {
-    if (b.id !== blocoId) return b;
-    const plannedMin = getPlannedMin(b);
-    const feito = v >= plannedMin && plannedMin > 0;
-    // O campo substitui o total estudado — a "sessão" de agora é só a diferença.
-    deltaMin = Math.max(0, v - (b.minutosFeitos || 0));
-    alvo = { ...b, minutosFeitos: v, feito, data: b.data || todayKey() };
-    return alvo;
-  });
+  // Só o tempo muda. Atingir o planejado NÃO encerra a sessão — isso é
+  // decisão da aluna (○ na lista ou "Sessão encerrada" no registro).
+  plan[wk] = (plan[wk]||[]).map(b => b.id === blocoId ? { ...b, minutosFeitos: v, data: b.data || todayKey() } : b);
   savePlan(plan);
   fecharDur();
   render();
-  // Tempo de estudo registrado manualmente também conta como sessão: pergunta
-  // qual recurso foi utilizado pra atualizar o progresso do material.
-  if (v > 0 && alvo) {
-    abrirMatAvancoAposSessao({
-      discId: alvo.discId || null,
-      discNome: discNome || '',
-      conteudo: alvo.conteudo || '',
-      conteudoId: alvo.conteudoId || null,
-      minutos: deltaMin,
-      histId: null,
-      blocoId,
-      concluded: !!alvo.feito
-    });
-  }
 }
 
 function render() {
@@ -2188,9 +2213,18 @@ function render() {
   // Dia de HOJE em Cuiabá pelos campos locais — NUNCA via toISOString() (que
   // devolve a data em UTC e, à noite no Brasil, já aponta pro dia seguinte,
   // fazendo a lista de "hoje" mostrar as tarefas de amanhã).
-  const yyyy = dateKey(hoje);
+  const hojeKey = dateKey(hoje);
+  const yyyy = selectedDay;
+  const selDate = manualParseDate(selectedDay) || hoje;
+  const selDia = selDate.getDay();
+  const ehHoje = yyyy === hojeKey;
 
   document.getElementById('dataHoje').textContent = hoje.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
+  document.getElementById('diaTitulo').innerHTML = ehHoje
+    ? 'Planejado <i>pra hoje</i>'
+    : `${escHtml(selDate.toLocaleDateString('pt-BR', { weekday: 'long' }))}, <i>${String(selDate.getDate()).padStart(2, '0')}/${String(selDate.getMonth() + 1).padStart(2, '0')}</i>`;
+  document.getElementById('lblHoje').textContent = ehHoje ? 'Estudado hoje' : 'Estudado · ' + fmtDiaCurto(yyyy);
+  document.getElementById('lblPlan').textContent = ehHoje ? 'Planejado hoje' : 'Planejado · ' + fmtDiaCurto(yyyy);
 
   // ==== Blocos planejados pra HOJE ====
   const histRev = loadHist();
@@ -2236,7 +2270,7 @@ function render() {
   // Aulas fixas pra hoje (das disciplinas)
   const DIA_IDX = { dom:0, seg:1, ter:2, qua:3, qui:4, sex:5, sab:6 };
   const aulasHoje = [];
-  disc.forEach(d => (d.aulas||[]).forEach(a => { if (DIA_IDX[a.dia]===hojeDia) aulasHoje.push({disc:d, aula:a}); }));
+  disc.forEach(d => (d.aulas||[]).forEach(a => { if (DIA_IDX[a.dia]===selDia) aulasHoje.push({disc:d, aula:a}); }));
 
   // Stats de hoje — reúnem todos os planos filtrados. Revisões agendadas não
   // contam como horas de estudo, mas entram na contagem de itens.
@@ -2253,7 +2287,7 @@ function render() {
 
   // Banner meme: cumpriu ou superou meta diária
   const memeEl = document.getElementById('metaMeme');
-  if (planMin > 0 && feitosMin >= planMin) {
+  if (ehHoje && planMin > 0 && feitosMin >= planMin) {
     const superou = feitosMin > planMin;
     const lista = superou ? MEMES_SUPER : MEMES_META;
     const meme = pickMeme(todayKey() + '-' + (superou?'over':'meta'), lista);
@@ -2292,7 +2326,7 @@ function render() {
   const plEl = document.getElementById('planList');
   const sess = loadSess();
   if (todayItems.length === 0 && aulasHoje.length === 0) {
-    plEl.innerHTML = `<div class="empty-state">Nada planejado pra hoje. <br><a href="plannerstudy.html">Ir ao planejamento →</a>, <a href="#" onclick="event.preventDefault(); abrirManual()">planejar uma sessão</a> ou adicionar um estudo extra aqui em cima.</div>`;
+    plEl.innerHTML = `<div class="empty-state">Nada ${ehHoje ? 'planejado pra hoje' : 'registrado nesse dia'}. <br><a href="#" onclick="event.preventDefault(); abrirRegistro({ data: selectedDay })">Registrar um estudo</a>, <a href="#" onclick="event.preventDefault(); abrirManual({ data: selectedDay })">reservar uma sessão</a> ou <a href="plannerstudy.html">ir ao planejamento →</a></div>`;
   } else {
     const itens = [];
     // aulas fixas primeiro (read-only)
@@ -2346,482 +2380,774 @@ function render() {
   }
   histEl.innerHTML = linhas.join('');
 
-  renderMateriaisHoje();
+  renderSemanaStrip(coll);
+  renderAtividades(coll);
 }
 
-// ===== Materiais de estudo: progresso gradual (motor em theme.js) =========
-// Materiais (capítulos, artigos, videoaulas, áudios) são concluídos aos
-// poucos. Aqui: (1) a seção "Materiais em andamento" com progresso, ritmo e
-// previsão dinâmica; (2) o modal que pergunta o avanço ao encerrar a sessão.
+// ===== Diário: dia selecionado + faixa da semana ==============================
+// O Histórico mostra UM dia por vez (hoje, por padrão): o que estava reservado,
+// o que foi feito e o que falta. A faixa da semana resume cada dia
+// (realizado / planejado) e deixa pular pra qualquer um — inclusive pra
+// registrar um estudo em data passada ou reorganizar o que ficou pra trás.
 const MAT = window.TrackerMedMateriais;
-// Última posição registrada (página/minuto/%). Fallback pro theme.js antigo
-// em cache, sem posAtual: a soma dos avanços (feito) equivale à posição.
-const matPos = m => (MAT.posAtual ? MAT.posAtual(m) : MAT.stats(m).feito);
+let selectedDay = todayKey();
+let semanaAnchor = null;   // segunda-feira da semana exibida; null = semana do dia selecionado
+const atvAberto = new Set();   // etapas com a lista de registros expandida
 
-const MA_PERGUNTAS = {
-  paginas: 'Quantas páginas você leu?',
-  minutos: 'Quantos minutos você assistiu/ouviu?',
-  capitulos: 'Quantos capítulos você concluiu?',
-  aulas: 'Quantas aulas você concluiu?',
-  questoes: 'Quantas questões você fez?',
-  itens: 'Quantos itens você concluiu?',
-  percentual: 'Em que percentual do material você está agora?'
-};
-
-// ===== Modal "recurso utilizado": tipos e campos de progressão =============
-// Ao encerrar o TEMPO de estudo (sem necessariamente concluir o conteúdo), o
-// modal pergunta qual material foi usado. Pode ser um material já em andamento
-// ou um novo, cadastrado na hora com a progressão adequada ao tipo:
-//   · livro / artigo / resumo → página inicial, página final, total de páginas
-//   · videoaula / gravação / podcast → tempo inicial, tempo final, duração total
-//   · outros materiais → quantidade concluída e quantidade total
-const MA_NOVO = '__novo__';
-const MA_TIPOS_NOVO = [
-  { tipo:'livro',    grupo:'paginas', icon:'📖', label:'Livro / capítulo' },
-  { tipo:'artigo',   grupo:'paginas', icon:'📄', label:'Artigo científico' },
-  { tipo:'resumo',   grupo:'paginas', icon:'📝', label:'Resumo / apostila' },
-  { tipo:'video',    grupo:'minutos', icon:'🎬', label:'Videoaula' },
-  { tipo:'gravacao', grupo:'minutos', icon:'🎥', label:'Gravação de aula' },
-  { tipo:'audio',    grupo:'minutos', icon:'🎧', label:'Podcast / áudio' },
-  { tipo:'outro',    grupo:'itens',   icon:'📚', label:'Outros materiais' }
-];
-// `calc` devolve o avanço da PRIMEIRA sessão de um material novo a partir de
-// (inicial, final). Páginas contam inclusive (da pág. 10 à 14 = 5 páginas);
-// tempo é a diferença. Em material JÁ EM ANDAMENTO a retomada é por posição
-// (retIni/retFim): o aluno informa só onde parou e o avanço é a diferença pra
-// última posição registrada (parou na pág. 10, agora na 16 → 6 páginas) —
-// informar a página nunca soma o número dela como quantidade lida.
-const MA_GRUPOS = {
-  paginas: { unidade:'paginas', ini:'Página inicial', fim:'Página final', tot:'Total de páginas',
-             calc:(i,f)=>f-i+1, iniMin:1,
-             retIni:'Parou na página', retFim:'Em que página você parou agora?' },
-  minutos: { unidade:'minutos', ini:'Tempo inicial (min)', fim:'Tempo final (min)', tot:'Duração total (min)',
-             calc:(i,f)=>f-i, iniMin:0,
-             retIni:'Parou no minuto', retFim:'Em que minuto você parou agora?' },
-  itens:   { unidade:'itens', ini:null, fim:'Quantidade concluída nesta sessão', tot:'Quantidade total',
-             calc:(i,f)=>f, iniMin:0 }
-};
-
-function renderMateriaisHoje() {
-  const box = document.getElementById('matHojeBox');
-  if (!box || !MAT) return;
-  const emAndamento = MAT.emAndamento();
-  const hojeK = todayKey();
-  const concluidosHoje = MAT.load().filter(m => m && m.concluido && m.concluidoEm === hojeK);
-  if (!emAndamento.length && !concluidosHoje.length) { box.style.display = 'none'; return; }
-  box.style.display = '';
-  const midAttr = id => JSON.stringify(id).replace(/"/g, '&quot;');
-  const RITMO = window.TrackerMedRitmo;
-  const ritmoSamples = RITMO ? RITMO.samples() : null;
-  const rows = emAndamento.map(m => {
-    const st = MAT.stats(m);
-    const u = q => escHtml(MAT.fmtUnid(q, m.unidade));
-    const disc = m.discNome ? `<span class="mi-disc">· ${escHtml(m.discNome)}${m.conteudoNome ? ' — ' + escHtml(m.conteudoNome) : ''}</span>` : '';
-    const hojeTxt = st.hoje > 0 ? `Hoje: <b>${u(st.hoje)}</b> · ` : '';
-    // Previsão baseada na velocidade REAL (págs/h, min/h) quando há sessões
-    // cronometradas; senão, cai na estimativa por qtd/dia do matStats.
-    let prev = st.estimativaDias != null ? ` · previsão: <b>${st.estimativaDias} dia${st.estimativaDias !== 1 ? 's' : ''}</b>` : '';
-    if (RITMO) {
-      const ri = RITMO.material(m, ritmoSamples);
-      if (ri.vel && ri.restanteMin != null) {
-        prev = ` · ritmo: <b>${escHtml(RITMO.fmtVel(ri.vel.porHora, m.unidade))}</b> · ~<b>${fmtHrange(Math.round(ri.restanteMin))}</b> restantes`;
-        if (ri.dias != null) prev += ` (≈${ri.dias} dia${ri.dias !== 1 ? 's' : ''})`;
-      }
-    }
-    const msgs = MAT.mensagens(m).slice(0, 2).map(x => `<div class="mi-msg">${escHtml(x)}</div>`).join('');
-    return `<div class="mat-item">
-      <div class="mi-top">
-        <span class="mi-nome">${MAT.tipoIcon(m.tipo)} ${escHtml(m.nome)} ${disc}</span>
-        <span class="mi-num">${st.pct}%</span>
-        <button type="button" class="mi-btn" onclick="abrirMatAvanco({materialId:${midAttr(m.id)}})">+ avanço</button>
-        <button type="button" class="mi-del" onclick="excluirMaterialHist(${midAttr(m.id)})" title="Excluir esta leitura da lista" aria-label="Excluir leitura">🗑</button>
-      </div>
-      <div class="mi-bar"><i style="width:${st.pct}%"></i></div>
-      <div class="mi-sub">${hojeTxt}<b>${escHtml(MAT.fmtCurto(st.feito, m.unidade))}</b> de ${u(st.total)} · restam <b>${u(st.restante)}</b>${prev}</div>
-      ${msgs}
-    </div>`;
-  });
-  const feitos = concluidosHoje.map(m => `<div class="mat-item done">
-      <div class="mi-top">
-        <span class="mi-nome">${MAT.tipoIcon(m.tipo)} ${escHtml(m.nome)}</span>
-        <span class="mi-num" style="color:var(--mint,#1FC28A)">100% ✓</span>
-        <button type="button" class="mi-del" onclick="excluirMaterialHist(${midAttr(m.id)})" title="Excluir esta leitura da lista" aria-label="Excluir leitura">🗑</button>
-      </div>
-      <div class="mi-bar"><i style="width:100%"></i></div>
-      <div class="mi-sub">Material concluído hoje. 🎉</div>
-    </div>`);
-  document.getElementById('matHojeList').innerHTML = rows.concat(feitos).join('');
-}
-
-// Excluir uma leitura individualmente: tira o material e o progresso dele da
-// lista, sem mexer no resto — as sessões de estudo já registradas no
-// histórico continuam intactas.
-function excluirMaterialHist(id) {
-  const m = MAT.get(id);
-  if (!m) return;
-  if (!confirm('Excluir a leitura “' + m.nome + '”?\n\nEla e o progresso registrado nela saem da lista de materiais. As sessões de estudo do histórico continuam.\n\nEssa ação não pode ser desfeita.')) return;
-  MAT.remove(id);
-  renderMateriaisHoje();
-}
-
-// Após encerrar uma sessão de estudo: pergunta se o aluno quer atualizar o
-// progresso de leitura de um livro/material — só no "Sim" os campos de
-// recurso e avanço aparecem. ctx amarra o registro à tarefa (bloco), ao
-// conteúdo e à entrada do histórico da sessão.
-let maCtx = null;        // { discId, discNome, conteudo, conteudoId, topicoId, minutos, histId, blocoId, bloco, concluded, pendenteConclusao }
-let maNovoTipo = 'livro';
-let maSubCampos = '';    // subtítulo da etapa de campos (definido em abrirMatAvanco)
-function abrirMatAvancoAposSessao(ctx) {
-  ctx = ctx || {};
-  if (!MAT) {
-    // Fallback (theme.js desatualizado no cache do navegador, sem o motor de
-    // materiais): o modal de recurso não existe — conclui a sessão direto pra
-    // tarefa não ficar presa sem check.
-    if (ctx.pendenteConclusao) confirmarConclusaoSessao(ctx);
-    return;
-  }
-  abrirMatAvanco({ discId: ctx.discId || null, sessao: ctx });
-}
-
-function abrirMatAvanco(opts) {
-  opts = opts || {};
-  if (!MAT) return;
-  maCtx = opts.sessao || null;
-  const mats = MAT.emAndamento();
-  // Materiais da disciplina da sessão primeiro; demais em seguida.
-  const ordenados = mats.slice().sort((a, b) => {
-    const pa = a.discId === opts.discId ? 0 : 1;
-    const pb = b.discId === opts.discId ? 0 : 1;
-    return pa - pb;
-  });
-  const selId = opts.materialId || (ordenados.length ? ordenados[0].id : MA_NOVO);
-  const opcoes = ordenados.map(m => {
-    const extra = m.discNome ? ` — ${m.discNome}` : '';
-    return `<option value="${escHtml(m.id)}"${m.id === selId ? ' selected' : ''}>${MAT.tipoIcon(m.tipo)} ${escHtml(m.nome + extra)}</option>`;
-  });
-  opcoes.push(`<option value="${MA_NOVO}"${selId === MA_NOVO ? ' selected' : ''}>➕ Registrar novo recurso…</option>`);
-  document.getElementById('maMaterial').innerHTML = opcoes.join('');
-  // Título e subtítulo conforme o papel do modal: quando a conclusão da sessão
-  // depende dele (pendenteConclusao), salvar é o que confirma a conclusão e faz
-  // o check ✓ aparecer; fechar mantém o tempo registrado sem concluir.
-  // maSubCampos guarda o subtítulo da etapa de campos — aplicado só quando o
-  // aluno responde "Sim" à pergunta de leitura (ou na abertura direta).
-  if (maCtx && maCtx.pendenteConclusao) {
-    document.getElementById('maTitulo').innerHTML = 'Sessão <i>finalizada</i>';
-    maSubCampos = 'Registre o material utilizado e a progressão da sessão (páginas, minutos de vídeo/áudio, capítulos…). <b>Salvar confirma a conclusão da sessão</b>; fechar mantém o tempo registrado sem concluir.';
-  } else if (maCtx && maCtx.concluded) {
-    document.getElementById('maTitulo').innerHTML = 'Recurso <i>utilizado</i>';
-    maSubCampos = 'Conteúdo concluído! Registre o material usado na sessão — se ele também foi finalizado, use <b>✓ Concluí o material</b>.';
-  } else if (maCtx) {
-    document.getElementById('maTitulo').innerHTML = 'Recurso <i>utilizado</i>';
-    maSubCampos = 'Tempo de estudo registrado — o conteúdo segue em andamento. Informe o material usado e a progressão pra atualizar o acumulado.';
-  } else {
-    document.getElementById('maTitulo').innerHTML = 'Avanço no <i>material</i>';
-    maSubCampos = 'Registre quanto você avançou — vale também pra leitura feita fora de uma sessão cronometrada, sem depender das horas registradas. O material é concluído ao atingir o total ou quando você marcar ✓.';
-  }
-  maMontarTipos();
-  document.getElementById('maNome').value = (maCtx && maCtx.conteudo) || '';
-  maOnChange();
-  // Sessão de estudo (play, conclusão manual, estudo extra, tempo editado):
-  // a leitura é opcional — começa na pergunta. "+ avanço" vai direto aos campos.
-  if (maCtx) maMostrarPerguntaLeitura();
-  else maMostrarCamposLeitura();
-  document.getElementById('matAvancoModal').classList.add('open');
-}
-
-// ===== Etapas do modal de recurso: pergunta de leitura × campos ==============
-// Etapa 1 — "Deseja atualizar o progresso de leitura de um livro?". Só aparece
-// quando o modal abre após uma sessão de estudo (maCtx presente).
-function maMostrarPerguntaLeitura() {
-  document.getElementById('maStep1').style.display = '';
-  document.getElementById('maStep2').style.display = 'none';
-  document.getElementById('maSub').textContent = 'Tempo de estudo registrado.';
-  document.getElementById('maStep1Help').innerHTML = (maCtx && maCtx.pendenteConclusao)
-    ? '“<b>Não</b>” salva e conclui o estudo normalmente, sem pedir nada sobre livros ou páginas. “<b>Sim</b>” abre os campos pra escolher o livro ou material e registrar o avanço.'
-    : '“<b>Não</b>” mantém o estudo salvo como está, sem pedir nada sobre livros ou páginas. “<b>Sim</b>” abre os campos pra escolher o livro ou material e registrar o avanço.';
-}
-// Etapa 2 — campos de material/progressão (fluxo original do modal).
-function maMostrarCamposLeitura() {
-  document.getElementById('maStep1').style.display = 'none';
-  document.getElementById('maStep2').style.display = '';
-  document.getElementById('maSub').innerHTML = maSubCampos;
-  const pularBtn = document.getElementById('maPularBtn');
-  if (pularBtn) pularBtn.textContent = maCtx ? '← Voltar' : 'Pular';
-}
-// Resposta da etapa 1. "Sim" abre os campos; "Não" salva o estudo normalmente
-// sem pedir nada sobre livros — pra sessão aguardando conclusão, isso confirma
-// a conclusão direto (mesmo efeito de salvar o modal, só que sem material).
-function maResponderLeitura(sim) {
-  if (sim) { maMostrarCamposLeitura(); return; }
-  const pendente = (maCtx && maCtx.pendenteConclusao) ? maCtx : null;
-  fecharMatAvanco();
-  if (pendente) confirmarConclusaoSessao(pendente);
-  else render();
-}
-// Botão secundário da etapa 2: numa sessão volta pra pergunta de leitura;
-// na abertura direta ("+ avanço") mantém o "Pular" que só fecha o modal.
-function maPularOuVoltar() {
-  if (maCtx) { maMostrarPerguntaLeitura(); return; }
-  fecharMatAvanco();
-}
-
-function maMontarTipos() {
-  document.getElementById('maTipoBtns').innerHTML = MA_TIPOS_NOVO.map(t =>
-    `<button type="button" class="ma-tipo-btn${t.tipo === maNovoTipo ? ' active' : ''}" data-tipo="${t.tipo}" onclick="maSetTipo('${t.tipo}')"><span class="tic">${t.icon}</span>${t.label}</button>`
-  ).join('');
-}
-function maSetTipo(tipo) {
-  maNovoTipo = tipo;
-  document.querySelectorAll('#maTipoBtns .ma-tipo-btn').forEach(b => b.classList.toggle('active', b.dataset.tipo === tipo));
-  maAtualizarCampos();
-}
-function maSelecionado() {
-  const sel = document.getElementById('maMaterial');
-  if (!sel || !sel.value || sel.value === MA_NOVO) return null;
-  return MAT.get(sel.value);
-}
-// Grupo de progressão (inicial/final/total) da unidade; null → campo único de
-// quantidade (unidades avulsas de materiais já cadastrados: capítulos, %, …).
-function maGrupoDe(unidade) {
-  if (unidade === 'paginas') return MA_GRUPOS.paginas;
-  if (unidade === 'minutos') return MA_GRUPOS.minutos;
+function rgEl(id) { return document.getElementById(id); }
+function selecionarDia(k) { selectedDay = k; semanaAnchor = null; render(); }
+function semanaAnchorKey() { return semanaAnchor || dateKey(startOfWeek(manualParseDate(selectedDay) || nowCuiaba())); }
+function semanaNav(dir) { semanaAnchor = dateKey(startOfWeek(addDays(manualParseDate(semanaAnchorKey()), dir * 7))); render(); }
+function semanaHoje() { semanaAnchor = null; selectedDay = todayKey(); render(); }
+function fmtDiaCurto(k) { const d = manualParseDate(k); return d ? `${DIAS_LBL[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}` : (k || '—'); }
+function findBloco(blocoId, wkHint) {
+  const plan = loadPlan();
+  const wks = wkHint ? [wkHint].concat(Object.keys(plan).filter(w => w !== wkHint)) : Object.keys(plan);
+  for (const wk of wks) { const b = (plan[wk] || []).find(x => x && x.id === blocoId); if (b) return { wk, b }; }
   return null;
 }
-function maGrupoNovo() {
-  const t = MA_TIPOS_NOVO.find(x => x.tipo === maNovoTipo);
-  return MA_GRUPOS[t ? t.grupo : 'itens'];
+
+function renderSemanaStrip(coll) {
+  const el = rgEl('semanaStrip');
+  if (!el) return;
+  const monday = manualParseDate(semanaAnchorKey());
+  const hojeK = todayKey();
+  const items = coll.items.filter(it => histFiltro === 'todos' || it.planoId === histFiltro);
+  const byDate = {};
+  items.forEach(it => { (byDate[it.date] = byDate[it.date] || []).push(it); });
+  let html = `<button type="button" class="sem-nav" onclick="semanaNav(-1)" title="Semana anterior">‹</button>`;
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(monday, i);
+    const k = dateKey(d);
+    const dia = byDate[k] || [];
+    const est = dia.filter(it => !it.isRev);
+    const plan = est.reduce((s, it) => s + getPlannedMin(it.b), 0);
+    const done = est.reduce((s, it) => s + getStudiedMin(it.b), 0);
+    const pend = est.filter(it => !it.b.feito && getPlannedMin(it.b) > getStudiedMin(it.b)).length;
+    const revs = dia.filter(it => it.isRev && !it.b.feito).length;
+    const pct = plan > 0 ? Math.min(100, Math.round(done / plan * 100)) : (done > 0 ? 100 : 0);
+    const cls = ['sem-dia', k === selectedDay ? 'sel' : '', k === hojeK ? 'hoje' : '', k < hojeK ? 'passado' : ''].join(' ').trim();
+    const dots = (pend && k < hojeK ? '<span class="dot pend" title="sessão pendente"></span>' : '')
+      + (revs ? '<span class="dot rev" title="revisão agendada"></span>' : '')
+      + (plan > 0 && done >= plan ? '<span class="dot ok" title="meta do dia cumprida"></span>' : '');
+    html += `<button type="button" class="${cls}" onclick="selecionarDia('${k}')" title="${k === hojeK ? 'Hoje' : fmtDiaCurto(k)}">
+      <span class="sd-dia">${DIAS_LBL[d.getDay()]}${k === hojeK ? ' · hoje' : ''}</span>
+      <span class="sd-num">${d.getDate()}</span>
+      <span class="sd-bar"><i style="width:${pct}%"></i></span>
+      <span class="sd-txt">${(done > 0 || plan > 0) ? `${fmtHrange(done)}<span class="sep"> / ${fmtHrange(plan)}</span>` : '—'}</span>
+      <span class="sd-dots">${dots}</span>
+    </button>`;
+  }
+  html += `<button type="button" class="sem-nav" onclick="semanaNav(1)" title="Semana seguinte">›</button>`;
+  el.innerHTML = html;
+  const sunday = addDays(monday, 6);
+  const foraDeHoje = semanaAnchorKey() !== dateKey(startOfWeek(nowCuiaba())) || selectedDay !== hojeK;
+  rgEl('semanaLbl').innerHTML = `${escHtml(fmtDiaCurto(dateKey(monday)))} — ${escHtml(fmtDiaCurto(dateKey(sunday)))}`
+    + (foraDeHoje ? ` · <a href="#" onclick="event.preventDefault(); semanaHoje()">voltar pra hoje</a>` : '');
 }
-function maOnChange() {
-  const m = maSelecionado();
-  document.getElementById('maNovoWrap').style.display = m ? 'none' : '';
-  document.getElementById('maProgWrap').style.display = m ? '' : 'none';
-  if (m) {
-    const st = MAT.stats(m);
-    document.getElementById('maFill').style.width = st.pct + '%';
-    document.getElementById('maProgTxt').textContent =
-      `${MAT.fmtCurto(st.feito, m.unidade)} de ${MAT.fmtUnid(st.total, m.unidade)} · ${st.pct}% · restam ${MAT.fmtUnid(st.restante, m.unidade)}`;
-  }
-  maAtualizarCampos();
-}
-// Mostra os campos de progressão adequados ao material/tipo em foco e
-// pré-preenche o ponto de partida com o progresso já acumulado.
-function maAtualizarCampos() {
-  const m = maSelecionado();
-  const g = m ? maGrupoDe(m.unidade) : maGrupoNovo();
-  const range = document.getElementById('maRangeWrap');
-  const qtdW = document.getElementById('maQtdWrap');
-  if (m && !g) {
-    // Material existente com unidade avulsa: campo único de quantidade.
-    range.style.display = 'none';
-    qtdW.style.display = '';
-    document.getElementById('maPergunta').textContent = MA_PERGUNTAS[m.unidade] || 'Quanto você avançou?';
-    document.getElementById('maUnid').textContent = m.unidade === 'percentual' ? '%' : (MAT.UNIDADES[m.unidade]?.abbr || '');
-    document.getElementById('maQtd').value = '';
-    maPreview();
-    return;
-  }
-  range.style.display = '';
-  qtdW.style.display = 'none';
-  // Retomada: material em andamento com unidade de posição — a posição onde
-  // parou fica fixa (só informativa) e o aluno digita apenas onde está agora.
-  const retomada = !!(m && g.ini);
-  document.getElementById('maIniCol').style.display = g.ini ? '' : 'none';
-  if (g.ini) document.getElementById('maIniLbl').textContent = retomada ? g.retIni : g.ini;
-  document.getElementById('maFimLbl').textContent = retomada ? g.retFim : g.fim;
-  document.getElementById('maTotLbl').textContent = g.tot;
-  // Material existente: o total já é conhecido; retoma de onde parou.
-  document.getElementById('maTotCol').style.display = m ? 'none' : '';
-  const iniEl = document.getElementById('maIni');
-  iniEl.readOnly = retomada;
-  if (g.ini) iniEl.value = retomada ? matPos(m) : g.iniMin;
-  else iniEl.value = '';
-  document.getElementById('maFim').value = '';
-  document.getElementById('maTot').value = '';
-  maPreview();
-}
-// Lê os campos de progressão → { qtd, de, ate } ou null. estrito=true valida
-// com alertas (salvar); senão falha silenciosamente (preview / conclusão).
-// m (material já em andamento) ativa o modo retomada: o avanço é SEMPRE
-// posição informada − última posição registrada — parou na pág. 10 e agora
-// está na 16 registra 6 páginas, nunca 16.
-function maLerProgresso(g, estrito, m) {
-  if (!g) {
-    const v = parseFloat(document.getElementById('maQtd').value);
-    if (m && m.unidade === 'percentual') {
-      const pos = matPos(m);
-      if (isNaN(v) || v <= pos) {
-        if (estrito) { alert(`Informe o percentual atual do material — maior que o já registrado (${MAT.fmtQtd(pos)}%).`); document.getElementById('maQtd').focus(); }
-        return null;
-      }
-      return { qtd: v - pos, de: pos, ate: v };
-    }
-    if (!(v > 0)) { if (estrito) document.getElementById('maQtd').focus(); return null; }
-    return { qtd: v, de: null, ate: null };
-  }
-  const fim = parseFloat(document.getElementById('maFim').value);
-  if (g.ini && m) {
-    const pos = matPos(m);
-    if (isNaN(fim) || fim <= pos) {
-      if (estrito) alert(`${g.retFim} Informe um valor maior que o já registrado (${MAT.fmtQtd(pos)}).`);
-      return null;
-    }
-    return { qtd: fim - pos, de: pos, ate: fim };
-  }
-  if (g.ini) {
-    const ini = parseFloat(document.getElementById('maIni').value);
-    if (isNaN(ini) || ini < g.iniMin) { if (estrito) alert(`${g.ini}: informe um valor válido.`); return null; }
-    if (isNaN(fim) || g.calc(ini, fim) <= 0) { if (estrito) alert(`${g.fim} precisa ser maior que o valor inicial.`); return null; }
-    return { qtd: g.calc(ini, fim), de: ini, ate: fim };
-  }
-  if (!(fim > 0)) { if (estrito) alert(`${g.fim}: informe um valor maior que zero.`); return null; }
-  return { qtd: fim, de: null, ate: null };
-}
-function maPreview() {
-  const box = document.getElementById('maPreviewBox');
-  const m = maSelecionado();
-  const g = m ? maGrupoDe(m.unidade) : maGrupoNovo();
-  const av = maLerProgresso(g, false, m);
-  let total, feito = 0, unidade;
-  if (m) {
-    const st = MAT.stats(m);
-    total = st.total; feito = st.feito; unidade = m.unidade;
-  } else {
-    total = parseFloat(document.getElementById('maTot').value);
-    unidade = g.unidade;
-  }
-  if (!av || !(av.qtd > 0)) {
-    box.classList.remove('on');
-    if (m && g && g.retIni) {
-      box.textContent = `${g.retIni} ${MAT.fmtQtd(matPos(m))} — informe onde parou agora; só a diferença conta como avanço.`;
-    } else if (m && m.unidade === 'percentual') {
-      box.textContent = `Você está em ${MAT.fmtQtd(matPos(m))}% — informe o percentual atual; só a diferença conta como avanço.`;
-    } else {
-      box.textContent = m ? 'Informe quanto você avançou nesta sessão.' : 'Informe a progressão da sessão e o total do material.';
-    }
-    return;
-  }
-  if (!(total > 0)) {
-    box.classList.add('on');
-    box.innerHTML = `Avanço desta sessão: <b>${escHtml(MAT.fmtUnid(av.qtd, unidade))}</b> — informe o total pra calcular o progresso.`;
-    return;
-  }
-  // Progresso acumulado = posição alcançada (ate) quando a unidade é de
-  // posição; unidades avulsas (capítulos, questões…) seguem somando.
-  const novoFeito = Math.min(total, av.ate != null ? av.ate : feito + av.qtd);
-  const novoPct = Math.min(100, Math.round((novoFeito / total) * 100));
-  const novoRest = Math.max(0, total - novoFeito);
-  box.classList.add('on');
-  box.innerHTML = `Avanço: <b>${escHtml(MAT.fmtUnid(av.qtd, unidade))}</b> · novo progresso: <b>${escHtml(MAT.fmtCurto(novoFeito, unidade))}</b> de ${escHtml(MAT.fmtUnid(total, unidade))} · ${novoPct}% · restam ${escHtml(MAT.fmtUnid(novoRest, unidade))}`
-    + (novoFeito >= total ? ' · <b>material será concluído ✓</b>' : '');
-}
-// Cria o material cadastrado na hora, já vinculado à disciplina e ao conteúdo
-// da sessão que originou o modal.
-function maCriarMaterial(g, total) {
-  const nome = (document.getElementById('maNome').value || '').trim();
-  return MAT.upsert({
-    id: MAT.uid(), nome, tipo: maNovoTipo, unidade: g.unidade, total,
-    discId: (maCtx && maCtx.discId) || null,
-    discNome: (maCtx && maCtx.discNome) || null,
-    conteudoId: (maCtx && maCtx.conteudoId) || null,
-    conteudoNome: (maCtx && maCtx.conteudo) || null,
-    prazo: null, criadoEm: todayKey(),
-    concluido: false, concluidoEm: null, log: []
+
+// ===== Feed do histórico (historicoEstudos) por sessão ========================
+// Uma entrada por sessão registrada (blocoId). É o que alimenta as revisões
+// espaçadas (revisar:true) e o fallback de velocidade dos gráficos.
+function upsertHistSessao(o) {
+  const d = manualParseDate(o.dataKey);
+  const dataBR = fmtDataBR(d || nowCuiaba());
+  const arr = loadHist();
+  let found = false;
+  const novo = arr.map(r => {
+    if (!r || r.blocoId !== o.blocoId || r.parentId) return r;
+    found = true;
+    // Revisões já configuradas não são desligadas por aqui (os filhos continuam).
+    const revisar = r.revConfigured ? true : !!o.revisar;
+    const out = { ...r, data: dataBR, materia: o.materia, conteudo: o.conteudo || '', conteudoId: o.conteudoId || null, topicoId: o.topicoId || null, minutos: o.minutos || 0, revisar };
+    if (o.recurso) out.recurso = o.recurso; else delete out.recurso;
+    return out;
   });
+  if (found) { saveHist(novo); return; }
+  if (!(o.minutos > 0) && !o.revisar) return;
+  const rec = { id: uid(), data: dataBR, materia: o.materia, conteudo: o.conteudo || '', conteudoId: o.conteudoId || null, topicoId: o.topicoId || null,
+                minutos: o.minutos || 0, concluido: false, revisar: !!o.revisar, revConfigured: false, auto: true, blocoId: o.blocoId };
+  if (o.recurso) rec.recurso = o.recurso;
+  pushHist(rec);
 }
-// Amarra o recurso à sessão: grava na entrada do histórico e no bloco da
-// tarefa qual material foi usado e quanto se avançou.
-function maRegistrarRecursoNaSessao(m, av, materialConcluido) {
-  if (!maCtx) return;
-  const recurso = { materialId: m.id, nome: m.nome, tipo: m.tipo, unidade: m.unidade, qtd: (av && av.qtd) || 0 };
-  if (av && av.de != null) recurso.de = av.de;
-  if (av && av.ate != null) recurso.ate = av.ate;
-  if (materialConcluido) recurso.materialConcluido = true;
-  if (maCtx.histId) {
-    const arr = loadHist().map(r => (r && r.id === maCtx.histId) ? { ...r, recurso } : r);
-    saveHist(arr);
-  }
-  if (maCtx.blocoId) {
-    const plan = loadPlan();
-    let mudou = false;
-    Object.keys(plan).forEach(wk => {
-      plan[wk] = (plan[wk] || []).map(b => {
-        if (!b || b.id !== maCtx.blocoId) return b;
-        mudou = true;
-        return { ...b, materialId: m.id, recurso };
-      });
-    });
-    if (mudou) savePlan(plan);
-  }
+function removerHistSessao(blocoId) {
+  if (!blocoId) return;
+  let mudou = false;
+  const novo = loadHist().filter(r => {
+    if (r && r.blocoId === blocoId && !r.parentId && !r.revConfigured) { mudou = true; return false; }
+    return true;
+  }).map(r => {
+    if (r && r.blocoId === blocoId && !r.parentId && r.revConfigured) { mudou = true; return { ...r, blocoId: null }; }
+    return r;
+  });
+  if (mudou) saveHist(novo);
 }
-function maMetaAvanco(av) {
-  const meta = {};
-  if (av && av.de != null) meta.de = av.de;
-  if (av && av.ate != null) meta.ate = av.ate;
-  if (maCtx && maCtx.blocoId) meta.blocoId = maCtx.blocoId;
-  // Tempo real da sessão: base do cálculo de velocidade (págs/h, min/h…)
-  // usado nas projeções de ritmo em graficos.html. Preferência pelo tempo
-  // EXATO do cronômetro (segundos → minutos com 2 casas: 16min20s = 16,33);
-  // fluxos manuais e registros antigos seguem em minutos inteiros.
-  if (maCtx && maCtx.segundos > 0) meta.sessaoMin = Math.round(maCtx.segundos / 60 * 100) / 100;
-  else if (maCtx && maCtx.minutos > 0) meta.sessaoMin = Math.round(maCtx.minutos);
-  return meta;
+
+// ===== Registrar / editar estudo ==============================================
+// Um modal só, pra três situações: registrar um estudo já feito (qualquer
+// data), encerrar a sessão que acabou de sair do cronômetro/planejamento e
+// corrigir um registro. Grava o bloco em trackermed.plan.v1 (tempo, data,
+// reserva, atividade), o avanço no log da etapa (com o tempo da sessão, pra
+// alimentar o ritmo) e a entrada do feed — tudo amarrado pelo id do bloco,
+// então corrigir ou excluir nunca duplica nem deixa resto.
+let rgCtx = null;   // { wk, blocoId, modo, segundos, entry, feitoOriginal }
+const rgHier = conteudosEngine().ctrl({ sel: 'rgConteudoSel', topico: 'rgTopicoSel', selWrap: 'rgConteudoSelWrap', livreWrap: 'rgConteudoLivreWrap', livre: 'rgConteudo', hint: 'rgConteudoHint' });
+const RG_DUR_OPTS = [30, 45, 60, 90, 120];
+
+function rgDiscList() { return loadDisc().filter(d => d.status === 'em-curso' || !d.status); }
+function rgDiscAtual() { const v = rgEl('rgDisc').value; return v === '__outra__' ? null : (v || null); }
+function rgSetMin(min, viaInput) {
+  const v = Math.max(0, parseInt(min) || 0);
+  document.querySelectorAll('#rgDurBtns .opt-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.min) === v));
+  if (!viaInput) rgEl('rgMin').value = v > 0 ? v : '';
+  rgAtualizar();
 }
-function salvarMatAvanco() {
-  if (!MAT) { fecharMatAvanco(); return; }
-  let m = maSelecionado();
-  const novo = !m;
-  const g = novo ? maGrupoNovo() : maGrupoDe(m.unidade);
-  let total;
+function rgMinInput() { rgSetMin(rgEl('rgMin').value, true); }
+function rgSetDetalhes(on) {
+  rgEl('rgDetalhes').style.display = on ? '' : 'none';
+  rgEl('rgDetToggle').textContent = on ? '− Ocultar detalhes' : '+ Detalhes opcionais — atividade, quantidade, conteúdo, horário…';
+}
+function rgToggleDetalhes() { rgSetDetalhes(rgEl('rgDetalhes').style.display === 'none'); }
+function rgDiscChange() {
+  const outra = rgEl('rgDisc').value === '__outra__';
+  rgEl('rgDiscOutraWrap').style.display = outra ? '' : 'none';
+  rgHier.montar(rgDiscAtual(), {});
+  rgMontarMateriais(rgEl('rgMaterial').value);
+  if (outra) setTimeout(() => rgEl('rgDiscOutra').focus(), 30);
+}
+function rgMontarMateriais(selId) {
+  const sel = rgEl('rgMaterial');
+  const discId = rgDiscAtual();
+  const lista = MAT.load().filter(m => m && (!m.concluido || m.id === selId));
+  lista.sort((a, b) => ((a.discId === discId) ? 0 : 1) - ((b.discId === discId) ? 0 : 1)
+    || String(a.nome || '').localeCompare(String(b.nome || ''))
+    || ((parseFloat(a.ordem) || 0) - (parseFloat(b.ordem) || 0)));
+  const opts = ['<option value="">— nenhuma —</option>'];
+  lista.forEach(m => {
+    const outra = (m.discId && m.discId !== discId && m.discNome) ? ` · ${m.discNome}` : '';
+    opts.push(`<option value="${escHtml(m.id)}"${m.id === selId ? ' selected' : ''}>${MAT.etapaIcon(m)} ${escHtml(m.nome)} — ${escHtml(MAT.etapaLabel(m))}${escHtml(outra)}${m.concluido ? ' ✓' : ''}</option>`);
+  });
+  opts.push(`<option value="__novo__"${selId === '__novo__' ? ' selected' : ''}>➕ Nova atividade…</option>`);
+  sel.innerHTML = opts.join('');
+  rgMaterialChange();
+}
+function rgMaterialChange() {
+  const v = rgEl('rgMaterial').value;
+  const novo = v === '__novo__';
+  rgEl('rgNovoWrap').style.display = novo ? '' : 'none';
+  const m = (!novo && v) ? MAT.get(v) : null;
+  const wrap = rgEl('rgQtdWrap');
+  if (!m && !novo) { wrap.style.display = 'none'; rgAtualizar(); return; }
+  wrap.style.display = '';
   if (novo) {
-    const nome = (document.getElementById('maNome').value || '').trim();
-    if (!nome) { alert('Dê um nome ao material (ex: Capítulo 12 — Insuficiência Cardíaca).'); return; }
-    total = parseFloat(document.getElementById('maTot').value);
-    if (!(total > 0)) { alert(`${g.tot}: informe um valor maior que zero.`); return; }
+    if (!rgEl('rgNovoEtapa').options.length) {
+      rgEl('rgNovoEtapa').innerHTML = Object.keys(MAT.ETAPAS).map(k => `<option value="${k}">${MAT.ETAPAS[k].icon} ${MAT.ETAPAS[k].label}</option>`).join('');
+      rgEl('rgNovoUnid').innerHTML = Object.keys(MAT.UNIDADES).map(u => `<option value="${u}">${u === 'percentual' ? 'Percentual (%)' : MAT.UNIDADES[u].plural[0].toUpperCase() + MAT.UNIDADES[u].plural.slice(1)}</option>`).join('');
+      rgNovoEtapaChange();
+    }
+    rgNovoUnidChange();
+    if (!rgEl('rgNovoNome').value) rgEl('rgNovoNome').value = (rgEl('rgConteudo').value || '').trim();
+    return;
+  }
+  const st = MAT.stats(m);
+  rgEl('rgQtdLbl').textContent = MAT.pergunta(m.unidade);
+  rgEl('rgQtdUnid').textContent = m.unidade === 'percentual' ? '%' : ((MAT.UNIDADES[m.unidade] || {}).abbr || '');
+  const e = (rgCtx && rgCtx.entry && rgCtx.entry.material.id === m.id) ? rgCtx.entry.entry : null;
+  if (e) {
+    rgEl('rgQtd').value = e.ate != null ? e.ate : e.qtd;
+    rgEl('rgQtdHint').textContent = e.ate != null
+      ? `Nesta sessão: de ${MAT.fmtQtd(e.de != null ? e.de : 0)} até ${MAT.fmtQtd(e.ate)} (${MAT.fmtUnid(e.qtd, m.unidade)}). Corrija o “até” se precisar.`
+      : `Registrado nesta sessão: ${MAT.fmtUnid(e.qtd, m.unidade)}.`;
   } else {
-    total = MAT.stats(m).total;
+    rgEl('rgQtd').value = '';
+    rgEl('rgQtdHint').textContent = MAT.POS_UNIDS[m.unidade]
+      ? `Última posição registrada: ${MAT.fmtQtd(MAT.posAtual(m))} de ${MAT.fmtQtd(st.total)} (${st.pct}%). Informe onde parou agora — só a diferença conta.`
+      : `Até agora: ${MAT.fmtCurto(st.feito, m.unidade)} de ${MAT.fmtUnid(st.total, m.unidade)} (${st.pct}%).`;
   }
-  const av = maLerProgresso(g, true, m);
-  if (!av) return;
-  if (av.ate != null && total > 0 && av.ate > total) { alert(`O valor informado (${MAT.fmtQtd(av.ate)}) não pode passar do total do material (${MAT.fmtQtd(total)}).`); return; }
-  if (novo) m = maCriarMaterial(g, total);
-  // Sessão aguardando conclusão: cria a entrada do feed ANTES de amarrar o
-  // recurso, pra que o material salvo fique gravado nessa mesma entrada.
-  const pendente = (maCtx && maCtx.pendenteConclusao) ? maCtx : null;
-  if (pendente && !pendente.histId) pendente.histId = criarHistSessao(pendente);
-  MAT.addAvanco(m.id, av.qtd, undefined, maMetaAvanco(av));
-  maRegistrarRecursoNaSessao(m, av, false);
-  fecharMatAvanco();
-  // Salvar é o que confirma a conclusão da sessão (marca o check ✓).
-  if (pendente) confirmarConclusaoSessao(pendente);
-  else render();
+  rgAtualizar();
 }
-function concluirMatAvanco() {
-  if (!MAT) { fecharMatAvanco(); return; }
-  let m = maSelecionado();
-  const novo = !m;
-  const g = novo ? maGrupoNovo() : maGrupoDe(m.unidade);
-  const av = maLerProgresso(g, false, m); // opcional: registra o trecho da sessão, se preenchido
-  if (novo) {
-    const nome = (document.getElementById('maNome').value || '').trim();
-    if (!nome) { alert('Dê um nome ao material antes de concluí-lo.'); return; }
-    let total = parseFloat(document.getElementById('maTot').value);
-    // Sem total informado, o "final" da sessão vira o total (concluiu inteiro).
-    if (!(total > 0) && av && av.ate != null) total = av.ate;
-    if (!(total > 0) && av) total = av.qtd;
-    if (!(total > 0)) { alert(`${g.tot}: informe o total pra registrar o material.`); return; }
-    m = maCriarMaterial(g, total);
+function rgNovoEtapaChange() {
+  const def = MAT.ETAPAS[rgEl('rgNovoEtapa').value] || MAT.ETAPAS.outro;
+  rgEl('rgNovoUnid').value = def.unidade;
+  rgNovoUnidChange();
+}
+function rgNovoUnidChange() {
+  const u = rgEl('rgNovoUnid').value;
+  const tot = rgEl('rgNovoTotal');
+  if (u === 'percentual') { tot.value = 100; tot.disabled = true; } else tot.disabled = false;
+  rgEl('rgNovoTotalLbl').textContent = ({ paginas: 'Total de páginas', minutos: 'Duração (min)', capitulos: 'Capítulos', aulas: 'Aulas', questoes: 'Questões', itens: 'Itens', percentual: 'Total (%)' })[u] || 'Total';
+  rgEl('rgQtdLbl').textContent = MAT.pergunta(u);
+  rgEl('rgQtdUnid').textContent = u === 'percentual' ? '%' : ((MAT.UNIDADES[u] || {}).abbr || '');
+  rgEl('rgQtdHint').textContent = 'Opcional: até onde você chegou nesta sessão (ou quanto fez).';
+  rgAtualizar();
+}
+
+function abrirRegistro(opts) {
+  opts = opts || {};
+  if (!MAT || !MAT.atividades) { alert('Atualize a página (Ctrl+F5 / recarregar) pra carregar o motor de atividades.'); return; }
+  let bloco = null, wk = null;
+  if (opts.blocoId) { const f = findBloco(opts.blocoId, opts.wk); if (f) { bloco = f.b; wk = f.wk; } }
+  const entry = bloco ? (MAT.logPorBloco(bloco.id)[0] || null) : null;
+  rgCtx = { wk, blocoId: bloco ? bloco.id : null, modo: opts.modo || (bloco ? 'editar' : 'novo'), segundos: opts.segundos || 0, entry, feitoOriginal: bloco ? !!bloco.feito : false };
+  rgEl('rgTitulo').innerHTML = rgCtx.modo === 'concluir' ? 'Encerrar <i>sessão</i>' : (bloco ? 'Editar <i>registro</i>' : 'Registrar <i>estudo</i>');
+  rgEl('rgSub').textContent = rgCtx.modo === 'concluir'
+    ? 'Confirme (ou ajuste) o tempo e, se quiser, informe até onde chegou na atividade. Fechar sem salvar mantém o tempo registrado e a sessão em aberto.'
+    : (bloco ? 'Corrija o que precisar — totais, progresso e previsões são recalculados.' : 'Só o essencial: matéria, data e tempo. O resto é opcional.');
+  rgEl('rgWk').value = wk || '';
+  rgEl('rgBlocoId').value = bloco ? bloco.id : '';
+  // matéria
+  const sel = rgEl('rgDisc');
+  const discList = rgDiscList();
+  sel.innerHTML = discList.map(d => `<option value="${escHtml(d.id)}">${escHtml(d.nome || 'Sem nome')}</option>`).join('') + '<option value="__outra__">+ Outra matéria…</option>';
+  const discId = (bloco && bloco.discId) || opts.discId || (entry && entry.material.discId) || null;
+  const avulsa = (bloco && !bloco.discId && bloco.matNome) || (!bloco && !discId && opts.matNome) || '';
+  if (discId && discList.some(d => d.id === discId)) sel.value = discId;
+  else if (avulsa) sel.value = '__outra__';
+  rgEl('rgDiscOutra').value = avulsa || '';
+  rgEl('rgDiscOutraWrap').style.display = sel.value === '__outra__' ? '' : 'none';
+  // data e tempo
+  rgEl('rgData').value = (bloco && blocoDate(wk, bloco)) || opts.data || todayKey();
+  const min = bloco ? (getStudiedMin(bloco) || opts.minutos || 0) : (opts.minutos || 0);
+  rgSetMin(min);
+  rgEl('rgPlanMin').value = bloco ? (getPlannedMin(bloco) || '') : '';
+  rgEl('rgIni').value = (bloco && !bloco.horaEstimada && bloco.ini) ? bloco.ini : '';
+  rgEl('rgFeito').value = (rgCtx.modo === 'concluir' || !bloco || bloco.feito) ? 'sim' : 'nao';
+  const feed = bloco ? loadHist().find(r => r && r.blocoId === bloco.id && !r.parentId) : null;
+  rgEl('rgRevisar').value = (feed && feed.revisar) ? 'sim' : 'nao';
+  rgEl('rgNotas').value = (bloco && bloco.notas) || '';
+  // conteúdo + atividade
+  rgHier.montar(rgDiscAtual(), bloco ? { conteudoId: bloco.conteudoId, topicoId: bloco.topicoId, texto: bloco.conteudo || '' } : (opts.conteudo ? { texto: opts.conteudo } : {}));
+  rgEl('rgNovoNome').value = ''; rgEl('rgNovoTotal').value = '';
+  const matSel = opts.materialId || (entry && entry.material.id) || (bloco && bloco.materialId) || '';
+  rgMontarMateriais(matSel);
+  const temDetalhe = !!(matSel || opts.abrirDetalhes || (bloco && (bloco.conteudo || bloco.notas)));
+  rgSetDetalhes(temDetalhe);
+  rgEl('rgDel').style.display = bloco ? '' : 'none';
+  rgAtualizar();
+  rgEl('registroModal').classList.add('open');
+  setTimeout(() => { if (!bloco && !matSel) rgEl('rgMin').focus(); }, 50);
+}
+function fecharRegistro() { rgEl('registroModal').classList.remove('open'); rgCtx = null; }
+
+function rgAtualizar() {
+  const box = rgEl('rgPreview');
+  if (!box || !rgCtx) return;
+  const min = Math.max(0, parseInt(rgEl('rgMin').value) || 0);
+  const dataStr = rgEl('rgData').value;
+  const dt = manualParseDate(dataStr);
+  const discSel = rgEl('rgDisc');
+  const discTxt = discSel.value === '__outra__' ? (rgEl('rgDiscOutra').value || 'matéria') : ((discSel.options[discSel.selectedIndex] || {}).text || '');
+  const partes = [];
+  if (dt) partes.push(escHtml(dataStr === todayKey() ? 'Hoje' : dt.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })));
+  partes.push(escHtml(discTxt));
+  if (min > 0) partes.push(`<b>${fmtHrange(min)}</b>`);
+  const planMin = parseInt(rgEl('rgPlanMin').value);
+  if (planMin > 0 && planMin !== min) partes.push(`de ${fmtHrange(planMin)} reservados`);
+  const v = rgEl('rgMaterial').value;
+  const m = (v && v !== '__novo__') ? MAT.get(v) : null;
+  const qtd = parseFloat(rgEl('rgQtd').value);
+  let temAvanco = false;
+  if (m && !isNaN(qtd)) {
+    const mesmo = rgCtx.entry && rgCtx.entry.material.id === m.id;
+    if (mesmo) { partes.push(`${escHtml(MAT.etapaLabel(m))}: corrige pra ${MAT.fmtQtd(qtd)}`); temAvanco = true; }
+    else {
+      const r = MAT.avancoDePosicao(m, qtd);
+      if (r && !r.erro) {
+        const st = MAT.stats(m);
+        const novoFeito = Math.min(st.total || Infinity, r.ate != null ? r.ate : st.feito + r.qtd);
+        const pct = st.total > 0 ? Math.min(100, Math.round(novoFeito / st.total * 100)) : 0;
+        partes.push(`${escHtml(MAT.etapaLabel(m))}: +${escHtml(MAT.fmtUnid(r.qtd, m.unidade))} → <b>${escHtml(MAT.fmtCurto(novoFeito, m.unidade))}</b> de ${escHtml(MAT.fmtUnid(st.total, m.unidade))} (${pct}%)${st.total > 0 && novoFeito >= st.total ? ' · etapa concluída ✓' : ''}`);
+        temAvanco = true;
+      } else if (r && r.erro === 'menor') partes.push(`<span style="color:var(--rose)">informe uma posição maior que ${MAT.fmtQtd(r.pos)}</span>`);
+      else if (r && r.erro === 'maior') partes.push(`<span style="color:var(--rose)">passa do total (${MAT.fmtQtd(r.total)})</span>`);
+    }
+  } else if (v === '__novo__' && !isNaN(qtd) && qtd > 0) {
+    const tot = parseFloat(rgEl('rgNovoTotal').value);
+    const u = rgEl('rgNovoUnid').value;
+    partes.push(`nova atividade: <b>${escHtml(MAT.fmtCurto(qtd, u))}</b>${tot > 0 ? ` de ${escHtml(MAT.fmtUnid(tot, u))} (${Math.min(100, Math.round(qtd / tot * 100))}%)` : ''}`);
+    temAvanco = true;
   }
-  const pendente = (maCtx && maCtx.pendenteConclusao) ? maCtx : null;
-  if (pendente && !pendente.histId) pendente.histId = criarHistSessao(pendente);
-  if (av && av.qtd > 0) MAT.addAvanco(m.id, av.qtd, undefined, maMetaAvanco(av));
-  MAT.concluir(m.id);
-  maRegistrarRecursoNaSessao(m, av, true);
-  fecharMatAvanco();
-  // Concluir o material também confirma a conclusão da sessão.
-  if (pendente) confirmarConclusaoSessao(pendente);
-  else render();
+  if (rgEl('rgFeito').value === 'nao') partes.push('<i>sessão fica em aberto</i>');
+  const ok = min > 0 || temAvanco;
+  box.classList.toggle('on', ok);
+  box.innerHTML = ok ? partes.join(' · ') : 'Informe a matéria, a data e o tempo estudado (ou, pelo menos, o avanço na atividade).';
 }
-function fecharMatAvanco() { document.getElementById('matAvancoModal').classList.remove('open'); maCtx = null; }
+
+function salvarRegistro() {
+  if (!rgCtx) return;
+  const discVal = rgEl('rgDisc').value;
+  let discId = null, matNome = null, discNome;
+  if (discVal === '__outra__') {
+    matNome = (rgEl('rgDiscOutra').value || '').trim();
+    if (!matNome) { alert('Informe o nome da matéria.'); rgEl('rgDiscOutra').focus(); return; }
+    discNome = matNome;
+  } else {
+    const d = loadDisc().find(x => x.id === discVal);
+    if (!d) { alert('Selecione uma matéria.'); return; }
+    discId = d.id; discNome = d.nome;
+  }
+  const dataKey = rgEl('rgData').value;
+  const dt = manualParseDate(dataKey);
+  if (!dt) { alert('Informe a data.'); rgEl('rgData').focus(); return; }
+  const min = Math.max(0, parseInt(rgEl('rgMin').value) || 0);
+  const planRaw = parseInt(rgEl('rgPlanMin').value);
+  const planMin = (!isNaN(planRaw) && planRaw > 0) ? planRaw : null;
+  const feito = rgEl('rgFeito').value === 'sim';
+  const revisar = rgEl('rgRevisar').value === 'sim';
+  const notas = (rgEl('rgNotas').value || '').trim();
+  const cont = rgHier.ler();
+  const iniStr = rgEl('rgIni').value;
+  // atividade / etapa
+  const matSel = rgEl('rgMaterial').value;
+  let material = null, novoMaterial = null;
+  if (matSel === '__novo__') {
+    const nome = (rgEl('rgNovoNome').value || '').trim();
+    if (!nome) { alert('Dê um nome à atividade (ex: Harrison — cap. 12, Insuficiência cardíaca).'); rgEl('rgNovoNome').focus(); return; }
+    const unidade = rgEl('rgNovoUnid').value;
+    let total = parseFloat(rgEl('rgNovoTotal').value);
+    if (unidade === 'percentual') total = 100;
+    if (!(total > 0)) { alert('Informe o total (páginas, questões, minutos…).'); rgEl('rgNovoTotal').focus(); return; }
+    novoMaterial = { nome, etapa: rgEl('rgNovoEtapa').value, unidade, total };
+  } else if (matSel) {
+    material = MAT.get(matSel);
+  }
+  const qtdRaw = rgEl('rgQtd').value;
+  const temQtd = qtdRaw !== '' && !isNaN(parseFloat(qtdRaw));
+  if (min <= 0 && !(temQtd && (material || novoMaterial)) && !rgCtx.blocoId) {
+    alert('Informe o tempo estudado — ou, pelo menos, o avanço na atividade.'); rgEl('rgMin').focus(); return;
+  }
+  // valida o avanço ANTES de gravar qualquer coisa
+  let av = null;
+  const mesmoMaterial = !!(rgCtx.entry && material && rgCtx.entry.material.id === material.id);
+  if (material && temQtd) {
+    const v = parseFloat(qtdRaw);
+    if (mesmoMaterial) {
+      const e = rgCtx.entry.entry;
+      if (e.ate != null) {
+        const de = e.de != null ? e.de : 0;
+        const total = MAT.stats(material).total;
+        if (v <= de) { alert(`Informe uma posição maior que ${MAT.fmtQtd(de)} (onde essa sessão começou).`); return; }
+        if (total > 0 && v > total) { alert(`Não pode passar do total (${MAT.fmtQtd(total)}).`); return; }
+        av = { editar: true, ate: v };
+      } else {
+        if (!(v > 0)) { alert('Informe uma quantidade maior que zero.'); return; }
+        av = { editar: true, qtd: v };
+      }
+    } else {
+      const r = MAT.avancoDePosicao(material, v);
+      if (!r) { alert('Informe um valor maior que zero.'); return; }
+      if (r.erro === 'menor') { alert(`Você já registrou até ${MAT.fmtQtd(r.pos)} — informe onde está agora; só a diferença conta como avanço.`); return; }
+      if (r.erro === 'maior') { alert(`Não pode passar do total (${MAT.fmtQtd(r.total)}).`); return; }
+      av = r;
+    }
+  } else if (novoMaterial && temQtd) {
+    const v = parseFloat(qtdRaw);
+    if (!(v > 0)) { alert('Informe um valor maior que zero.'); return; }
+    if (v > novoMaterial.total) { alert(`Não pode passar do total (${MAT.fmtQtd(novoMaterial.total)}).`); return; }
+    av = MAT.POS_UNIDS[novoMaterial.unidade] ? { qtd: v, de: 0, ate: v } : { qtd: v, de: null, ate: null };
+  }
+  // cria a atividade nova (uma etapa só, por enquanto)
+  if (novoMaterial) {
+    const def = MAT.ETAPAS[novoMaterial.etapa] || MAT.ETAPAS.outro;
+    const id = MAT.uid();
+    material = MAT.upsert({ id, atividadeId: id, nome: novoMaterial.nome, tipo: def.tipo, etapa: novoMaterial.etapa, etapaNome: null,
+      unidade: novoMaterial.unidade, total: novoMaterial.total, discId, discNome, conteudoId: cont.conteudoId || null, conteudoNome: cont.conteudo || null,
+      prazo: null, criadoEm: todayKey(), ordem: 0, concluido: false, concluidoEm: null, log: [], estimativaMin: null, estimativaBaseMin: null });
+  }
+  // ---- bloco (sessão) ----
+  const plan = loadPlan();
+  let bloco = null, wkOld = null;
+  if (rgCtx.blocoId) {
+    for (const wk of Object.keys(plan)) {
+      const i = (plan[wk] || []).findIndex(b => b && b.id === rgCtx.blocoId);
+      if (i >= 0) { bloco = plan[wk][i]; wkOld = wk; plan[wk].splice(i, 1); break; }
+    }
+  }
+  const criarBloco = !!bloco || min > 0;
+  const blocoId = criarBloco ? (bloco ? bloco.id : uid()) : null;
+  const sessaoMin = min > 0 ? (rgCtx.segundos > 0 ? Math.round(rgCtx.segundos / 60 * 100) / 100 : min) : null;
+  // ---- avanço no log da etapa ----
+  if (rgCtx.entry && !mesmoMaterial) MAT.logDesvincularBloco(rgCtx.blocoId);
+  if (material) {
+    if (mesmoMaterial) {
+      const patch = { data: dataKey, sessaoMin: sessaoMin };
+      if (av && av.editar) { if (av.ate != null) patch.ate = av.ate; else patch.qtd = av.qtd; }
+      MAT.logEditar(material.id, rgCtx.entry.entry.ts, patch);
+    } else if (av) {
+      MAT.addAvanco(material.id, av.qtd, dataKey, { de: av.de, ate: av.ate, blocoId: blocoId || undefined, sessaoMin: (blocoId && sessaoMin) ? sessaoMin : undefined });
+    }
+    material = MAT.get(material.id) || material;
+  }
+  if (criarBloco) {
+    const minutosPlan = planMin != null ? planMin : (bloco ? (getPlannedMin(bloco) || min) : min);
+    const slot = Math.max(minutosPlan, min, 5);
+    let iniMin, fimMin, horaEstimada = false;
+    if (iniStr && !isNaN(hhmmToMin(iniStr))) { iniMin = hhmmToMin(iniStr); fimMin = Math.min(24 * 60, iniMin + slot); }
+    else if (bloco && bloco.ini && !bloco.horaEstimada && blocoDate(wkOld, bloco) === dataKey) { iniMin = hhmmToMin(bloco.ini); fimMin = Math.min(24 * 60, iniMin + slot); }
+    else if (dataKey === todayKey()) { const n = nowCuiaba(); fimMin = n.getHours() * 60 + n.getMinutes(); iniMin = Math.max(0, fimMin - slot); horaEstimada = true; }
+    else { fimMin = Math.min(24 * 60 - 1, 19 * 60 + slot); iniMin = Math.max(0, fimMin - slot); horaEstimada = true; }
+    if (isNaN(iniMin)) { iniMin = 19 * 60; fimMin = Math.min(24 * 60, iniMin + slot); horaEstimada = true; }
+    const novo = Object.assign({}, bloco || { id: blocoId, tipo: 'estudo', auto: false, extra: true, registro: true, criadoEm: new Date().toISOString() }, {
+      discId, conteudo: cont.conteudo, conteudoId: cont.conteudoId, topicoId: cont.topicoId,
+      data: dataKey, dia: dt.getDay(), ini: minToHHMM(iniMin), fim: minToHHMM(fimMin),
+      minutos: minutosPlan, minutosFeitos: min, feito, materialId: material ? material.id : null
+    });
+    if (discId) delete novo.matNome; else novo.matNome = matNome;
+    if (horaEstimada) novo.horaEstimada = true; else delete novo.horaEstimada;
+    if (notas) novo.notas = notas; else delete novo.notas;
+    if (material) {
+      const e2 = MAT.logPorBloco(novo.id).find(x => x.material.id === material.id);
+      novo.recurso = { materialId: material.id, nome: material.nome, tipo: material.tipo, unidade: material.unidade, etapa: MAT.etapaLabel(material), qtd: e2 ? e2.entry.qtd : 0 };
+      if (e2 && e2.entry.ate != null) novo.recurso.ate = e2.entry.ate;
+      if (material.concluido) novo.recurso.materialConcluido = true;
+    } else delete novo.recurso;
+    if (feito && !bloco) novo.encerradoEm = new Date().toISOString();
+    const wkNew = weekKey(dt);
+    if (!plan[wkNew]) plan[wkNew] = [];
+    plan[wkNew].push(novo);
+    savePlan(plan);
+    upsertHistSessao({ blocoId: novo.id, dataKey, materia: discNome, conteudo: cont.conteudo, conteudoId: cont.conteudoId, topicoId: cont.topicoId, minutos: min, revisar, recurso: novo.recurso || null });
+  }
+  fecharRegistro();
+  render();
+}
+function excluirRegistroAtual() {
+  if (!rgCtx || !rgCtx.blocoId) return;
+  const { wk, blocoId } = rgCtx;
+  fecharRegistro();
+  excluirSessao(wk, blocoId);
+}
+// Exclui uma sessão por completo: bloco, avanços ligados a ela e entrada do feed.
+function excluirSessao(wk, blocoId) {
+  const f = findBloco(blocoId, wk);
+  if (!f) return;
+  const studied = getStudiedMin(f.b);
+  if (!confirm(`Excluir este registro${studied > 0 ? ` (${fmtHrange(studied)} estudados)` : ''}?\n\nO tempo e o avanço ligados a ele saem dos totais. Essa ação não pode ser desfeita.`)) return;
+  const plan = loadPlan();
+  plan[f.wk] = (plan[f.wk] || []).filter(x => x && x.id !== blocoId);
+  savePlan(plan);
+  if (MAT && MAT.logDesvincularBloco) MAT.logDesvincularBloco(blocoId);
+  removerHistSessao(blocoId);
+  render();
+}
+// Atalho do modal "Estudo extra": registrar sem cronômetro → modal de registro.
+function abrirRegistroDoExtra() {
+  const mat = getMateriaExtra();
+  if (!mat) return;
+  const cont = getConteudoExtra();
+  fecharExtra();
+  abrirRegistro({ discId: mat.discId, matNome: mat.discId ? null : mat.nome, data: todayKey(), conteudo: cont.conteudo, abrirDetalhes: !!cont.conteudo });
+}
+
+// ===== Reagendar sessão ======================================================
+let reagCtx = null;
+function abrirReagendar(wk, blocoId) {
+  const f = findBloco(blocoId, wk);
+  if (!f) return;
+  const b = f.b;
+  reagCtx = { wk: f.wk, blocoId };
+  const d = b.discId ? loadDisc().find(x => x.id === b.discId) : null;
+  const nome = (d && d.nome) || b.matNome || 'Estudo';
+  const planned = getPlannedMin(b), studied = getStudiedMin(b), falta = Math.max(0, planned - studied);
+  rgEl('reagNome').textContent = nome + (b.conteudo ? ' · ' + b.conteudo : '') + ' · ' + fmtDiaCurto(blocoDate(f.wk, b));
+  rgEl('reagInfo').innerHTML = studied > 0
+    ? `Já estudou <b>${fmtHrange(studied)}</b> de ${fmtHrange(planned)} nessa sessão — isso fica registrado no dia original. Os <b>${fmtHrange(falta)}</b> restantes vão pra nova data.`
+    : `Sessão de <b>${fmtHrange(planned)}</b> ainda não iniciada — ela é movida inteira pra nova data.`;
+  const hoje = todayKey();
+  const dataAtual = blocoDate(f.wk, b) || hoje;
+  rgEl('reagData').value = dataAtual < hoje ? hoje : dateKey(addDays(manualParseDate(dataAtual), 1));
+  rgEl('reagIni').value = b.horaEstimada ? '' : (b.ini || '');
+  rgEl('reagModal').classList.add('open');
+}
+function fecharReagendar() { rgEl('reagModal').classList.remove('open'); reagCtx = null; }
+function salvarReagendar() {
+  if (!reagCtx) return;
+  const dataKey = rgEl('reagData').value;
+  const dt = manualParseDate(dataKey);
+  if (!dt) { alert('Informe a nova data.'); return; }
+  const iniStr = rgEl('reagIni').value;
+  const plan = loadPlan();
+  const arr = plan[reagCtx.wk] || [];
+  const idx = arr.findIndex(b => b && b.id === reagCtx.blocoId);
+  if (idx < 0) { fecharReagendar(); return; }
+  const b = arr[idx];
+  const planned = getPlannedMin(b), studied = getStudiedMin(b), falta = Math.max(0, planned - studied);
+  const dur = Math.max(studied > 0 ? falta : planned, 15);
+  let iniMin = !isNaN(hhmmToMin(iniStr)) ? hhmmToMin(iniStr) : hhmmToMin(b.ini || '');
+  if (isNaN(iniMin)) iniMin = 19 * 60;
+  const fimMin = Math.min(24 * 60, iniMin + dur);
+  iniMin = Math.max(0, fimMin - dur);
+  const wkNew = weekKey(dt);
+  if (!plan[wkNew]) plan[wkNew] = [];
+  if (studied > 0) {
+    // Encerra a sessão original com o que foi feito e cria a continuação.
+    arr[idx] = { ...b, feito: true, minutos: studied, encerradoEm: new Date().toISOString(), reagendadoPara: dataKey };
+    const novo = { id: uid(), tipo: 'estudo', discId: b.discId || null, conteudo: b.conteudo || '', conteudoId: b.conteudoId || null, topicoId: b.topicoId || null,
+                   materialId: b.materialId || null, dia: dt.getDay(), data: dataKey, ini: minToHHMM(iniMin), fim: minToHHMM(fimMin), minutos: dur,
+                   feito: false, auto: false, manual: true, reagendadoDe: b.id, criadoEm: new Date().toISOString() };
+    if (b.matNome) novo.matNome = b.matNome;
+    if (b.notas) novo.notas = b.notas;
+    if (!iniStr && b.horaEstimada) novo.horaEstimada = true;
+    plan[wkNew].push(novo);
+  } else {
+    arr.splice(idx, 1);
+    const mov = { ...b, dia: dt.getDay(), data: dataKey, ini: minToHHMM(iniMin), fim: minToHHMM(fimMin), minutos: dur, auto: false, reagendadoEm: new Date().toISOString() };
+    if (iniStr) delete mov.horaEstimada;
+    plan[wkNew].push(mov);
+  }
+  savePlan(plan);
+  fecharReagendar();
+  selectedDay = dataKey; semanaAnchor = null;
+  render();
+}
+
+// ===== Atividades e etapas ====================================================
+let atvCtx = null;
+const atvHier = conteudosEngine().ctrl({ sel: 'atConteudoSel', topico: 'atTopicoSel', selWrap: 'atConteudoSelWrap', livreWrap: 'atConteudoLivreWrap', livre: 'atConteudo', hint: 'atConteudoHint' });
+function atDiscChange() { atvHier.montar(rgEl('atDisc').value || null, {}); }
+function abrirAtividade(opts) {
+  opts = opts || {};
+  if (!MAT || !MAT.atividades) { alert('Atualize a página (recarregar) pra carregar o motor de atividades.'); return; }
+  atvCtx = { atividadeId: opts.atividadeId || null };
+  const modoEtapa = !!atvCtx.atividadeId;
+  const base = modoEtapa ? MAT.etapasDe(atvCtx.atividadeId)[0] : null;
+  if (modoEtapa && !base) return;
+  rgEl('atTitulo').innerHTML = modoEtapa ? 'Nova <i>etapa</i>' : 'Nova <i>atividade</i>';
+  rgEl('atSub').textContent = modoEtapa
+    ? `Etapa de “${base.nome}” — com progresso próprio (ler, resumir, fazer questões, revisar…). Nenhuma etapa é obrigatória.`
+    : 'O que você vai concluir aos poucos — um capítulo, uma aula, uma lista. Depois é só registrar as sessões nela.';
+  rgEl('atBaseWrap').style.display = modoEtapa ? 'none' : '';
+  const sel = rgEl('atDisc');
+  const discList = rgDiscList();
+  sel.innerHTML = '<option value="">— sem matéria —</option>' + discList.map(d => `<option value="${escHtml(d.id)}">${escHtml(d.nome || 'Sem nome')}</option>`).join('');
+  if (opts.discId && discList.some(d => d.id === opts.discId)) sel.value = opts.discId;
+  atvHier.montar(sel.value || null, {});
+  rgEl('atNome').value = ''; rgEl('atTipo').value = 'livro'; rgEl('atPrazo').value = '';
+  const etSel = rgEl('atEtapa');
+  etSel.innerHTML = Object.keys(MAT.ETAPAS).map(k => `<option value="${k}">${MAT.ETAPAS[k].icon} ${MAT.ETAPAS[k].label}</option>`).join('');
+  // Nova etapa: sugere a próxima que ainda não existe na atividade.
+  if (modoEtapa) {
+    const usadas = new Set(MAT.etapasDe(atvCtx.atividadeId).map(m => MAT.etapaKey(m)));
+    const prox = ['resumo', 'questoes', 'revisao', 'flashcards', 'leitura', 'video', 'outro'].find(k => !usadas.has(k)) || 'outro';
+    etSel.value = prox;
+  } else etSel.value = 'leitura';
+  atEtapaChange();
+  rgEl('atTotal').value = ''; rgEl('atEst').value = ''; rgEl('atEtapaNome').value = '';
+  if (rgEl('atUnid').value === 'percentual') rgEl('atTotal').value = 100;
+  rgEl('atividadeModal').classList.add('open');
+  setTimeout(() => (modoEtapa ? rgEl('atTotal') : rgEl('atNome')).focus(), 50);
+}
+function fecharAtividade() { rgEl('atividadeModal').classList.remove('open'); atvCtx = null; }
+function atEtapaChange() {
+  const k = rgEl('atEtapa').value;
+  const def = MAT.ETAPAS[k] || MAT.ETAPAS.outro;
+  rgEl('atUnid').value = def.unidade;
+  rgEl('atEtapaNomeWrap').style.display = k === 'outro' ? '' : 'none';
+  if (atvCtx && !atvCtx.atividadeId && def.tipo !== 'outro') rgEl('atTipo').value = def.tipo;
+  atUnidChange();
+}
+function atUnidChange() {
+  const u = rgEl('atUnid').value;
+  const tot = rgEl('atTotal');
+  if (u === 'percentual') { tot.value = 100; tot.disabled = true; } else { tot.disabled = false; if (tot.value === '100' && u !== 'percentual') tot.value = ''; }
+  rgEl('atTotalLbl').textContent = ({ paginas: 'Total de páginas', minutos: 'Duração total (min)', capitulos: 'Total de capítulos', aulas: 'Total de aulas', questoes: 'Total de questões', itens: 'Quantidade total', percentual: 'Total (%)' })[u] || 'Quantidade total';
+}
+function salvarAtividade() {
+  if (!atvCtx) return;
+  const etapa = rgEl('atEtapa').value;
+  const unidade = rgEl('atUnid').value;
+  let total = parseFloat(rgEl('atTotal').value);
+  if (unidade === 'percentual') total = 100;
+  if (!(total > 0)) { alert('Informe o total (páginas, questões, minutos…).'); rgEl('atTotal').focus(); return; }
+  const est = parseInt(rgEl('atEst').value) || 0;
+  const etapaNome = (rgEl('atEtapaNome').value || '').trim();
+  if (atvCtx.atividadeId) {
+    MAT.novaEtapa(atvCtx.atividadeId, { etapa, etapaNome, unidade, total, estimativaMin: est });
+    fecharAtividade(); render(); return;
+  }
+  const nome = (rgEl('atNome').value || '').trim();
+  if (!nome) { alert('Dê um nome à atividade.'); rgEl('atNome').focus(); return; }
+  const discId = rgEl('atDisc').value || null;
+  const d = discId ? loadDisc().find(x => x.id === discId) : null;
+  const cont = atvHier.ler();
+  const id = MAT.uid();
+  MAT.upsert({ id, atividadeId: id, nome, tipo: rgEl('atTipo').value, etapa, etapaNome: etapaNome || null, unidade, total,
+    discId, discNome: d ? d.nome : null, conteudoId: cont.conteudoId || null, conteudoNome: cont.conteudo || null,
+    prazo: rgEl('atPrazo').value || null, criadoEm: todayKey(), ordem: 0, concluido: false, concluidoEm: null, log: [],
+    estimativaMin: est > 0 ? est : null, estimativaBaseMin: est > 0 ? 0 : null });
+  fecharAtividade();
+  render();
+}
+function toggleRegistros(id) { if (atvAberto.has(id)) atvAberto.delete(id); else atvAberto.add(id); render(); }
+function concluirEtapa(id) {
+  const m = MAT.get(id); if (!m) return;
+  const st = MAT.stats(m);
+  if (st.restante > 0 && !confirm(`Marcar “${m.nome} — ${MAT.etapaLabel(m)}” como concluída?\n\nFaltam ${MAT.fmtUnid(st.restante, m.unidade)}; o progresso vai pra 100%.`)) return;
+  MAT.concluir(id); render();
+}
+function reabrirEtapa(id) { MAT.reabrir(id); render(); }
+function excluirEtapa(id) {
+  const m = MAT.get(id); if (!m) return;
+  const irmas = MAT.etapasDe(MAT.atividadeId(m)).length;
+  if (!confirm(`Excluir a etapa “${MAT.etapaLabel(m)}” de “${m.nome}”?\n\nO progresso registrado nela some da lista. As sessões do histórico continuam (sem o vínculo).${irmas <= 1 ? '\n\nÉ a única etapa — a atividade inteira sai da lista.' : ''}\n\nEssa ação não pode ser desfeita.`)) return;
+  MAT.remove(id); render();
+}
+function excluirAtividade(aid) {
+  const etapas = MAT.etapasDe(aid); if (!etapas.length) return;
+  if (!confirm(`Excluir “${etapas[0].nome}” e ${etapas.length === 1 ? 'sua etapa' : `suas ${etapas.length} etapas`}?\n\nO progresso registrado some da lista. As sessões do histórico continuam (sem o vínculo).\n\nEssa ação não pode ser desfeita.`)) return;
+  MAT.removerAtividade(aid); render();
+}
+// Correção de um avanço avulso (sem sessão ligada): posição ou quantidade.
+function editarAvanco(mid, ts) {
+  const m = MAT.get(mid); if (!m) return;
+  const e = (m.log || []).find(x => x && String(x.ts) === String(ts)); if (!e) return;
+  const posicao = e.ate != null;
+  const atual = posicao ? e.ate : e.qtd;
+  const raw = prompt(posicao ? `Até onde você chegou nesse registro (${MAT.unidadeLabel(m.unidade, 2)})? Começou em ${MAT.fmtQtd(e.de != null ? e.de : 0)}.` : `Quantidade desse registro (${MAT.unidadeLabel(m.unidade, 2)}):`, String(atual));
+  if (raw == null) return;
+  const v = parseFloat(String(raw).replace(',', '.'));
+  if (isNaN(v) || v < 0) { alert('Valor inválido.'); return; }
+  if (posicao) { if (v <= (e.de != null ? e.de : 0)) { alert('Informe uma posição maior que o início do registro.'); return; } MAT.logEditar(mid, ts, { ate: v }); }
+  else MAT.logEditar(mid, ts, { qtd: v });
+  render();
+}
+function excluirAvanco(mid, ts) {
+  const m = MAT.get(mid); if (!m) return;
+  if (!confirm('Excluir esse avanço? O progresso é recalculado.')) return;
+  MAT.logRemover(mid, ts); render();
+}
+function estFonteLbl(est) {
+  return est.fonte === 'manual' ? 'sua estimativa'
+    : est.fonte === 'ritmo' ? (est.provisoria ? 'pelo ritmo · provisório' : 'pelo seu ritmo')
+    : est.fonte === 'proporcao' ? 'tempo × avanço · provisório' : '';
+}
+
+function renderAtividades(coll) {
+  const list = rgEl('atvList');
+  if (!list || !MAT || !MAT.atividades) return;
+  const items = coll ? coll.items : [];
+  const hojeK = todayKey();
+  const grupos = MAT.atividades({ incluirConcluidas: true }).filter(g => !g.concluida || g.etapas.some(m => m.concluidoEm === hojeK));
+  if (!grupos.length) {
+    list.innerHTML = `<div class="empty-state">Nenhuma atividade em andamento. <a href="#" onclick="event.preventDefault(); abrirAtividade({})">Cadastre uma</a> (um capítulo, uma aula, uma lista) e registre as sessões nela — progresso, tempo e previsão aparecem aqui.</div>`;
+    return;
+  }
+  const samples = window.TrackerMedRitmo ? TrackerMedRitmo.samples() : null;
+  list.innerHTML = grupos.map(g => renderAtividadeCard(g, items, samples)).join('');
+}
+function renderAtividadeCard(g, items, samples) {
+  const idAttr = JSON.stringify(g.id).replace(/"/g, '&quot;');
+  const sub = [g.discNome, g.conteudoNome].filter(Boolean).map(escHtml).join(' — ');
+  const prazo = g.prazo ? ` · prazo ${escHtml(MAT.fmtDataBR(g.prazo))}` : '';
+  return `<div class="atv-card${g.concluida ? ' done' : ''}">
+    <div class="atv-head">
+      <div class="atv-title">${MAT.tipoIcon(g.tipo)} ${escHtml(g.nome)}<span class="atv-sub">${sub ? ' · ' + sub : ''}${prazo}</span></div>
+      <div class="atv-acts">
+        <button type="button" class="mi-btn" onclick="abrirAtividade({ atividadeId: ${idAttr} })" title="Acrescentar uma etapa (resumo, questões, revisão…)">+ etapa</button>
+        <button type="button" class="mi-del" onclick="excluirAtividade(${idAttr})" title="Excluir a atividade e todas as etapas">🗑</button>
+      </div>
+    </div>
+    ${g.etapas.map(m => renderEtapaRow(m, items, samples)).join('')}
+  </div>`;
+}
+function renderEtapaRow(m, items, samples) {
+  const st = MAT.stats(m);
+  const tempo = MAT.tempo(m, items);
+  const sit = MAT.situacao(m, tempo);
+  const est = MAT.estimativa(m, tempo, samples);
+  const u = q => escHtml(MAT.fmtUnid(q, m.unidade));
+  const mid = JSON.stringify(m.id).replace(/"/g, '&quot;');
+  const did = JSON.stringify(m.discId || null).replace(/"/g, '&quot;');
+  const aberto = atvAberto.has(m.id);
+  const prox = tempo.proximas.length
+    ? ` · reservado <b>${fmtHrange(tempo.reservadoMin)}</b> (${tempo.proximas.length} ${plural(tempo.proximas.length, 'sessão', 'sessões')}${tempo.proximas[0].date ? ', próx. ' + escHtml(fmtDiaCurto(tempo.proximas[0].date)) : ''})`
+    : (m.concluido ? '' : ' · nada reservado');
+  let estTxt = '';
+  if (!m.concluido) estTxt = est.min != null
+    ? ` · faltam <b>~${fmtHrange(est.min)}</b> <span class="atv-fonte">(${estFonteLbl(est)})</span>`
+    : ' · <span class="atv-fonte">sem estimativa ainda — defina a sua ou registre uma sessão com avanço</span>';
+  const nAvulsos = (m.log || []).filter(e => e && !e.blocoId).length;
+  const nFeitas = tempo.sessoes.filter(x => x.studied > 0).length;
+  const nReg = tempo.nSessoes + nAvulsos;
+  const acts = m.concluido
+    ? `<button type="button" class="mi-btn" onclick="reabrirEtapa(${mid})">↺ reabrir</button>`
+    : `<button type="button" class="mi-btn primary" onclick="abrirRegistro({ materialId: ${mid}, discId: ${did}, data: selectedDay })" title="Registrar uma sessão nesta etapa">+ sessão</button>
+       <button type="button" class="mi-btn" onclick="abrirManual({ materialId: ${mid}, discId: ${did}, data: selectedDay })" title="Reservar um horário pra esta etapa">⏱ reservar</button>
+       <button type="button" class="mi-btn" onclick="abrirEstimativa(${mid})" title="Definir quanto tempo você acha que ainda falta">✎ estimativa</button>
+       <button type="button" class="mi-btn" onclick="concluirEtapa(${mid})" title="Marcar a etapa como concluída">✓ concluir</button>`;
+  return `<div class="etapa-row ${sit}">
+    <div class="mi-top">
+      <span class="mi-nome">${MAT.etapaIcon(m)} ${escHtml(MAT.etapaLabel(m))} <span class="sit-chip ${sit}">${MAT.SITUACAO_LBL[sit]}</span></span>
+      <span class="mi-num">${st.pct}%</span>
+    </div>
+    <div class="mi-bar"><i style="width:${st.pct}%"></i></div>
+    <div class="mi-sub"><b>${escHtml(MAT.fmtCurto(st.feito, m.unidade))}</b> de ${u(st.total)} · restam <b>${u(st.restante)}</b>${st.hoje > 0 ? ` · hoje <b>${u(st.hoje)}</b>` : ''}</div>
+    <div class="mi-sub">realizado <b>${fmtHrange(tempo.realizadoMin)}</b>${nFeitas ? ` em ${nFeitas} ${plural(nFeitas, 'sessão', 'sessões')}` : ''}${prox}${estTxt}</div>
+    <div class="etapa-acts">${acts}
+      <button type="button" class="mi-btn ghost" onclick="toggleRegistros(${mid})">${aberto ? '▾' : '▸'} registros${nReg ? ` (${nReg})` : ''}</button>
+      <button type="button" class="mi-del" onclick="excluirEtapa(${mid})" title="Excluir esta etapa">🗑</button>
+    </div>
+    ${aberto ? renderRegistros(m, tempo) : ''}
+  </div>`;
+}
+function renderRegistros(m, tempo) {
+  const linhas = [];
+  tempo.sessoes.forEach(s => {
+    const b = s.b;
+    const e = (m.log || []).find(x => x && x.blocoId === b.id);
+    const qtd = e ? ` · ${escHtml(MAT.fmtUnid(e.qtd, m.unidade))}${e.ate != null ? ` (até ${MAT.fmtQtd(e.ate)})` : ''}` : '';
+    const status = b.feito ? 'encerrada' : (s.studied > 0 ? 'em aberto' : 'reservada');
+    const editavel = s.foco !== false && s.wk;
+    const acts = editavel
+      ? `<button class="edit-btn" onclick="abrirRegistro({ wk: '${escHtml(s.wk)}', blocoId: '${escHtml(b.id)}' })" title="Corrigir">✎</button>${b.feito ? '' : `<button class="edit-btn" onclick="abrirReagendar('${escHtml(s.wk)}','${escHtml(b.id)}')" title="Reagendar">⇄</button>`}<button class="edit-btn" onclick="excluirSessao('${escHtml(s.wk)}','${escHtml(b.id)}')" title="Excluir">🗑</button>`
+      : '';
+    linhas.push(`<div class="reg-row"><span class="reg-data">${escHtml(fmtDiaCurto(s.date || ''))}</span><span class="reg-txt">${s.studied > 0 ? fmtHrange(s.studied) : '—'}${s.planned > 0 && s.planned !== s.studied ? ` <span class="sep">de ${fmtHrange(s.planned)}</span>` : ''}${qtd} · <i>${status}</i></span><span class="reg-acts">${acts}</span></div>`);
+  });
+  (m.log || []).filter(e => e && !e.blocoId).sort((a, b) => String(b.data || '').localeCompare(String(a.data || ''))).forEach(e => {
+    const ts = escHtml(String(e.ts));
+    linhas.push(`<div class="reg-row"><span class="reg-data">${escHtml(fmtDiaCurto(e.data))}</span><span class="reg-txt">${escHtml(MAT.fmtUnid(e.qtd, m.unidade))}${e.ate != null ? ` (até ${MAT.fmtQtd(e.ate)})` : ''}${e.sessaoMin > 0 ? ` · ${fmtHrange(Math.round(e.sessaoMin))}` : ''} · <i>avanço avulso</i></span><span class="reg-acts"><button class="edit-btn" onclick="editarAvanco('${escHtml(m.id)}','${ts}')" title="Corrigir">✎</button><button class="edit-btn" onclick="excluirAvanco('${escHtml(m.id)}','${ts}')" title="Excluir">🗑</button></span></div>`);
+  });
+  if (!linhas.length) return '<div class="reg-list"><div class="reg-row"><span class="reg-txt" style="font-style:italic">Nenhum registro ainda — use <b>+ sessão</b> pra lançar o primeiro.</span></div></div>';
+  return `<div class="reg-list">${linhas.join('')}</div>`;
+}
+
+// ===== Estimativa de tempo restante (definida pela aluna) =====================
+let estCtx = null;
+function abrirEstimativa(materialId) {
+  const m = MAT.get(materialId); if (!m) return;
+  estCtx = { id: materialId };
+  const tempo = MAT.tempo(m, histCollect().items);
+  const est = MAT.estimativa(m, tempo, null);
+  rgEl('estNome').textContent = `${m.nome} — ${MAT.etapaLabel(m)}`;
+  rgEl('estAtual').innerHTML = est.min != null
+    ? `Hoje: <b>${fmtHrange(est.min)}</b> restantes (${estFonteLbl(est)}) · realizado ${fmtHrange(tempo.realizadoMin)}.`
+    : `Ainda sem dados pra estimar — realizado ${fmtHrange(tempo.realizadoMin)}. Defina a sua.`;
+  rgEl('estMin').value = est.fonte === 'manual' ? est.min : '';
+  rgEl('estModal').classList.add('open');
+  setTimeout(() => rgEl('estMin').focus(), 50);
+}
+function fecharEstimativa() { rgEl('estModal').classList.remove('open'); estCtx = null; }
+function estSet(v) { rgEl('estMin').value = v; }
+function salvarEstimativa() {
+  if (!estCtx) return;
+  const m = MAT.get(estCtx.id); if (!m) { fecharEstimativa(); return; }
+  const v = parseInt(rgEl('estMin').value);
+  const tempo = MAT.tempo(m, histCollect().items);
+  MAT.setEstimativa(estCtx.id, isNaN(v) ? 0 : v, tempo.realizadoMin);
+  fecharEstimativa(); render();
+}
+function limparEstimativa() { if (!estCtx) return; MAT.setEstimativa(estCtx.id, 0, 0); fecharEstimativa(); render(); }
+
+// Select "Atividade / etapa" do modal de reservar sessão.
+function mMontarMateriais(selId) {
+  const sel = document.getElementById('mMaterial');
+  if (!sel) return;
+  if (!MAT || !MAT.etapaLabel) { sel.innerHTML = '<option value="">— nenhuma —</option>'; return; }
+  const v = document.getElementById('mDisc').value;
+  const discId = v === '__outra__' ? null : v;
+  const lista = MAT.emAndamento().slice().sort((a, b) => ((a.discId === discId) ? 0 : 1) - ((b.discId === discId) ? 0 : 1) || String(a.nome || '').localeCompare(String(b.nome || '')));
+  sel.innerHTML = '<option value="">— nenhuma —</option>' + lista.map(m => `<option value="${escHtml(m.id)}"${m.id === selId ? ' selected' : ''}>${MAT.etapaIcon(m)} ${escHtml(m.nome)} — ${escHtml(MAT.etapaLabel(m))}${(m.discId && m.discId !== discId && m.discNome) ? ' · ' + escHtml(m.discNome) : ''}</option>`).join('');
+}
 
 render();
 setInterval(() => { if (!timerState.running) render(); }, 60000);

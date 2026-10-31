@@ -265,7 +265,7 @@
   // e pros outros aparelhos. O pareamento da conta (sync.meta) fica — é dele
   // que o sync precisa pra propagar a limpeza; sair da conta é outra ação.
   var RESET_KEEP = ['trackermed.sync.meta.v1'];
-  var RESET_EXTRA = ['planejamento.disponibilidade'];
+  var RESET_EXTRA = ['planejamento.disponibilidade', 'historicoEstudos'];
   function resetKeys() {
     var keys = [];
     try {
@@ -842,6 +842,341 @@
     fmtVel: ritFmtVel
   };
 
+  // ---- Atividades e etapas: tempo, situação, estimativa, correções ------
+  // Uma ATIVIDADE é o que a aluna quer concluir (ler o cap. 12, assistir a
+  // aula X). Cada ETAPA dela (leitura, resumo, questões, revisão…) é um
+  // material comum — mesma unidade, total, log e estatísticas de sempre —
+  // ligado ao grupo por `atividadeId`. Materiais antigos, sem o campo, são
+  // atividades de uma etapa só (o próprio id vira o id da atividade), então
+  // nada precisa migrar. O tempo REALIZADO vem das sessões (blocos do
+  // planejamento com materialId); o RESERVADO, das sessões ainda pendentes;
+  // a ESTIMATIVA restante respeita a definida à mão e, sem ela, deriva do
+  // ritmo medido (ou, sem ritmo, da proporção tempo gasto × avanço).
+  var MAT_ETAPAS = {
+    leitura:    { label: 'Leitura',           icon: '📖', unidade: 'paginas',    tipo: 'livro'  },
+    video:      { label: 'Videoaula / áudio', icon: '🎬', unidade: 'minutos',    tipo: 'video'  },
+    resumo:     { label: 'Resumo',            icon: '📝', unidade: 'paginas',    tipo: 'resumo' },
+    questoes:   { label: 'Questões',          icon: '✅', unidade: 'questoes',   tipo: 'outro'  },
+    flashcards: { label: 'Flashcards',        icon: '🃏', unidade: 'itens',      tipo: 'outro'  },
+    revisao:    { label: 'Revisão',           icon: '🔁', unidade: 'percentual', tipo: 'outro'  },
+    outro:      { label: 'Outra etapa',       icon: '📌', unidade: 'itens',      tipo: 'outro'  }
+  };
+  var MAT_SITUACAO_LBL = { 'nao-iniciada': 'Não iniciada', 'em-andamento': 'Em andamento', 'concluida': 'Concluída' };
+  // Unidades de POSIÇÃO: a aluna informa onde parou e só a diferença conta.
+  var MAT_POS_UNIDS = { paginas: 1, minutos: 1, percentual: 1 };
+
+  function matEtapaKey(m) {
+    if (m && m.etapa && MAT_ETAPAS[m.etapa]) return m.etapa;
+    var t = m && m.tipo;
+    if (t === 'video' || t === 'gravacao' || t === 'audio') return 'video';
+    if (t === 'resumo') return 'resumo';
+    if (m && m.unidade === 'questoes') return 'questoes';
+    return 'leitura';
+  }
+  function matEtapaLabel(m) { return (m && m.etapaNome) || MAT_ETAPAS[matEtapaKey(m)].label; }
+  function matEtapaIcon(m) { return MAT_ETAPAS[matEtapaKey(m)].icon; }
+  function matAtividadeId(m) { return m ? (m.atividadeId || m.id) : null; }
+  function matNum0(v) { var n = parseFloat(v); return isFinite(n) ? n : 0; }
+  function matHHMMtoMin(t) {
+    if (!t || typeof t !== 'string') return NaN;
+    var p = t.split(':');
+    var h = parseInt(p[0], 10), mi = parseInt(p[1], 10);
+    return (isNaN(h) || isNaN(mi)) ? NaN : h * 60 + mi;
+  }
+  // Mesma regra de todas as páginas: minutos planejados = b.minutos ou fim−ini;
+  // estudados = minutosFeitos (ou o planejado, se marcado feito sem registro).
+  function matPlannedMin(b) {
+    if (!b) return 0;
+    if (matNum0(b.minutos) > 0) return Math.round(matNum0(b.minutos));
+    var mi = matHHMMtoMin(b.ini), mf = matHHMMtoMin(b.fim);
+    if (!isNaN(mi) && !isNaN(mf)) return Math.max(0, Math.round(mf - mi));
+    return 0;
+  }
+  function matStudiedMin(b) {
+    if (!b) return 0;
+    if (b.minutosFeitos != null) return Math.max(0, Math.round(matNum0(b.minutosFeitos)));
+    return b.feito ? matPlannedMin(b) : 0;
+  }
+
+  // Agrupa os materiais em atividades (cada uma com suas etapas, na ordem
+  // de criação). opts.incluirConcluidas: também as 100% concluídas.
+  function matAtividades(opts) {
+    opts = opts || {};
+    var grupos = {}, ordem = [];
+    matLoad().forEach(function (m) {
+      if (!m) return;
+      var aid = matAtividadeId(m);
+      if (!grupos[aid]) {
+        grupos[aid] = { id: aid, nome: m.nome, tipo: m.tipo, discId: m.discId || null, discNome: m.discNome || '',
+                        conteudoId: m.conteudoId || null, conteudoNome: m.conteudoNome || '', prazo: m.prazo || null,
+                        criadoEm: m.criadoEm || '', etapas: [] };
+        ordem.push(aid);
+      }
+      var g = grupos[aid];
+      if (!g.prazo && m.prazo) g.prazo = m.prazo;
+      g.etapas.push(m);
+    });
+    var out = ordem.map(function (aid) {
+      var g = grupos[aid];
+      g.etapas.sort(function (a, b) {
+        return (matNum0(a.ordem) - matNum0(b.ordem))
+          || String(a.criadoEm || '').localeCompare(String(b.criadoEm || ''))
+          || String(a.id).localeCompare(String(b.id));
+      });
+      g.concluida = g.etapas.every(function (m) { return !!m.concluido; });
+      return g;
+    });
+    if (!opts.incluirConcluidas) out = out.filter(function (g) { return !g.concluida; });
+    return out;
+  }
+  function matEtapasDe(atividadeId) {
+    return matLoad().filter(function (m) { return m && matAtividadeId(m) === atividadeId; });
+  }
+  // Nova etapa numa atividade existente: herda nome, disciplina e conteúdo da
+  // etapa-base; só etapa, unidade, total e estimativa são próprios.
+  function matNovaEtapa(atividadeId, campos) {
+    var base = matEtapasDe(atividadeId)[0];
+    if (!base) return null;
+    campos = campos || {};
+    var key = campos.etapa && MAT_ETAPAS[campos.etapa] ? campos.etapa : 'outro';
+    var def = MAT_ETAPAS[key];
+    var unidade = campos.unidade || def.unidade;
+    var total = matNum0(campos.total);
+    if (!(total > 0) && unidade === 'percentual') total = 100;
+    var est = matNum0(campos.estimativaMin);
+    var m = {
+      id: matUid(), nome: base.nome, tipo: campos.tipo || def.tipo,
+      etapa: key, etapaNome: String(campos.etapaNome || '').trim() || null,
+      unidade: unidade, total: total,
+      atividadeId: atividadeId,
+      discId: base.discId || null, discNome: base.discNome || null,
+      conteudoId: base.conteudoId || null, conteudoNome: base.conteudoNome || null,
+      prazo: campos.prazo || null, criadoEm: tzTodayKey(),
+      ordem: matEtapasDe(atividadeId).length,
+      concluido: false, concluidoEm: null, log: [],
+      estimativaMin: est > 0 ? est : null, estimativaBaseMin: est > 0 ? 0 : null
+    };
+    if (!base.atividadeId) { base.atividadeId = atividadeId; matUpsert(base); }
+    matUpsert(m);
+    return m;
+  }
+  function matRemoverAtividade(atividadeId) {
+    matSave(matLoad().filter(function (m) { return !(m && matAtividadeId(m) === atividadeId); }));
+  }
+
+  // Tempo da etapa a partir das sessões (blocos com materialId) + lançamentos
+  // do log com tempo medido que não pertencem a nenhuma dessas sessões
+  // (avanços antigos, registrados por outro caminho) — sem contar duas vezes.
+  // items: [{ b, wk, date }] (ver TrackerMedSessoes.collectAll) ou [bloco].
+  function matTempo(m, items) {
+    var linked = {}, realizado = 0, reservado = 0, proximas = [], sessoes = [];
+    (items || []).forEach(function (it) {
+      var b = it && it.b ? it.b : it;
+      if (!b || !m || b.materialId !== m.id) return;
+      var date = (it && it.date) || b.data || null;
+      var pl = matPlannedMin(b), st = matStudiedMin(b);
+      linked[b.id] = 1;
+      realizado += st;
+      sessoes.push({ b: b, wk: it && it.wk, date: date, planned: pl, studied: st, feito: !!b.feito });
+      if (!b.feito) {
+        var falta = Math.max(0, pl - st);
+        reservado += falta;
+        proximas.push({ b: b, wk: it && it.wk, date: date, faltaMin: falta, planned: pl, studied: st });
+      }
+    });
+    (m && Array.isArray(m.log) ? m.log : []).forEach(function (e) {
+      if (!e) return;
+      var sm = matNum0(e.sessaoMin);
+      if (sm > 0 && (!e.blocoId || !linked[e.blocoId])) realizado += sm;
+    });
+    var byDate = function (a, b) { return String(a.date || '').localeCompare(String(b.date || '')); };
+    proximas.sort(byDate);
+    sessoes.sort(function (a, b) { return byDate(b, a); });
+    return { realizadoMin: Math.round(realizado), reservadoMin: Math.round(reservado), proximas: proximas, sessoes: sessoes, nSessoes: sessoes.length };
+  }
+  function matSituacao(m, tempo) {
+    if (!m) return 'nao-iniciada';
+    if (m.concluido) return 'concluida';
+    if (matPosAtual(m) > 0 || (tempo && tempo.realizadoMin > 0) || (Array.isArray(m.log) && m.log.length > 0)) return 'em-andamento';
+    return 'nao-iniciada';
+  }
+  // Estimativa de tempo restante. fonte: 'manual' (a da aluna, descontando o
+  // que ela estudou depois de defini-la) · 'ritmo' (velocidade medida) ·
+  // 'proporcao' (tempo gasto × avanço, provisória) · null (sem dados).
+  function matEstimativa(m, tempo, allSamples) {
+    var st = matStats(m);
+    if (m.concluido) return { min: 0, fonte: 'concluida' };
+    var realizado = tempo ? matNum0(tempo.realizadoMin) : 0;
+    if (matNum0(m.estimativaMin) > 0) {
+      var gasto = Math.max(0, realizado - matNum0(m.estimativaBaseMin));
+      return { min: Math.max(0, Math.round(matNum0(m.estimativaMin) - gasto)), fonte: 'manual', definida: matNum0(m.estimativaMin) };
+    }
+    if (st.restante <= 0 && matNum(m.total) > 0) return { min: 0, fonte: 'ritmo' };
+    var ri = ritMaterial(m, allSamples);
+    if (ri && ri.vel && ri.restanteMin != null) return { min: Math.max(0, Math.round(ri.restanteMin)), fonte: 'ritmo', vel: ri.vel, provisoria: !!ri.vel.provisoria };
+    var pos = matPosAtual(m);
+    if (realizado > 0 && pos > 0 && st.restante > 0) return { min: Math.max(0, Math.round(realizado * st.restante / pos)), fonte: 'proporcao', provisoria: true };
+    return { min: null, fonte: null };
+  }
+  function matSetEstimativa(id, min, realizadoAtualMin) {
+    var m = matGet(id);
+    if (!m) return null;
+    var v = matNum0(min);
+    if (v > 0) { m.estimativaMin = Math.round(v); m.estimativaBaseMin = Math.round(matNum0(realizadoAtualMin)); }
+    else { m.estimativaMin = null; m.estimativaBaseMin = null; }
+    matUpsert(m);
+    return m;
+  }
+
+  // Correção de lançamentos do log (os totais são derivados, então corrigir
+  // um registro recalcula tudo). Atingiu o total → conclui; caiu abaixo →
+  // reabre (a conclusão manual grava um lançamento até o total, então ela
+  // só é desfeita se a aluna mexer nesse lançamento).
+  function matRecalcConclusao(m) {
+    var st = matStats(m);
+    if (matNum(m.total) > 0 && st.restante <= 0) { if (!m.concluido) { m.concluido = true; m.concluidoEm = tzTodayKey(); } }
+    else if (m.concluido) { m.concluido = false; m.concluidoEm = null; }
+  }
+  function matLogFind(m, ts) {
+    var log = Array.isArray(m.log) ? m.log : [];
+    for (var i = 0; i < log.length; i++) { if (log[i] && String(log[i].ts) === String(ts)) return i; }
+    return -1;
+  }
+  function matLogEditar(id, ts, patch) {
+    var m = matGet(id);
+    if (!m) return null;
+    var i = matLogFind(m, ts);
+    if (i < 0) return null;
+    var e = Object.assign({}, m.log[i]);
+    var ateAntes = e.ate != null ? matNum0(e.ate) : null;
+    patch = patch || {};
+    if (patch.data) e.data = patch.data;
+    if (patch.ate != null) {
+      var ate = matNum0(patch.ate);
+      e.ate = ate;
+      if (e.de != null) e.qtd = Math.max(0, ate - matNum0(e.de));
+    }
+    if (patch.qtd != null) e.qtd = Math.max(0, matNum0(patch.qtd));
+    if (patch.sessaoMin !== undefined) { if (matNum0(patch.sessaoMin) > 0) e.sessaoMin = matNum0(patch.sessaoMin); else delete e.sessaoMin; }
+    if (patch.blocoId !== undefined) { if (patch.blocoId) e.blocoId = patch.blocoId; else delete e.blocoId; }
+    m.log[i] = e;
+    if (ateAntes != null && e.ate != null && matNum0(e.ate) !== ateAntes) matLogReencadear(m, i + 1, ateAntes, matNum0(e.ate));
+    matRecalcConclusao(m);
+    matUpsert(m);
+    return m;
+  }
+  function matLogRemover(id, ts) {
+    var m = matGet(id);
+    if (!m) return null;
+    var i = matLogFind(m, ts);
+    if (i >= 0) {
+      var rem = m.log[i];
+      // Posição em que o log ficava ANTES do lançamento removido.
+      var pos = 0;
+      for (var k = 0; k < i; k++) { var p = m.log[k]; if (!p) continue; var a = parseFloat(p.ate); pos = isFinite(a) ? a : pos + matNum(p.qtd); }
+      m.log.splice(i, 1);
+      if (rem && rem.ate != null) matLogReencadear(m, i, matNum0(rem.ate), pos);
+      matRecalcConclusao(m);
+      matUpsert(m);
+    }
+    return m;
+  }
+  // Lançamentos de posição são encadeados (o "de" de um é o "ate" do anterior).
+  // Corrigir ou remover um deles re-encadeia os seguintes enquanto a corrente
+  // continuar (de === ate anterior), pra que o avanço de cada sessão continue
+  // sendo a diferença real — a posição alcançada (último "ate") não muda.
+  function matLogReencadear(m, from, ateAntigo, ateNovo) {
+    var prevOld = ateAntigo, prevNew = ateNovo;
+    for (var j = from; j < m.log.length; j++) {
+      var e = m.log[j];
+      if (!e || e.ate == null || e.de == null || matNum0(e.de) !== prevOld) break;
+      var novo = Object.assign({}, e, { de: prevNew, qtd: Math.max(0, matNum0(e.ate) - prevNew) });
+      m.log[j] = novo;
+      prevOld = matNum0(e.ate); prevNew = matNum0(e.ate);
+    }
+  }
+  // Lançamentos ligados a uma sessão (bloco), em qualquer material.
+  function matLogPorBloco(blocoId) {
+    var out = [];
+    if (!blocoId) return out;
+    matLoad().forEach(function (m) {
+      (m && Array.isArray(m.log) ? m.log : []).forEach(function (e) { if (e && e.blocoId === blocoId) out.push({ material: m, entry: e }); });
+    });
+    return out;
+  }
+  // Tira de todos os materiais os lançamentos de uma sessão (ao trocar a
+  // atividade de um registro ou excluir a sessão).
+  function matLogDesvincularBloco(blocoId) {
+    var mudou = [];
+    if (!blocoId) return mudou;
+    matLoad().forEach(function (m) {
+      if (!m || !Array.isArray(m.log)) return;
+      var antes = m.log.length;
+      m.log = m.log.filter(function (e) { return !(e && e.blocoId === blocoId); });
+      if (m.log.length !== antes) { matRecalcConclusao(m); matUpsert(m); mudou.push(m.id); }
+    });
+    return mudou;
+  }
+  // Avanço a partir do valor digitado: unidades de posição (página, minuto, %)
+  // → diferença pra última posição; demais (questões, capítulos, itens) →
+  // quantidade. Devolve { qtd, de, ate } ou { erro: 'menor'|'maior' }.
+  function matAvancoDePosicao(m, valor) {
+    var v = matNum0(valor);
+    if (!(v > 0)) return null;
+    if (MAT_POS_UNIDS[m.unidade]) {
+      var pos = matPosAtual(m);
+      if (v <= pos) return { erro: 'menor', pos: pos };
+      var total = matNum(m.total);
+      if (total > 0 && v > total) return { erro: 'maior', total: total };
+      return { qtd: v - pos, de: pos, ate: v };
+    }
+    return { qtd: v, de: null, ate: null };
+  }
+  function matPergunta(unidade) {
+    return ({ paginas: 'Parou em que página?', minutos: 'Parou em que minuto?', percentual: 'Em que % está agora?',
+              capitulos: 'Capítulos concluídos', aulas: 'Aulas concluídas', questoes: 'Questões feitas', itens: 'Itens concluídos' })[unidade] || 'Quanto avançou?';
+  }
+
+  // ---- Sessões de todos os planos -------------------------------------
+  // Blocos de estudo/revisão do plano em foco (chaves vivas) e dos demais
+  // (snapshots), cada um com a data real — base do tempo por atividade e das
+  // visões de dia/semana. Só leitura.
+  function sessBlocoDate(wk, b) {
+    if (b && b.data) return b.data;
+    if (!wk || !b || b.dia == null) return null;
+    var p = wk.split('-').map(Number);
+    if (!p[0]) return null;
+    var off = b.dia === 0 ? 6 : b.dia - 1;
+    return tzKeyOf(new Date(p[0], p[1] - 1, p[2] + off));
+  }
+  function sessCollectAll() {
+    var planos = ctxPlanos(), foco = ctxFocusId(), store = ctxSnapStore();
+    var out = [], seenFoco = false;
+    var addPlan = function (plan, p, isFoco) {
+      if (!plan || typeof plan !== 'object') return;
+      for (var wk in plan) {
+        (plan[wk] || []).forEach(function (b) {
+          if (!b) return;
+          out.push({ b: b, wk: wk, date: sessBlocoDate(wk, b), planoId: p ? p.id : null, planoNome: p ? p.nome : '', foco: isFoco });
+        });
+      }
+    };
+    planos.forEach(function (p) {
+      if (!p || !p.id) return;
+      var isFoco = p.id === foco;
+      if (isFoco) seenFoco = true;
+      addPlan(isFoco ? jparse(lsGet(LIVE_KEYS.plan), {}) : jparse((store[p.id] || {}).plan, {}), p, isFoco);
+    });
+    if (!seenFoco) addPlan(jparse(lsGet(LIVE_KEYS.plan), {}), null, true);
+    return out;
+  }
+  window.TrackerMedSessoes = {
+    collectAll: sessCollectAll,
+    blocoDate: sessBlocoDate,
+    plannedMin: matPlannedMin,
+    studiedMin: matStudiedMin
+  };
+
   window.TrackerMedMateriais = {
     KEY: MAT_KEY,
     TIPOS: MAT_TIPOS,
@@ -867,7 +1202,31 @@
     fmtDataBR: matFmtDataBR,
     unidadeLabel: matUnidLabel,
     tipoIcon: matTipoIcon,
-    tipoLabel: matTipoLabel
+    tipoLabel: matTipoLabel,
+    // atividades e etapas
+    ETAPAS: MAT_ETAPAS,
+    SITUACAO_LBL: MAT_SITUACAO_LBL,
+    POS_UNIDS: MAT_POS_UNIDS,
+    etapaKey: matEtapaKey,
+    etapaLabel: matEtapaLabel,
+    etapaIcon: matEtapaIcon,
+    atividadeId: matAtividadeId,
+    atividades: matAtividades,
+    etapasDe: matEtapasDe,
+    novaEtapa: matNovaEtapa,
+    removerAtividade: matRemoverAtividade,
+    tempo: matTempo,
+    situacao: matSituacao,
+    estimativa: matEstimativa,
+    setEstimativa: matSetEstimativa,
+    logEditar: matLogEditar,
+    logRemover: matLogRemover,
+    logPorBloco: matLogPorBloco,
+    logDesvincularBloco: matLogDesvincularBloco,
+    avancoDePosicao: matAvancoDePosicao,
+    pergunta: matPergunta,
+    plannedMin: matPlannedMin,
+    studiedMin: matStudiedMin
   };
 
   // ---- Conteúdos hierárquicos: Disciplina → Conteúdo/Área → Tópico ------
