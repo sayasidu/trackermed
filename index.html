@@ -110,7 +110,8 @@
     .hero .lede { animation-delay: .12s; }
     .hero .access { animation-delay: .18s; }
     .hero .hero-preview { animation-delay: .24s; }
-    .hero .motivation { animation-delay: .3s; }
+    .hero .provas-board { animation-delay: .3s; }
+    .hero .motivation { animation-delay: .36s; }
     @keyframes heroIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
   }
 
@@ -168,6 +169,49 @@
   [data-theme="dark"] .motivation button { color: var(--text); border-color: var(--border); }
   [data-theme="dark"] .motivation button:hover { border-color: var(--acid); color: var(--acid); }
 
+  /* QUADRO DE PROVAS — mês atual + próximo mês, com contagem regressiva */
+  .provas-board { margin-top: 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--sh-2); position: relative; overflow: hidden; scroll-margin-top: 90px; }
+  .provas-board::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--grad-brand); }
+  .provas-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 24px 24px 16px; }
+  .provas-head h3 { font-family: 'Fraunces', serif; font-size: clamp(22px, 2.6vw, 28px); font-weight: 500; letter-spacing: -0.02em; line-height: 1.1; margin-top: 6px; color: var(--text); }
+  .provas-head h3 i { color: var(--cobalt); font-style: italic; }
+  .provas-hint { font-size: 12px; color: var(--text-mute); margin-top: 6px; }
+  .provas-add { display: inline-flex; align-items: center; gap: 6px; background: var(--ink); color: var(--paper); padding: 9px 14px; font-size: 12px; font-weight: 600; border-radius: 6px; box-shadow: var(--sh-1); white-space: nowrap; transition: transform .22s var(--ease), box-shadow .22s var(--ease), background .2s var(--ease); }
+  .provas-add:hover { background-image: var(--grad-brand); transform: translateY(-2px); box-shadow: var(--sh-glow); }
+  [data-theme="dark"] .provas-add { background: var(--acid); color: var(--ink); }
+  [data-theme="dark"] .provas-add:hover { color: #fff; }
+  .provas-months { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--border); }
+  .provas-month { padding: 18px 24px 22px; min-width: 0; }
+  .provas-month + .provas-month { border-left: 1px solid var(--border); }
+  .provas-month-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  .pm-nome { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; color: var(--text-mute); }
+  .pm-nome b { color: var(--cobalt); }
+  .pm-count { font-size: 11px; font-weight: 700; color: var(--text-soft); background: var(--surface-soft); border: 1px solid var(--border); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+  .provas-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .prova-row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto auto; grid-template-areas: "dot main data dias"; align-items: center; gap: 12px; padding: 11px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-soft); transition: transform .2s var(--ease), box-shadow .2s var(--ease), border-color .2s var(--ease); }
+  .prova-row:hover { transform: translateX(2px); border-color: var(--cobalt); box-shadow: var(--sh-1); }
+  .pr-dot { grid-area: dot; width: 10px; height: 10px; border-radius: 50%; background: var(--cobalt); box-shadow: 0 0 0 3px rgba(194,37,92,.12); }
+  .pr-main { grid-area: main; min-width: 0; }
+  .pr-disc { font-weight: 600; font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pr-sub { font-size: 12px; color: var(--text-mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pr-data { grid-area: data; text-align: right; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-mute); white-space: nowrap; }
+  .pr-data b { display: block; font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; letter-spacing: -0.02em; text-transform: none; color: var(--text); line-height: 1.1; }
+  .pr-dias { grid-area: dias; min-width: 88px; text-align: center; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); color: var(--text-soft); white-space: nowrap; line-height: 1.15; }
+  .pr-dias b { display: block; font-family: 'Fraunces', serif; font-size: 20px; letter-spacing: -0.03em; line-height: 1; text-transform: none; color: var(--text); }
+  .pr-dias b.txt { font-size: 15px; font-style: italic; }
+  .prova-row.soon .pr-dias { background-image: var(--grad-brand); color: rgba(255,255,255,.85); border-color: transparent; }
+  .prova-row.soon .pr-dias b { color: #fff; }
+  .prova-row.today { border-color: var(--rose); background: rgba(255,91,91,.07); }
+  .prova-row.today .pr-dias { background: var(--rose); color: rgba(255,255,255,.9); border-color: transparent; }
+  .prova-row.today .pr-dias b { color: #fff; }
+  .prova-row.today .pr-dot { background: var(--rose); box-shadow: 0 0 0 3px rgba(255,91,91,.18); }
+  @media (prefers-reduced-motion: no-preference) { .prova-row.today .pr-dot { animation: tmPulse 2.6s var(--ease) infinite; } }
+  .prova-row.past { opacity: .55; }
+  .prova-row.past .pr-dot { background: var(--text-mute); box-shadow: none; }
+  .provas-empty { font-size: 13px; color: var(--text-mute); font-style: italic; padding: 16px 12px; border: 1px dashed var(--border); border-radius: 10px; text-align: center; }
+  .provas-foot { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 12px 24px 16px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-mute); }
+  .provas-foot b { color: var(--text-soft); font-weight: 600; }
+
   /* PERFORMANCE section */
   .perf-section { padding: 70px 0 30px; border-top: 1px solid var(--border); }
   .perf-head { margin-bottom: 28px; }
@@ -215,6 +259,8 @@
 
   @media (max-width: 900px) {
     .hero-preview { grid-template-columns: 1fr; }
+    .provas-months { grid-template-columns: 1fr; }
+    .provas-month + .provas-month { border-left: 0; border-top: 1px solid var(--border); }
     .quick-grid { grid-template-columns: 1fr 1fr; }
     .perf-grid { grid-template-columns: 1fr 1fr; }
     .nav-links { display: none; }
@@ -225,6 +271,10 @@
     .access-row { flex-direction: column; }
     .access-row button { padding: 14px; justify-content: center; }
     .motivation { flex-direction: column; align-items: flex-start; }
+    .provas-head, .provas-month, .provas-foot { padding-left: 16px; padding-right: 16px; }
+    .prova-row { grid-template-columns: 10px minmax(0, 1fr) auto; grid-template-areas: "dot main dias" "dot data dias"; row-gap: 4px; }
+    .pr-data { text-align: left; }
+    .pr-data b { display: inline; font-size: 14px; margin-right: 6px; }
   }
 </style>
 <script src="theme.js?v=8"></script>
@@ -287,6 +337,19 @@
         <div class="mini-sub" style="color:rgba(250,240,238,0.6)" id="kProvaSub">sem prova cadastrada</div>
       </div>
     </div>
+
+    <section class="provas-board" id="provas" aria-labelledby="provasTitulo">
+      <div class="provas-head">
+        <div>
+          <div class="kicker">Provas no radar</div>
+          <h3 id="provasTitulo">Provas de <i id="provasMesAtual">—</i> e <i id="provasMesProx">—</i>.</h3>
+          <div class="provas-hint">Tudo que está cadastrado nas disciplinas e nos planos, em ordem cronológica. A contagem de dias atualiza sozinha.</div>
+        </div>
+        <a class="provas-add" href="disciplinas.html">+ Cadastrar prova</a>
+      </div>
+      <div class="provas-months" id="provasMeses" aria-live="polite"></div>
+      <div class="provas-foot"><span id="provasResumo">—</span><span>Datas no fuso de Cuiabá</span></div>
+    </section>
 
     <div class="motivation" role="region" aria-label="Frase de motivação">
       <div class="quote" id="motivationQuote">Cada hora estudada é um passo a menos pra prova e um passo a mais pra aprovação.</div>
@@ -460,6 +523,16 @@
     return b.feito ? getPlannedMin(b) : 0;
   }
   function isBlocoEstudo(b) { return !b.tipo || b.tipo === 'estudo' || b.tipo === 'revisao' || !!b.revisao; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+  function capitalizar(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+  // Dias entre hoje (00:00, Cuiabá) e uma data 'YYYY-MM-DD': 0 = hoje, 1 = amanhã, negativo = já passou.
+  function diasAte(key, hoje) {
+    const [y, m, d] = key.split('-').map(Number);
+    const t0 = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    return Math.round((new Date(y, m - 1, d) - t0) / 86400000);
+  }
+  function nomeMes(y, m) { return new Date(y, m, 1).toLocaleDateString('pt-BR', { month: 'long' }); }
+  function diaSemanaCurto(y, m, d) { return capitalizar(new Date(y, m, d).toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')); }
   // Data 'YYYY-MM-DD' de um bloco: respeita b.data (registrada pelo Histórico)
   // ou deriva da segunda-feira da semana + dia da semana do bloco.
   function blocoDateKey(wkS, b) {
@@ -562,30 +635,19 @@
 
     // Próxima prova: a mais próxima entre todas as cadastradas no sistema —
     // prova avulsa (dashboard), data de prova dos planos e provas das
-    // disciplinas de cada plano.
-    const provas = [];
-    const provaAvulsa = loadJSON(PROVA_KEY, {});
-    if (provaAvulsa.nome && provaAvulsa.data) provas.push({ nome: provaAvulsa.nome, data: provaAvulsa.data });
-    planos.forEach(({ p, disc }) => {
-      if (p && p.dataProva) provas.push({ nome: p.nome || 'Prova', data: p.dataProva });
-      disc.forEach(d => ((d && d.provas) || []).forEach(pv => {
-        if (pv && pv.data) provas.push({ nome: pv.nome ? `${pv.nome} · ${d.nome}` : d.nome, data: pv.data });
-      }));
-    });
-    const futuras = provas
-      .filter(pv => /^\d{4}-\d{2}-\d{2}$/.test(String(pv.data)) && pv.data >= hojeKey)
-      .sort((a, b) => (a.data < b.data ? -1 : 1));
+    // disciplinas de cada plano. A mesma lista alimenta o quadro de provas.
+    const provas = coletarProvas(planos);
+    const futuras = provas.filter(pv => pv.data >= hojeKey);
     if (futuras.length) {
       const prox = futuras[0];
-      const [py, pm, pd] = prox.data.split('-').map(Number);
-      const todayDate = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-      const dias = Math.max(0, Math.round((new Date(py, pm-1, pd) - todayDate) / 86400000));
+      const dias = Math.max(0, diasAte(prox.data, hoje));
       document.getElementById('kProvaVal').textContent = dias;
       document.getElementById('kProvaSub').textContent = `${dias === 1 ? 'dia' : 'dias'} · ${prox.nome}`;
     } else {
       document.getElementById('kProvaVal').textContent = '—';
       document.getElementById('kProvaSub').textContent = 'sem prova futura cadastrada';
     }
+    renderQuadroProvas(provas, hoje);
 
     // Performance: agregados de todo o histórico (simulados e erros já são
     // registros únicos, compartilhados entre os planos)
@@ -642,6 +704,104 @@
       : 'aplicados até aqui';
   }
 
+  // Reúne TODAS as provas cadastradas no site, em ordem cronológica:
+  // - prova avulsa do Dashboard (trackermed.prova.v1);
+  // - data de prova dos planos de residência / ENAMED (trackermed.planos.v1);
+  // - provas de cada disciplina de cada plano (em foco: chaves vivas; demais: snapshots).
+  // Cada item: { disciplina, sub, nome, data:'YYYY-MM-DD', cor }.
+  function coletarProvas(planos) {
+    const out = [];
+    const nPlanos = planos.length;
+    const avulsa = loadJSON(PROVA_KEY, {});
+    if (avulsa.nome && avulsa.data) {
+      out.push({ disciplina: avulsa.nome, sub: 'Prova avulsa · Dashboard', nome: avulsa.nome, data: avulsa.data, cor: null });
+    }
+    planos.forEach(({ p, disc }) => {
+      if (p && p.dataProva) {
+        const tipo = p.tipo === 'enamed' ? 'ENAMED' : 'Prova de residência';
+        out.push({ disciplina: p.nome || 'Prova', sub: tipo + (p.instituicao ? ` · ${p.instituicao}` : ''), nome: p.nome || 'Prova', data: p.dataProva, cor: null });
+      }
+      disc.forEach(d => ((d && d.provas) || []).forEach(pv => {
+        if (!pv || !pv.data) return;
+        const partes = [];
+        if (pv.nome) partes.push(pv.nome);
+        if (nPlanos > 1 && p && p.nome) partes.push(p.nome);
+        const discNome = d.nome || 'Disciplina';
+        out.push({ disciplina: discNome, sub: partes.join(' · '), nome: pv.nome ? `${pv.nome} · ${discNome}` : discNome, data: pv.data, cor: d.cor || null });
+      }));
+    });
+    return out
+      .filter(pv => /^\d{4}-\d{2}-\d{2}$/.test(String(pv.data)))
+      .sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : 0));
+  }
+
+  // Selo de contagem regressiva de uma prova.
+  function seloDias(dias) {
+    if (dias === 0) return { cls: 'today', html: '<b class="txt">Hoje</b>é o dia', aria: 'é hoje' };
+    if (dias === 1) return { cls: 'soon', html: '<b>1</b>dia · amanhã', aria: 'falta 1 dia, é amanhã' };
+    if (dias < 0) {
+      const n = -dias;
+      return { cls: 'past', html: `<b class="txt">Já foi</b>há ${n} ${n === 1 ? 'dia' : 'dias'}`, aria: `já passou há ${n} ${n === 1 ? 'dia' : 'dias'}` };
+    }
+    return { cls: dias <= 7 ? 'soon' : '', html: `<b>${dias}</b>dias`, aria: `faltam ${dias} dias` };
+  }
+
+  function linhaProva(pv, hoje) {
+    const dias = diasAte(pv.data, hoje);
+    const selo = seloDias(dias);
+    const [y, m, d] = pv.data.split('-').map(Number);
+    const dot = pv.cor
+      ? `<span class="pr-dot" style="background:${esc(pv.cor)};box-shadow:0 0 0 3px ${esc(pv.cor)}33"></span>`
+      : '<span class="pr-dot"></span>';
+    return `<li class="prova-row ${selo.cls}">
+      ${dot}
+      <div class="pr-main">
+        <div class="pr-disc">${esc(pv.disciplina)}</div>
+        ${pv.sub ? `<div class="pr-sub">${esc(pv.sub)}</div>` : ''}
+      </div>
+      <time class="pr-data" datetime="${esc(pv.data)}"><b>${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}</b>${esc(diaSemanaCurto(y, m - 1, d))}</time>
+      <span class="pr-dias" aria-label="${esc(selo.aria)}">${selo.html}</span>
+    </li>`;
+  }
+
+  // Quadro em destaque: provas do mês atual e do próximo, uma coluna por mês.
+  function renderQuadroProvas(provas, hoje) {
+    const meses = [0, 1].map(off => {
+      const ref = new Date(hoje.getFullYear(), hoje.getMonth() + off, 1);
+      const y = ref.getFullYear(), m = ref.getMonth();
+      const ini = dateKey(ref), fim = dateKey(new Date(y, m + 1, 0));
+      return { y, m, nome: nomeMes(y, m), itens: provas.filter(pv => pv.data >= ini && pv.data <= fim) };
+    });
+    document.getElementById('provasMesAtual').textContent = meses[0].nome;
+    document.getElementById('provasMesProx').textContent = meses[1].nome;
+    document.getElementById('provasMeses').innerHTML = meses.map(mes => {
+      const n = mes.itens.length;
+      const lista = n
+        ? `<ol class="provas-list">${mes.itens.map(pv => linhaProva(pv, hoje)).join('')}</ol>`
+        : `<div class="provas-empty">Nenhuma prova cadastrada em ${esc(mes.nome)}.</div>`;
+      return `<div class="provas-month">
+        <div class="provas-month-head">
+          <div class="pm-nome"><b>${esc(capitalizar(mes.nome))}</b> ${mes.y}</div>
+          <span class="pm-count">${n} ${n === 1 ? 'prova' : 'provas'}</span>
+        </div>
+        ${lista}
+      </div>`;
+    }).join('');
+
+    const todas = meses[0].itens.concat(meses[1].itens);
+    const futuras = todas.filter(pv => diasAte(pv.data, hoje) >= 0);
+    const resumo = document.getElementById('provasResumo');
+    if (!todas.length) {
+      resumo.innerHTML = 'Nenhuma prova nesses dois meses — cadastre em <b>Disciplinas</b> pra ela aparecer aqui.';
+    } else if (!futuras.length) {
+      resumo.innerHTML = `<b>${todas.length}</b> ${todas.length === 1 ? 'prova' : 'provas'} no período, ${todas.length === 1 ? 'já realizada' : 'todas já realizadas'}.`;
+    } else {
+      const d = diasAte(futuras[0].data, hoje);
+      const quando = d === 0 ? 'é <b>hoje</b>' : d === 1 ? 'é <b>amanhã</b>' : `em <b>${d} dias</b>`;
+      resumo.innerHTML = `<b>${futuras.length}</b> ${futuras.length === 1 ? 'prova' : 'provas'} pela frente · a próxima ${quando} (${esc(futuras[0].disciplina)}).`;
+    }
+  }
+
   function pickFraseInicial() {
     const idx = Math.floor((Date.now() / 86400000)) % FRASES.length;
     document.getElementById('motivationQuote').textContent = FRASES[idx];
@@ -677,8 +837,19 @@
     document.getElementById('nomeInput').focus();
   }
 
+  // Contagem regressiva sempre atual: re-renderiza quando o dia vira (checa a
+  // cada minuto), quando a aba/app volta ao primeiro plano, quando outra aba
+  // mexe nos dados e quando a nuvem traz dado novo.
+  let diaRenderizado = null;
+  function renderHome() { diaRenderizado = dateKey(nowCuiaba()); renderPreview(); }
+  setInterval(() => { if (dateKey(nowCuiaba()) !== diaRenderizado) renderHome(); }, 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') renderHome(); });
+  window.addEventListener('pageshow', e => { if (e.persisted) renderHome(); });
+  window.addEventListener('storage', e => { if (!e.key || /^(trackermed\.|planejamento\.)/.test(e.key)) renderHome(); });
+  window.addEventListener('tmsync', e => { if (e.detail && e.detail.applied) renderHome(); });
+
   init();
-  renderPreview();
+  renderHome();
   pickFraseInicial();
   document.getElementById('motivationNext').addEventListener('click', trocarFrase);
 </script>

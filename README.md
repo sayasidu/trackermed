@@ -10,6 +10,16 @@ nomes das variáveis CSS antigas (`--cobalt`, `--acid`, `--ink`, `--paper`)
 foram mantidos por compatibilidade — só os valores mudaram (em `app.css` e no
 `<style>` próprio de `index.html`).
 
+Na **home** (`index.html`), logo abaixo dos três cartões de resumo, fica o
+quadro **Provas no radar**: todas as provas cadastradas para o mês atual e o
+próximo, em ordem cronológica, uma coluna por mês, com disciplina, nome da
+prova, data (com dia da semana) e quantos dias faltam. Ele reúne as provas das
+disciplinas de todos os planos (`trackermed.disciplinas.v1` e snapshots), a
+data de prova dos planos de residência/ENAMED (`trackermed.planos.v1`) e a
+prova avulsa do Dashboard (`trackermed.prova.v1`). A contagem se refaz sozinha
+quando o dia vira, quando a aba volta ao primeiro plano, quando outra aba mexe
+nos dados e quando a nuvem sincroniza.
+
 Atalhos de personalização e manutenção:
 
 - **Recomeçar do zero**: botão no pé da barra lateral de todas as páginas (e
