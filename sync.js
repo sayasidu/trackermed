@@ -43,7 +43,9 @@
   // aparelho), tema (preferência do aparelho) e o próprio meta.
   var EXCLUDE = { 'trackermed.app.timer.v1': 1, 'trackermed.theme.v1': 1 };
   EXCLUDE[META_KEY] = 1;
-  var EXTRA_KEYS = { 'planejamento.disponibilidade': 1 };
+  // historicoEstudos (sessões e revisões) não tem o prefixo trackermed.,
+  // mas é dado de estudo — sincroniza, entra no backup e no reset.
+  var EXTRA_KEYS = { 'planejamento.disponibilidade': 1, 'historicoEstudos': 1 };
 
   function tracked(k) {
     return typeof k === 'string' && !EXCLUDE[k] &&

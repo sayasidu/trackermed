@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=7"></script>
+<script src="theme.js?v=8"></script>
 <style>
 .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
 .stat-card { background: #fff; border: 1px solid #E0E0E0; padding: 18px 20px; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); }
@@ -235,6 +235,9 @@
 .matp-sub b { color: var(--text); font-weight: 600; }
 .matp-meta { grid-column: 1 / -1; font-size: 11.5px; color: var(--cobalt); font-weight: 600; }
 .matp-meta.atrasado { color: var(--rose); }
+.matp-group { margin-bottom: 10px; }
+.matp-gtitle { font-weight: 700; font-size: 13.5px; color: var(--text); margin: 6px 0 4px; }
+.matp-gtitle .matp-disc { font-size: 11px; color: var(--muted); font-weight: 500; }
 .prio-excluidas { margin-top: 10px; font-size: 11px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .prio-excluidas .pe-lbl { font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 4px; }
 .prio-excluidas .pe-tag { background: #F5F5F5; padding: 4px 8px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; border-left: 3px solid var(--line); border-radius: 0 6px 6px 0; box-shadow: 0 1px 2px rgba(43,15,38,.08); }
@@ -503,8 +506,8 @@
 </div>
 
 <div class="disp-setup" id="materiaisPanel" style="display:none">
-  <h3>Materiais <i>em andamento</i></h3>
-  <div class="help">O que ainda falta em cada material de estudo (capítulos, artigos, videoaulas, áudios), com a <b>previsão dinâmica</b> de conclusão — ela se ajusta ao seu ritmo real — e a <b>meta diária sugerida</b> pra cumprir o prazo. Registre o avanço ao encerrar cada sessão no <a href="historico.html" style="color:var(--cobalt);font-weight:600">Histórico</a>; o cadastro fica em <a href="disciplinas.html" style="color:var(--cobalt);font-weight:600">Disciplinas</a>.</div>
+  <h3>Atividades <i>em andamento</i></h3>
+  <div class="help">O que ainda falta em cada atividade (capítulos, artigos, videoaulas, listas), com a <b>previsão dinâmica</b> de conclusão — ela se ajusta ao seu ritmo real — e a <b>meta diária sugerida</b> pra cumprir o prazo. Cada etapa (leitura, resumo, questões…) mostra o <b>tempo realizado</b>, o <b>reservado</b> nas próximas sessões e a <b>estimativa restante</b>. Registre sessões, reserve horários e corrija registros no <a href="historico.html" style="color:var(--cobalt);font-weight:600">Histórico</a>; o cadastro completo fica em <a href="disciplinas.html" style="color:var(--cobalt);font-weight:600">Disciplinas</a>.</div>
   <div id="materiaisList" style="margin-top:12px"></div>
 </div>
 
@@ -587,6 +590,7 @@
       <div class="mfield" id="mDiscOutraWrap" style="display:none"><label>Nome da matéria</label>
         <input type="text" id="mDiscOutra" maxlength="80" placeholder="ex: Inglês, Programação, Direito…">
       </div>
+      <div class="mfield"><label>Atividade / etapa (opcional)</label><select id="mMaterial"></select></div>
       <div id="mConteudoWrap">
         <div class="mfield row2" id="mConteudoSelWrap" style="display:none">
           <div><label>Conteúdo / Área (opcional)</label><select id="mConteudoSel" onchange="mHier.onConteudoChange()"></select></div>
@@ -1790,6 +1794,7 @@ function abrirManual(pre) {
   if (pre.discId && discList.some(d => d.id === pre.discId)) sel.value = pre.discId;
   document.getElementById('mDiscOutra').value = '';
   mDiscChange();
+  mMontarMateriais(pre.materialId || null);
   document.getElementById('mData').value = pre.data || toISODate(nowCuiaba());
   document.getElementById('mIni').value = pre.ini || horaAgoraArredondada();
   document.getElementById('mDurCustom').value = '';
@@ -1803,7 +1808,20 @@ function mDiscChange() {
   const outra = v === '__outra__';
   document.getElementById('mDiscOutraWrap').style.display = outra ? '' : 'none';
   mHier.montar(outra ? null : v, {});
+  mMontarMateriais(null);
   if (outra) setTimeout(() => document.getElementById('mDiscOutra').focus(), 30);
+}
+// Select "Atividade / etapa (opcional)": a sessão reservada já nasce ligada à
+// etapa — o tempo dela entra como "reservado" no painel de atividades.
+function mMontarMateriais(selId) {
+  const sel = document.getElementById('mMaterial');
+  if (!sel) return;
+  const M = window.TrackerMedMateriais;
+  if (!M || !M.etapaLabel) { sel.innerHTML = '<option value="">— nenhuma —</option>'; return; }
+  const v = document.getElementById('mDisc').value;
+  const discId = v === '__outra__' ? null : v;
+  const lista = M.emAndamento().slice().sort((a, b) => ((a.discId === discId) ? 0 : 1) - ((b.discId === discId) ? 0 : 1) || String(a.nome || '').localeCompare(String(b.nome || '')));
+  sel.innerHTML = '<option value="">— nenhuma —</option>' + lista.map(m => `<option value="${escH(m.id)}"${m.id === selId ? ' selected' : ''}>${M.etapaIcon(m)} ${escH(m.nome)} — ${escH(M.etapaLabel(m))}${(m.discId && m.discId !== discId && m.discNome) ? ' · ' + escH(m.discNome) : ''}</option>`).join('');
 }
 function setManualDur(min, viaCustom) {
   manualDur = min;
@@ -1891,6 +1909,8 @@ function salvarManual() {
     dia, ini, fim, feito: false, auto: false, manual: true, criadoEm: new Date().toISOString()
   };
   if (matNome) bloco.matNome = matNome;
+  const materialId = (document.getElementById('mMaterial') || {}).value || null;
+  if (materialId) bloco.materialId = materialId;
   plan[wk].push(bloco);
   savePlan(plan);
   fecharManual();
@@ -1941,6 +1961,9 @@ function renderGrade(discList) {
   const wk = weekKey(anchorDate);
   const plan = loadPlan();
   const rotina = loadRotina();
+  const MATG = window.TrackerMedMateriais;
+  const matById = {};
+  (MATG ? MATG.load() : []).forEach(m => { if (m) matById[m.id] = m; });
 
   for (let i = 0; i < 7; i++) {
     const d = addDays(wkStart, i);
@@ -2018,7 +2041,7 @@ function renderGrade(discList) {
       body += `<div class="bloco ${cssCls} ${b.feito?'concluido':''}" data-bloco-id="${escH(b.id)}" style="top:${top}px;height:${h}px;background:${bg};color:${fg};border-left:3px solid ${bl}" title="${titleHint}">
         <div class="check">${b.feito?'✓':''}</div>
         <div class="nome">${badge}${escH(nomeBase)}</div>
-        <div class="tempo">${escH(b.ini)}—${escH(b.fim)}${b.conteudo?` · ${escH(b.conteudo)}`:''}</div>
+        <div class="tempo">${escH(b.ini)}—${escH(b.fim)}${b.conteudo?` · ${escH(b.conteudo)}`:''}${(b.materialId && matById[b.materialId]) ? ` · ${escH(matById[b.materialId].nome)}${MATG.etapaLabel ? ' — ' + escH(MATG.etapaLabel(matById[b.materialId])) : ''}` : ''}</div>
         <div class="resize-handle" data-resize="${escH(b.id)}"></div>
       </div>`;
     });
@@ -2789,47 +2812,40 @@ function renderMateriaisPanel() {
   const listEl = document.getElementById('materiaisList');
   const M = window.TrackerMedMateriais;
   if (!panel || !listEl || !M) return;
-  const mats = M.emAndamento();
-  if (!mats.length) { panel.style.display = 'none'; return; }
-  panel.style.display = '';
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  listEl.innerHTML = mats.map(m => {
-    const st = M.stats(m);
-    const u = q => esc(M.fmtUnid(q, m.unidade));
-    const disc = m.discNome ? `<span class="matp-disc">${esc(m.discNome)}${m.conteudoNome ? ' — ' + esc(m.conteudoNome) : ''}</span>` : '';
-    const ritmo = st.ritmo > 0 ? ` · ritmo atual: <b>${u(Math.round(st.ritmo * 10) / 10)}/dia</b>` : '';
-    const prev = st.estimativaDias != null
-      ? ` · previsão: <b>${st.estimativaDias} dia${st.estimativaDias !== 1 ? 's' : ''}</b> (${esc(M.fmtDataBR(st.dataEstimada))})`
-      : (st.diasComAvanco === 0 ? ' · sem avanços registrados ainda' : '');
-    let meta = '';
-    if (m.prazo && st.sugestaoDiaria != null) {
-      meta = st.atrasado
-        ? `<div class="matp-meta atrasado">⚠ Prazo (${esc(M.fmtDataBR(m.prazo))}) vencido — faltam ${u(st.restante)}.</div>`
-        : `<div class="matp-meta">🎯 Pra concluir até ${esc(M.fmtDataBR(m.prazo))}: cerca de <b>${u(Math.ceil(st.sugestaoDiaria))}/dia</b>.</div>`;
-    }
-    const idAttr = JSON.stringify(m.id).replace(/"/g, '&quot;');
-    return `<div class="matp-row${st.atrasado ? ' atrasado' : ''}">
-      <div class="matp-nome">${M.tipoIcon(m.tipo)} ${esc(m.nome)} ${disc}</div>
-      <div class="matp-pct">${st.pct}%</div>
-      <button type="button" class="matp-del" onclick="excluirMaterialPanel(${idAttr})" title="Excluir esta leitura da lista" aria-label="Excluir leitura">🗑</button>
-      <div class="matp-bar"><i style="width:${st.pct}%"></i></div>
-      <div class="matp-sub"><b>${esc(M.fmtCurto(st.feito, m.unidade))}</b> de ${u(st.total)} · restam <b>${u(st.restante)}</b>${ritmo}${prev}</div>
-      ${meta}
-    </div>`;
+  // Atividades agrupadas (etapas com progresso próprio) + tempo realizado,
+  // reservado e estimativa restante — mesmos números do Histórico.
+  const grupos = M.atividades ? M.atividades({}) : null;
+  if (!grupos || !grupos.length) { panel.style.display = 'none'; return; }
+  panel.style.display = '';
+  const items = window.TrackerMedSessoes ? TrackerMedSessoes.collectAll() : [];
+  const samples = window.TrackerMedRitmo ? TrackerMedRitmo.samples() : null;
+  const fonte = est => est.fonte === 'manual' ? 'sua estimativa' : est.fonte === 'ritmo' ? (est.provisoria ? 'ritmo · provisório' : 'pelo ritmo') : est.fonte === 'proporcao' ? 'tempo × avanço' : '';
+  listEl.innerHTML = grupos.map(g => {
+    const sub = [g.discNome, g.conteudoNome].filter(Boolean).map(esc).join(' — ');
+    const etapas = g.etapas.map(m => {
+      const st = M.stats(m), tempo = M.tempo(m, items), est = M.estimativa(m, tempo, samples), sit = M.situacao(m, tempo);
+      const u = q => esc(M.fmtUnid(q, m.unidade));
+      const prox = tempo.proximas.length ? ` · reservado <b>${fmtMinTransfer(tempo.reservadoMin)}</b> (${tempo.proximas.length} sess.)` : '';
+      const estTxt = m.concluido ? '' : (est.min != null ? ` · faltam ~<b>${fmtMinTransfer(est.min)}</b> <i>(${fonte(est)})</i>` : '');
+      let meta = '';
+      if (m.prazo && st.sugestaoDiaria != null) {
+        meta = st.atrasado
+          ? `<div class="matp-meta atrasado">⚠ Prazo (${esc(M.fmtDataBR(m.prazo))}) vencido — faltam ${u(st.restante)}.</div>`
+          : `<div class="matp-meta">🎯 Pra concluir até ${esc(M.fmtDataBR(m.prazo))}: cerca de <b>${u(Math.ceil(st.sugestaoDiaria))}/dia</b>.</div>`;
+      }
+      return `<div class="matp-row${st.atrasado ? ' atrasado' : ''}">
+        <div class="matp-nome">${M.etapaIcon(m)} ${esc(M.etapaLabel(m))} <span class="matp-disc">${M.SITUACAO_LBL[sit]}</span></div>
+        <div class="matp-pct">${st.pct}%</div>
+        <div class="matp-bar"><i style="width:${st.pct}%"></i></div>
+        <div class="matp-sub"><b>${esc(M.fmtCurto(st.feito, m.unidade))}</b> de ${u(st.total)} · restam <b>${u(st.restante)}</b> · realizado <b>${fmtMinTransfer(tempo.realizadoMin)}</b>${prox}${estTxt}</div>
+        ${meta}
+      </div>`;
+    }).join('');
+    return `<div class="matp-group"><div class="matp-gtitle">${M.tipoIcon(g.tipo)} ${esc(g.nome)}${sub ? ` <span class="matp-disc">· ${sub}</span>` : ''}</div>${etapas}</div>`;
   }).join('');
 }
 
-// Excluir uma leitura individualmente: tira o material e o progresso dele da
-// lista sem mexer no resto do planejamento.
-function excluirMaterialPanel(id) {
-  const M = window.TrackerMedMateriais;
-  if (!M) return;
-  const m = M.get(id);
-  if (!m) return;
-  if (!confirm('Excluir a leitura “' + m.nome + '”?\n\nEla e o progresso registrado nela saem da lista de materiais. As sessões de estudo do histórico continuam.\n\nEssa ação não pode ser desfeita.')) return;
-  M.remove(id);
-  renderMateriaisPanel();
-}
 window.addEventListener('storage', e => {
   const M = window.TrackerMedMateriais;
   if (e && e.key && M && e.key === M.KEY) renderMateriaisPanel();

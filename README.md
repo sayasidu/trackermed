@@ -19,13 +19,66 @@ Atalhos de personalização e manutenção:
 - **Excluir leituras individualmente**: nas listas "Materiais em andamento"
   do Histórico e do Planejamento, o botão 🗑 remove só aquela leitura (as
   sessões já registradas no histórico ficam).
-- **Sessão manual**: além da sugestão automática, dá pra registrar à mão a
-  matéria que vai estudar no dia, com horário de início e tempo planejado —
-  em **Planejamento** (botão "+ Sessão manual" ou clique num horário vazio da
-  grade) e em **Histórico** ("+ Planejar sessão", com a opção "Salvar e
-  iniciar" o cronômetro). O registro é o mesmo bloco de estudo dos gerados
+- **Sessão manual / reservar sessão**: além da sugestão automática, dá pra
+  reservar à mão a matéria que vai estudar no dia, com horário de início,
+  tempo planejado e, opcionalmente, a atividade/etapa — em **Planejamento**
+  (botão "+ Sessão manual" ou clique num horário vazio da grade) e em
+  **Histórico** ("+ Reservar sessão", com a opção "Salvar e iniciar" o
+  cronômetro). O registro é o mesmo bloco de estudo dos gerados
   automaticamente, então aparece nas duas telas, no calendário geral e segue o
   fluxo normal de cronômetro, progresso e conclusão.
+
+## Diário de estudo (Histórico) — planejar, registrar e acompanhar
+
+O **Histórico** funciona como planejador + diário integrados. Tudo gira em
+torno de três conceitos, guardados nas chaves que o site já usava:
+
+- **Sessão** — um bloco em `trackermed.plan.v1` (o mesmo formato do
+  Planejamento). Carrega o tempo *reservado* (`minutos`), o *realizado*
+  (`minutosFeitos`), se foi *encerrada* (`feito`), a data real (`data`) e,
+  opcionalmente, a atividade/etapa (`materialId`). É dela que Dashboard,
+  Gráficos e app somam as horas.
+- **Atividade** — o que a aluna quer concluir (ler o cap. 12, assistir a
+  aula X). Cada **etapa** dela (leitura, resumo, questões, revisão,
+  flashcards…) é um material em `trackermed.materiais.v1` ligado ao grupo por
+  `atividadeId`, com unidade, total e log próprios — concluir a leitura não
+  conclui o resumo. Materiais antigos são atividades de uma etapa só; nada
+  precisa migrar.
+- **Avanço** — lançamento no log da etapa (`{ data, qtd, de, ate, sessaoMin,
+  blocoId }`). Páginas, minutos e % são *posição* ("parou na página 8" → o
+  avanço é a diferença pra última posição); questões, capítulos e itens são
+  quantidade.
+
+O que o site calcula sozinho, por etapa: feito/restante/%, **tempo
+realizado** (soma das sessões ligadas), **tempo reservado** (sessões ainda em
+aberto), **estimativa restante** (a definida pela aluna vence, descontando o
+que ela estudou depois; sem ela, o ritmo medido; sem ritmo, a proporção tempo
+× avanço) e a **situação** (não iniciada / em andamento / concluída).
+Corrigir ou excluir um registro recalcula tudo — e sessão reagendada nunca
+conta duas vezes (o que foi feito fica no dia original, só o restante muda de
+data).
+
+Fluxo de uso, com o exemplo "ler o cap. 12 do Harrison (20 páginas)":
+
+1. **+ Nova atividade** (ou "+ etapa" numa existente): matéria, nome, etapa
+   *Leitura*, 20 páginas, prazo e estimativa opcionais.
+2. **⏱ reservar** no cartão da etapa (ou "+ Reservar sessão" no dia): data,
+   horário de início e tempo — vira um bloco pendente, visível na faixa da
+   semana, na lista do dia e na grade do Planejamento.
+3. **+ Registrar estudo** (ou "+ sessão" no cartão): matéria, data e tempo
+   bastam. Em *Detalhes*, a etapa e "parou em que página?" (5), conteúdo,
+   anotações, horário, tempo reservado, sessão encerrada ou não, mandar pras
+   revisões. Serve pra registrar depois, em qualquer data, sem cronômetro.
+   O cronômetro (▶) desemboca no mesmo modal, já preenchido.
+4. O cartão mostra: 5 de 20 · restam 15 · 25% · realizado 2h00 · reservado
+   1h30 (próx. dom 1/11) · faltam ~6h (pelo ritmo) · em andamento. Amanhã,
+   "parou na 8" → 8 de 20 (40%).
+5. Reorganizar: ✎ corrige qualquer sessão (tempo, data, etapa, quantidade),
+   ⇄ reagenda o que ficou pra trás, ○ encerra, "registros" lista sessões e
+   avanços da etapa com ✎/🗑, "✎ estimativa" define o tempo que ainda falta.
+
+Outras chaves: `historicoEstudos` (feed das sessões e revisões) agora
+sincroniza na nuvem, entra no backup e no "Recomeçar do zero".
 
 ## App no iPhone e iPad (PWA)
 
