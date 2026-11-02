@@ -1371,6 +1371,333 @@
     ctrl: hierCtrl
   };
 
+  // ---- Afazeres do dia (lista de tarefas) --------------------------------
+  // Lista simples de tarefas por dia, separada das sessões de estudo: texto
+  // livre, feita/não feita e data. Mora no Histórico (segue o dia selecionado)
+  // e aparece também na tela inicial do app (sempre "hoje"). Chave
+  // trackermed.* — entra na sincronização da nuvem, no backup e no "Recomeçar
+  // do zero" sem configuração extra. Shape de uma tarefa:
+  // { id:'t-…', data:'YYYY-MM-DD', texto, feito:false, criadoEm:ISO,
+  //   feitoEm:ISO|null, ordem:n, movidaDe:'YYYY-MM-DD'? }
+  var TAR_KEY = 'trackermed.tarefas.v1';
+  var TAR_MAX = 200;
+  function tarLoad() {
+    var a = jparse(lsGet(TAR_KEY), []);
+    return Array.isArray(a) ? a.filter(function (t) { return t && t.id && typeof t.texto === 'string' && t.data; }) : [];
+  }
+  function tarSave(arr) {
+    lsSet(TAR_KEY, JSON.stringify(arr));
+    try { window.dispatchEvent(new CustomEvent('tmtarefas')); } catch (e) {}
+  }
+  function tarUid() { return 't-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7); }
+  // Pendentes primeiro (na ordem em que foram criadas), concluídas por último
+  // (na ordem em que foram concluídas) — o que falta fica sempre à vista.
+  function tarOrdenar(list) {
+    return list.slice().sort(function (a, b) {
+      if (!!a.feito !== !!b.feito) return a.feito ? 1 : -1;
+      if (a.feito) return String(a.feitoEm || '').localeCompare(String(b.feitoEm || ''));
+      return ((a.ordem || 0) - (b.ordem || 0)) || String(a.criadoEm || '').localeCompare(String(b.criadoEm || ''));
+    });
+  }
+  function tarDoDia(dataKey) { return tarOrdenar(tarLoad().filter(function (t) { return t.data === dataKey; })); }
+  // Tarefas de dias ANTERIORES que ficaram sem concluir — pra trazer pra frente.
+  function tarPendentesAntes(dataKey) {
+    return tarLoad().filter(function (t) { return !t.feito && t.data < dataKey; })
+      .sort(function (a, b) { return String(a.data).localeCompare(String(b.data)) || ((a.ordem || 0) - (b.ordem || 0)); });
+  }
+  function tarProxOrdem(arr, dataKey) {
+    return arr.reduce(function (m, t) { return t.data === dataKey ? Math.max(m, t.ordem || 0) : m; }, 0) + 1;
+  }
+  function tarAdd(dataKey, texto) {
+    texto = String(texto == null ? '' : texto).trim().slice(0, TAR_MAX);
+    if (!texto || !dataKey) return null;
+    var arr = tarLoad();
+    var t = { id: tarUid(), data: dataKey, texto: texto, feito: false, criadoEm: new Date().toISOString(), feitoEm: null, ordem: tarProxOrdem(arr, dataKey) };
+    arr.push(t);
+    tarSave(arr);
+    return t;
+  }
+  function tarPatch(id, fn) {
+    var arr = tarLoad(), hit = null;
+    for (var i = 0; i < arr.length; i++) {
+      if (arr[i].id === id) { hit = fn(arr[i]) || arr[i]; arr[i] = hit; break; }
+    }
+    if (hit) tarSave(arr);
+    return hit;
+  }
+  function tarToggle(id, feito) {
+    return tarPatch(id, function (t) {
+      var f = feito == null ? !t.feito : !!feito;
+      t.feito = f; t.feitoEm = f ? new Date().toISOString() : null;
+      return t;
+    });
+  }
+  function tarEditar(id, texto) {
+    texto = String(texto == null ? '' : texto).trim().slice(0, TAR_MAX);
+    if (!texto) return null;
+    return tarPatch(id, function (t) { t.texto = texto; return t; });
+  }
+  function tarRemover(id) {
+    var arr = tarLoad();
+    var novo = arr.filter(function (t) { return t.id !== id; });
+    if (novo.length !== arr.length) tarSave(novo);
+  }
+  // Move tarefas pra outro dia (guarda de onde vieram). Usado pra trazer as
+  // pendentes de ontem/anteontem pra hoje.
+  function tarMoverPara(ids, dataKey) {
+    if (!dataKey || !ids || !ids.length) return;
+    var set = {}; ids.forEach(function (id) { set[id] = 1; });
+    var arr = tarLoad(), ordem = tarProxOrdem(arr, dataKey) - 1, mudou = false;
+    arr.forEach(function (t) {
+      if (!set[t.id] || t.data === dataKey) return;
+      t.movidaDe = t.movidaDe || t.data; t.data = dataKey; t.ordem = ++ordem; mudou = true;
+    });
+    if (mudou) tarSave(arr);
+  }
+  function tarLimparConcluidas(dataKey) {
+    var arr = tarLoad();
+    var novo = arr.filter(function (t) { return !(t.feito && t.data === dataKey); });
+    if (novo.length !== arr.length) tarSave(novo);
+  }
+  function tarStats(dataKey) {
+    var l = tarLoad().filter(function (t) { return t.data === dataKey; });
+    var f = l.filter(function (t) { return t.feito; }).length;
+    return { total: l.length, feitas: f, pendentes: l.length - f };
+  }
+
+  // ---- Widget: a lista pronta, pra qualquer página montar num <div> --------
+  // TrackerMedTarefas.render(el, 'YYYY-MM-DD', { compact, placeholder, onChange })
+  // desenha (ou redesenha) a lista dentro de `el`. Os eventos ficam no próprio
+  // elemento, e o widget se redesenha sozinho depois de cada ação, quando outra
+  // aba mexe na lista e quando a nuvem traz dados novos.
+  var TAR_CSS = [
+    '.tm-todo{font-family:inherit;color:var(--text,var(--ink))}',
+    '.tm-todo-add{display:flex;gap:8px}',
+    '.tm-todo-add input{flex:1;min-width:0;padding:11px 13px;border:1px solid var(--line,#EFDBDD);background:var(--paper,#FAF0EE);color:var(--text,var(--ink));font-family:inherit;font-size:14px;border-radius:9px;transition:border-color .2s,box-shadow .2s}',
+    '.tm-todo-add input:focus{outline:none;border-color:var(--cobalt,#C2255C);box-shadow:var(--ring,0 0 0 3px rgba(194,37,92,.3))}',
+    '.tm-todo-add button{flex:none;background-image:var(--grad-brand,var(--grad,none));background-color:var(--cobalt,#C2255C);color:#fff;border:none;border-radius:9px;padding:0 16px;min-height:42px;font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.02em;cursor:pointer;box-shadow:var(--sh-glow,0 8px 26px rgba(194,37,92,.34));transition:transform .2s,box-shadow .2s;white-space:nowrap}',
+    '.tm-todo-add button:hover{transform:translateY(-2px)}',
+    '.tm-todo-prog{display:flex;align-items:center;gap:10px;margin:12px 0 8px;font-size:11.5px;color:var(--muted,#7E6577)}',
+    '.tm-todo-prog .bar{flex:1;height:6px;background:rgba(43,15,38,.10);border-radius:999px;overflow:hidden}',
+    '.tm-todo-prog .bar i{display:block;height:100%;background-image:var(--grad-brand,var(--grad,none));background-color:var(--cobalt,#C2255C);border-radius:999px;transition:width .35s}',
+    '.tm-todo-prog.done .bar i{background-image:none;background-color:#43A047}',
+    '.tm-todo-prog .lbl{white-space:nowrap;font-weight:600}',
+    '.tm-todo-clear{background:transparent;border:none;color:var(--cobalt,#C2255C);font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;padding:2px 4px}',
+    '.tm-todo-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}',
+    '.tm-todo-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--paper,#FAF0EE);border:1px solid var(--line,#EFDBDD);border-left:3px solid var(--cobalt,#C2255C);border-radius:0 8px 8px 0;transition:background-color .2s,opacity .2s}',
+    '.tm-todo-item.done{opacity:.62;border-left-color:#43A047;background:#E8F5E9}',
+    '.tm-todo-item.done .tm-todo-txt{text-decoration:line-through;color:var(--muted,#7E6577)}',
+    '.tm-todo-item.late{border-left-color:var(--amber,#F4A72F);background:#FFF8E1}',
+    '.tm-todo-check{position:relative;flex:none;width:22px;height:22px;cursor:pointer;margin:0}',
+    '.tm-todo-check input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}',
+    '.tm-todo-check span{position:absolute;inset:0;border:2px solid var(--cobalt,#C2255C);border-radius:7px;background:var(--card,#fff);transition:background-color .15s,border-color .15s}',
+    '.tm-todo-check input:checked+span{background:#43A047;border-color:#43A047}',
+    '.tm-todo-check input:checked+span::after{content:"";position:absolute;left:6px;top:2px;width:5px;height:10px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}',
+    '.tm-todo-check input:focus-visible+span{box-shadow:var(--ring,0 0 0 3px rgba(194,37,92,.3))}',
+    '.tm-todo-txt{flex:1;min-width:0;font-size:14px;font-weight:500;line-height:1.35;cursor:pointer;overflow-wrap:anywhere}',
+    '.tm-todo-edit{flex:1;min-width:0;padding:6px 9px;border:1px solid var(--cobalt,#C2255C);border-radius:7px;background:var(--card,#fff);color:var(--text,var(--ink));font-family:inherit;font-size:14px}',
+    '.tm-todo-edit:focus{outline:none;box-shadow:var(--ring,0 0 0 3px rgba(194,37,92,.3))}',
+    '.tm-todo-dia{flex:none;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#8D5A00;background:rgba(244,167,47,.18);padding:3px 7px;border-radius:999px;white-space:nowrap}',
+    '.tm-todo-acts{flex:none;display:flex;gap:2px}',
+    '.tm-todo-acts button{background:transparent;border:none;color:#b5b5b5;font-size:13px;cursor:pointer;padding:6px;min-width:32px;min-height:32px;border-radius:7px;font-family:inherit;line-height:1}',
+    '.tm-todo-acts button:hover{color:var(--cobalt,#C2255C);background:rgba(194,37,92,.08)}',
+    '.tm-todo-acts button[data-act="remover"]:hover{color:var(--rose,#FF5B5B)}',
+    '.tm-todo-acts button[data-act="trazer"]{color:var(--cobalt,#C2255C);font-weight:700;font-size:11.5px;white-space:nowrap}',
+    '.tm-todo-empty{font-size:12.5px;color:var(--muted,#7E6577);padding:14px 4px 4px}',
+    '.tm-todo-pend{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line,#EFDBDD)}',
+    '.tm-todo-pend-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px;font-weight:600;color:#8D5A00;margin-bottom:8px}',
+    '.tm-todo-pend-head button{background:transparent;border:1px solid var(--cobalt,#C2255C);color:var(--cobalt,#C2255C);border-radius:999px;padding:5px 11px;font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer}',
+    '.tm-todo-pend-head button:hover{background:var(--cobalt,#C2255C);color:#fff}',
+    '.tm-todo.compact .tm-todo-add input{padding:10px 12px;font-size:13.5px}',
+    '.tm-todo.compact .tm-todo-add button{min-height:40px;padding:0 13px}',
+    '.tm-todo.compact .tm-todo-txt{font-size:13.5px}',
+    '[data-theme="dark"] .tm-todo-add input,[data-theme="dark"] .tm-todo-edit{background:var(--surface-soft,#2A1327);color:var(--text,#F6EDF1)}',
+    '[data-theme="dark"] .tm-todo-item{background:var(--surface-soft,#2A1327)}',
+    '[data-theme="dark"] .tm-todo-item.done{background:rgba(67,160,71,.16)}',
+    '[data-theme="dark"] .tm-todo-item.late{background:rgba(244,167,47,.14)}',
+    '[data-theme="dark"] .tm-todo-check span{background:var(--surface,#33182F)}',
+    '[data-theme="dark"] .tm-todo-prog .bar{background:rgba(250,240,238,.14)}',
+    '[data-theme="dark"] .tm-todo-dia,[data-theme="dark"] .tm-todo-pend-head{color:#F4C77A}',
+    '@media (max-width:640px){.tm-todo-add button{padding:0 12px}.tm-todo-item{padding:8px 10px;gap:8px}.tm-todo-prog .lbl{white-space:normal}}'
+  ].join('\n');
+  function tarInjectCss() {
+    if (document.getElementById('tm-todo-css')) return;
+    var s = document.createElement('style');
+    s.id = 'tm-todo-css';
+    s.textContent = TAR_CSS;
+    (document.head || document.documentElement).appendChild(s);
+  }
+  // 'YYYY-MM-DD' → 'sáb 01/11'
+  function tarFmtDia(key) {
+    var p = String(key || '').split('-');
+    if (p.length !== 3) return key || '';
+    var d = new Date(+p[0], +p[1] - 1, +p[2], 12);
+    try { return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }).replace(/\./g, ''); }
+    catch (e) { return p[2] + '/' + p[1]; }
+  }
+  function tarItemHTML(t, pendente) {
+    return '<li class="tm-todo-item' + (t.feito ? ' done' : '') + (pendente ? ' late' : '') + '" data-id="' + escTxt(t.id) + '">'
+      + '<label class="tm-todo-check"><input type="checkbox" data-act="toggle"' + (t.feito ? ' checked' : '') + ' aria-label="' + (t.feito ? 'Desmarcar' : 'Concluir') + ': ' + escTxt(t.texto) + '"><span></span></label>'
+      + '<span class="tm-todo-txt" data-act="toggle-txt" title="' + (t.feito ? 'Desmarcar' : 'Marcar como concluída') + '">' + escTxt(t.texto) + '</span>'
+      + (pendente ? '<span class="tm-todo-dia" title="Ficou pendente nesse dia">' + escTxt(tarFmtDia(t.data)) + '</span>' : '')
+      + '<span class="tm-todo-acts">'
+      + (pendente ? '<button type="button" data-act="trazer" title="Trazer pra hoje">→ hoje</button>' : '')
+      + '<button type="button" data-act="editar" title="Editar" aria-label="Editar tarefa">✎</button>'
+      + '<button type="button" data-act="remover" title="Excluir" aria-label="Excluir tarefa">🗑</button>'
+      + '</span></li>';
+  }
+  var tarMounted = [];
+  function tarRender(el, dataKey, opts) {
+    if (!el) return;
+    if (opts) el._tmTodoOpts = opts; else opts = el._tmTodoOpts || {};
+    tarInjectCss();
+    dataKey = dataKey || el._tmTodoDia || tzTodayKey();
+    el._tmTodoDia = dataKey;
+    // Não atropela uma edição em andamento; o rascunho do campo "nova tarefa"
+    // sobrevive ao redesenho (a página redesenha de tempos em tempos).
+    var editando = el.querySelector('.tm-todo-edit');
+    if (editando && document.activeElement === editando) return;
+    var addOld = el.querySelector('.tm-todo-add input');
+    var rascunho = addOld ? addOld.value : '';
+    var tinhaFoco = !!(addOld && document.activeElement === addOld);
+    var ehHoje = dataKey === tzTodayKey();
+    var lista = tarDoDia(dataKey);
+    var feitas = lista.filter(function (t) { return t.feito; }).length;
+    var pend = ehHoje ? tarPendentesAntes(dataKey) : [];
+    var pct = lista.length ? Math.round(feitas / lista.length * 100) : 0;
+    var placeholder = opts.placeholder || (ehHoje ? 'Nova tarefa pra hoje — ex: ler cap. 12, fazer 30 questões…' : 'Nova tarefa pra ' + tarFmtDia(dataKey) + '…');
+    var h = '<div class="tm-todo' + (opts.compact ? ' compact' : '') + '">';
+    h += '<form class="tm-todo-add" autocomplete="off"><input type="text" maxlength="' + TAR_MAX + '" placeholder="' + escTxt(placeholder) + '" aria-label="Nova tarefa" enterkeyhint="done"><button type="submit">+ Adicionar</button></form>';
+    if (lista.length) {
+      h += '<div class="tm-todo-prog' + (pct === 100 ? ' done' : '') + '"><div class="bar"><i style="width:' + pct + '%"></i></div>'
+        + '<span class="lbl">' + feitas + ' de ' + lista.length + ' ' + (lista.length === 1 ? 'concluída' : 'concluídas') + (pct === 100 ? ' · dia fechado ✓' : '') + '</span>'
+        + (feitas ? '<button type="button" class="tm-todo-clear" data-act="limpar" title="Apaga as tarefas já concluídas deste dia">limpar concluídas</button>' : '')
+        + '</div>';
+      h += '<ul class="tm-todo-list">' + lista.map(function (t) { return tarItemHTML(t, false); }).join('') + '</ul>';
+    } else {
+      h += '<div class="tm-todo-empty">' + escTxt(opts.vazio || (ehHoje ? 'Nenhuma tarefa pra hoje ainda. Anota aí em cima o que precisa sair do papel.' : 'Nenhuma tarefa nesse dia.')) + '</div>';
+    }
+    if (pend.length) {
+      h += '<div class="tm-todo-pend"><div class="tm-todo-pend-head"><span>' + pend.length + (pend.length === 1 ? ' tarefa de um dia anterior ficou pendente' : ' tarefas de dias anteriores ficaram pendentes') + '</span>'
+        + '<button type="button" data-act="trazer-todas">trazer todas pra hoje</button></div>'
+        + '<ul class="tm-todo-list">' + pend.map(function (t) { return tarItemHTML(t, true); }).join('') + '</ul></div>';
+    }
+    h += '</div>';
+    el.innerHTML = h;
+    var addNew = el.querySelector('.tm-todo-add input');
+    if (addNew && rascunho) addNew.value = rascunho;
+    if (addNew && tinhaFoco) { try { addNew.focus(); addNew.setSelectionRange(addNew.value.length, addNew.value.length); } catch (e) {} }
+    if (!el._tmTodoBound) { el._tmTodoBound = true; tarMounted.push(el); tarBind(el); }
+  }
+  function tarRefresh(el) {
+    tarRender(el, el._tmTodoDia, null);
+    var cb = el._tmTodoOpts && el._tmTodoOpts.onChange;
+    if (typeof cb === 'function') { try { cb(); } catch (e) {} }
+  }
+  function tarIdDe(node) {
+    var li = node && node.closest ? node.closest('.tm-todo-item') : null;
+    return li ? li.getAttribute('data-id') : null;
+  }
+  function tarComecarEdicao(el, li) {
+    var id = li.getAttribute('data-id');
+    var t = tarLoad().filter(function (x) { return x.id === id; })[0];
+    var txt = li.querySelector('.tm-todo-txt');
+    if (!t || !txt) return;
+    var inp = document.createElement('input');
+    inp.type = 'text'; inp.className = 'tm-todo-edit'; inp.maxLength = TAR_MAX; inp.value = t.texto;
+    inp.setAttribute('aria-label', 'Editar tarefa');
+    var fechado = false;
+    function salvar() {
+      if (fechado) return; fechado = true;
+      var v = inp.value.trim();
+      if (v && v !== t.texto) tarEditar(id, v);
+      inp.remove();
+      tarRefresh(el);
+    }
+    function cancelar() { if (fechado) return; fechado = true; inp.remove(); tarRefresh(el); }
+    inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); salvar(); }
+      else if (e.key === 'Escape') { e.preventDefault(); cancelar(); }
+    });
+    inp.addEventListener('blur', salvar);
+    txt.replaceWith(inp);
+    try { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) {}
+  }
+  function tarBind(el) {
+    el.addEventListener('submit', function (e) {
+      var form = e.target && e.target.closest ? e.target.closest('.tm-todo-add') : null;
+      if (!form) return;
+      e.preventDefault();
+      var inp = form.querySelector('input');
+      var v = inp ? inp.value.trim() : '';
+      if (!v) { if (inp) inp.focus(); return; }
+      tarAdd(el._tmTodoDia, v);
+      if (inp) inp.value = '';
+      tarRefresh(el);
+      var again = el.querySelector('.tm-todo-add input');
+      if (again) { try { again.focus(); } catch (e2) {} }
+    });
+    el.addEventListener('change', function (e) {
+      var cb = e.target;
+      if (!cb || cb.getAttribute('data-act') !== 'toggle') return;
+      var id = tarIdDe(cb);
+      if (!id) return;
+      tarToggle(id, cb.checked);
+      tarRefresh(el);
+    });
+    el.addEventListener('click', function (e) {
+      var node = e.target && e.target.closest ? e.target.closest('[data-act]') : null;
+      if (!node || node.tagName === 'INPUT') return;
+      var act = node.getAttribute('data-act');
+      var li = node.closest('.tm-todo-item');
+      var id = li ? li.getAttribute('data-id') : null;
+      if (act === 'toggle-txt' && id) { tarToggle(id); tarRefresh(el); }
+      else if (act === 'editar' && li) { e.preventDefault(); tarComecarEdicao(el, li); }
+      else if (act === 'remover' && id) {
+        var t = tarLoad().filter(function (x) { return x.id === id; })[0];
+        if (!t) return;
+        if (!t.feito && !confirm('Excluir a tarefa "' + t.texto + '"?')) return;
+        tarRemover(id); tarRefresh(el);
+      }
+      else if (act === 'trazer' && id) { tarMoverPara([id], el._tmTodoDia); tarRefresh(el); }
+      else if (act === 'trazer-todas') {
+        tarMoverPara(tarPendentesAntes(el._tmTodoDia).map(function (t) { return t.id; }), el._tmTodoDia);
+        tarRefresh(el);
+      }
+      else if (act === 'limpar') {
+        var st = tarStats(el._tmTodoDia);
+        if (!st.feitas) return;
+        if (!confirm('Apagar ' + (st.feitas === 1 ? 'a tarefa concluída' : 'as ' + st.feitas + ' tarefas concluídas') + ' deste dia?')) return;
+        tarLimparConcluidas(el._tmTodoDia); tarRefresh(el);
+      }
+    });
+  }
+  // Outra aba mexeu na lista, ou a nuvem trouxe dados novos: redesenha os
+  // widgets que ainda estão na página.
+  function tarRefreshMounted() {
+    tarMounted = tarMounted.filter(function (el) { return el && document.contains(el); });
+    tarMounted.forEach(function (el) { tarRender(el, el._tmTodoDia, null); });
+  }
+  window.addEventListener('storage', function (e) { if (e && e.key === TAR_KEY) tarRefreshMounted(); });
+  window.addEventListener('tmsync', function (e) { if (e && e.detail && e.detail.applied) tarRefreshMounted(); });
+
+  window.TrackerMedTarefas = {
+    KEY: TAR_KEY,
+    load: tarLoad,
+    save: tarSave,
+    doDia: tarDoDia,
+    pendentesAntes: tarPendentesAntes,
+    add: tarAdd,
+    toggle: tarToggle,
+    editar: tarEditar,
+    remover: tarRemover,
+    moverPara: tarMoverPara,
+    limparConcluidas: tarLimparConcluidas,
+    stats: tarStats,
+    render: tarRender,
+    fmtDia: tarFmtDia
+  };
+
   window.TrackerMedTheme = { toggle, apply, current };
   window.TrackerMedContext = {
     MAX: MAX_ATIVOS,

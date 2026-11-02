@@ -30,13 +30,51 @@ Atalhos de personalização e manutenção:
   do Histórico e do Planejamento, o botão 🗑 remove só aquela leitura (as
   sessões já registradas no histórico ficam).
 - **Sessão manual / reservar sessão**: além da sugestão automática, dá pra
-  reservar à mão a matéria que vai estudar no dia, com horário de início,
-  tempo planejado e, opcionalmente, a atividade/etapa — em **Planejamento**
+  reservar à mão a matéria que vai estudar no dia, com horário de início e
+  término (ou tempo planejado) e, opcionalmente, a atividade/etapa — em **Planejamento**
   (botão "+ Sessão manual" ou clique num horário vazio da grade) e em
   **Histórico** ("+ Reservar sessão", com a opção "Salvar e iniciar" o
   cronômetro). O registro é o mesmo bloco de estudo dos gerados
   automaticamente, então aparece nas duas telas, no calendário geral e segue o
   fluxo normal de cronômetro, progresso e conclusão.
+
+## Afazeres do dia (lista de tarefas)
+
+Lista simples de tarefas por dia, separada das sessões de estudo — pra anotar
+o que precisa sair do papel (ler, resolver, revisar, entregar…) e marcar ao
+concluir. Mora no **Histórico**, numa caixa própria logo abaixo de "Planejado
+pra hoje", e segue o dia selecionado na faixa da semana (dá pra deixar tarefas
+pra amanhã ou rever as de ontem). A tela inicial do **app** (`app.html`)
+mostra a mesma lista, sempre de hoje. Em cada tarefa: tocar no texto ou na
+caixa marca/desmarca, ✎ edita no lugar (Enter salva, Esc cancela), 🗑 exclui;
+o cabeçalho mostra "x de y concluídas" e, se houver, "limpar concluídas". Em
+"hoje", as tarefas de dias anteriores que ficaram sem concluir aparecem num
+bloco à parte, com o dia de origem, e podem ser trazidas pra hoje uma a uma ou
+todas de uma vez.
+
+Dados na chave `trackermed.tarefas.v1` (`{ id, data, texto, feito, criadoEm,
+feitoEm, ordem, movidaDe? }`); por ter o prefixo `trackermed.`, entra na
+sincronização da nuvem, no backup e no "Recomeçar do zero" sem configuração
+extra. Motor e widget ficam em `theme.js` (`window.TrackerMedTarefas`), então
+qualquer página monta a lista com `TrackerMedTarefas.render(el, 'YYYY-MM-DD')`.
+
+## Horário de início e término das sessões
+
+Nos modais de sessão do **Histórico** ("+ Registrar estudo" e "+ Reservar
+sessão") e do **Planejamento** ("+ Sessão manual") dá pra anotar, em horas e
+minutos, quando a sessão começou e quando terminou (ex: início 14:00, término
+16:30). Os três campos — início, término e tempo — andam juntos:
+
+- o término é preenchido sozinho (início + tempo) enquanto você não digita um;
+- digitando o término, o tempo passa a ser término − início (14:00 → 16:30 =
+  2h30), e o tempo ainda pode ser ajustado depois (se houve pausa, por
+  exemplo) sem mexer no término digitado;
+- só o término, no registro, calcula o início (término − tempo);
+- término antes do início é avisado no preview e bloqueia o salvamento.
+
+O bloco guarda `ini`/`fim` como sempre (é o que a lista do dia e a grade
+mostram) e, quando o término foi digitado à mão, a marca `horarioManual: true`
+— é ela que diz ao ✎ pra respeitar esse término ao editar o tempo.
 
 ## Diário de estudo (Histórico) — planejar, registrar e acompanhar
 
@@ -73,13 +111,14 @@ Fluxo de uso, com o exemplo "ler o cap. 12 do Harrison (20 páginas)":
 1. **+ Nova atividade** (ou "+ etapa" numa existente): matéria, nome, etapa
    *Leitura*, 20 páginas, prazo e estimativa opcionais.
 2. **⏱ reservar** no cartão da etapa (ou "+ Reservar sessão" no dia): data,
-   horário de início e tempo — vira um bloco pendente, visível na faixa da
-   semana, na lista do dia e na grade do Planejamento.
+   horário de início e término (ou tempo) — vira um bloco pendente, visível
+   na faixa da semana, na lista do dia e na grade do Planejamento.
 3. **+ Registrar estudo** (ou "+ sessão" no cartão): matéria, data e tempo
-   bastam. Em *Detalhes*, a etapa e "parou em que página?" (5), conteúdo,
-   anotações, horário, tempo reservado, sessão encerrada ou não, mandar pras
-   revisões. Serve pra registrar depois, em qualquer data, sem cronômetro.
-   O cronômetro (▶) desemboca no mesmo modal, já preenchido.
+   bastam — ou início e término (14:00 → 16:30), que calculam o tempo. Em
+   *Detalhes*, a etapa e "parou em que página?" (5), conteúdo, anotações,
+   tempo reservado, sessão encerrada ou não, mandar pras revisões. Serve pra
+   registrar depois, em qualquer data, sem cronômetro. O cronômetro (▶)
+   desemboca no mesmo modal, já preenchido.
 4. O cartão mostra: 5 de 20 · restam 15 · 25% · realizado 2h00 · reservado
    1h30 (próx. dom 1/11) · faltam ~6h (pelo ritmo) · em andamento. Amanhã,
    "parou na 8" → 8 de 20 (40%).
