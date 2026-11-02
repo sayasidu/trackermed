@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=8"></script>
+<script src="theme.js?v=9"></script>
 <style>
 .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
 .stat-card { background: #fff; border: 1px solid #E0E0E0; padding: 18px 20px; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); }
@@ -573,7 +573,7 @@
   </div>
 </div>
 
-<!-- Modal: sessão manual — matéria + horário de início + tempo planejado.
+<!-- Modal: sessão manual — matéria + horário de início/término + tempo planejado.
      Cria um bloco de estudo comum em trackermed.plan.v1 (feito:false, auto:false,
      manual:true): entra na grade da semana, no calendário geral e aparece em
      "Planejado pra hoje" no Histórico exatamente como os blocos gerados
@@ -602,9 +602,10 @@
           <div id="mConteudoHint" style="display:none;font-size:11px;color:var(--muted);margin-top:6px">Cadastre conteúdos e tópicos em <a href="disciplinas.html" style="color:var(--cobalt);font-weight:600">Disciplinas</a> pra escolher aqui sem digitar.</div>
         </div>
       </div>
+      <div class="mfield"><label>Data</label><input type="date" id="mData" onchange="atualizarManualPreview()"></div>
       <div class="mfield row2">
-        <div><label>Data</label><input type="date" id="mData" onchange="atualizarManualPreview()"></div>
-        <div><label>Horário de início</label><input type="time" id="mIni" step="300" oninput="atualizarManualPreview()"></div>
+        <div><label>Horário de início</label><input type="time" id="mIni" step="60" oninput="mHorarioInput('ini')"></div>
+        <div><label>Horário de término</label><input type="time" id="mFim" step="60" oninput="mHorarioInput('fim')"></div>
       </div>
       <div class="mfield"><label>Tempo planejado de estudo</label>
         <div class="opt-grid c5" id="mDurBtns">
@@ -616,7 +617,7 @@
         </div>
         <div class="dur-custom"><input type="number" id="mDurCustom" min="5" max="720" step="5" placeholder="outro valor, em minutos (ex: 100)" oninput="onManualDurCustom()"></div>
       </div>
-      <div class="live-preview" id="mPreview">Informe o horário de início e o tempo planejado.</div>
+      <div class="live-preview" id="mPreview">Informe o horário de início e o tempo planejado (ou o horário de término).</div>
       <div class="mactions">
         <button type="button" class="mbtn-cancel" onclick="fecharManual()">Cancelar</button>
         <button type="submit" class="mbtn-save">Adicionar ao planejamento</button>
@@ -1797,6 +1798,8 @@ function abrirManual(pre) {
   mMontarMateriais(pre.materialId || null);
   document.getElementById('mData').value = pre.data || toISODate(nowCuiaba());
   document.getElementById('mIni').value = pre.ini || horaAgoraArredondada();
+  document.getElementById('mFim').value = '';
+  mFimAuto = true;
   document.getElementById('mDurCustom').value = '';
   setManualDur(pre.dur || 60);
   document.getElementById('manualModal').classList.add('open');
@@ -1823,10 +1826,35 @@ function mMontarMateriais(selId) {
   const lista = M.emAndamento().slice().sort((a, b) => ((a.discId === discId) ? 0 : 1) - ((b.discId === discId) ? 0 : 1) || String(a.nome || '').localeCompare(String(b.nome || '')));
   sel.innerHTML = '<option value="">— nenhuma —</option>' + lista.map(m => `<option value="${escH(m.id)}"${m.id === selId ? ' selected' : ''}>${M.etapaIcon(m)} ${escH(m.nome)} — ${escH(M.etapaLabel(m))}${(m.discId && m.discId !== discId && m.discNome) ? ' · ' + escH(m.discNome) : ''}</option>`).join('');
 }
-function setManualDur(min, viaCustom) {
+// Início, término e tempo planejado andam juntos: o término é preenchido
+// sozinho (início + tempo) até a aluna digitar um — daí vale o que ela digitou
+// e o tempo planejado passa a ser término − início.
+let mFimAuto = true;
+function mSyncFim() {
+  const fimEl = document.getElementById('mFim');
+  if (!mFimAuto && fimEl.value) return;
+  const iniMin = hhmmToMin(document.getElementById('mIni').value);
+  if (isNaN(iniMin) || !(manualDur > 0) || iniMin + manualDur > 24 * 60) { fimEl.value = ''; mFimAuto = true; return; }
+  fimEl.value = minToHHMM(iniMin + manualDur);
+  mFimAuto = true;
+}
+function mHorarioInput(qual) {
+  const fimEl = document.getElementById('mFim');
+  if (qual === 'fim') mFimAuto = !fimEl.value;
+  const iniMin = hhmmToMin(document.getElementById('mIni').value), fimMin = hhmmToMin(fimEl.value);
+  if (!mFimAuto && !isNaN(iniMin) && !isNaN(fimMin)) {
+    if (fimMin > iniMin) setManualDur(fimMin - iniMin, false, true);
+    else atualizarManualPreview();
+    return;
+  }
+  mSyncFim();
+  atualizarManualPreview();
+}
+function setManualDur(min, viaCustom, viaHorario) {
   manualDur = min;
   document.querySelectorAll('#mDurBtns .opt-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.min) === min));
   if (!viaCustom) document.getElementById('mDurCustom').value = MANUAL_DUR_OPTS.includes(min) ? '' : min;
+  if (!viaHorario) mSyncFim();
   atualizarManualPreview();
 }
 function onManualDurCustom() {
@@ -1837,9 +1865,15 @@ function onManualDurCustom() {
 function atualizarManualPreview() {
   const box = document.getElementById('mPreview');
   const iniMin = hhmmToMin(document.getElementById('mIni').value);
+  const fimDigitado = hhmmToMin(document.getElementById('mFim').value);
+  if (!isNaN(iniMin) && !isNaN(fimDigitado) && fimDigitado <= iniMin) {
+    box.classList.remove('on');
+    box.innerHTML = '<span style="color:var(--rose)">O horário de término precisa ser depois do início.</span>';
+    return;
+  }
   if (isNaN(iniMin) || !(manualDur > 0)) {
     box.classList.remove('on');
-    box.textContent = 'Informe o horário de início e o tempo planejado.';
+    box.textContent = 'Informe o horário de início e o tempo planejado (ou o horário de término).';
     return;
   }
   const fimMin = iniMin + manualDur;
@@ -1893,7 +1927,9 @@ function salvarManual() {
   if (!dt) { alert('Informe a data da sessão.'); return; }
   const iniMin = hhmmToMin(document.getElementById('mIni').value);
   if (isNaN(iniMin)) { alert('Informe o horário de início.'); return; }
-  if (!(manualDur > 0)) { alert('Informe o tempo planejado de estudo.'); return; }
+  const fimDigitado = hhmmToMin(document.getElementById('mFim').value);
+  if (!isNaN(fimDigitado) && fimDigitado <= iniMin) { alert('O horário de término precisa ser depois do início.'); document.getElementById('mFim').focus(); return; }
+  if (!(manualDur > 0)) { alert('Informe o tempo planejado de estudo ou o horário de término.'); return; }
   const fimMin = iniMin + manualDur;
   if (fimMin > 24 * 60) { alert('A sessão passaria da meia-noite — reduza o tempo ou ajuste o início.'); return; }
   const ini = minToHHMM(iniMin), fim = minToHHMM(fimMin);
@@ -2562,7 +2598,7 @@ function render() {
       ${avisoPeriodo}
     </div>
     <div class="g-acts">
-      <button class="manual-btn" onclick="abrirManual()" title="Registrar à mão uma sessão de estudo: matéria, horário de início e tempo planejado">+ Sessão manual</button>
+      <button class="manual-btn" onclick="abrirManual()" title="Registrar à mão uma sessão de estudo: matéria, horário de início e término (ou tempo planejado)">+ Sessão manual</button>
       <button class="limpar-btn" onclick="limparSemana()" ${blocosParaLimpar===0?'disabled':''} title="${escH(limparTitle)}">${limparLbl}</button>
       <button class="gerar-btn" onclick="gerarAuto()" ${gerarDisabled?'disabled':''}>${metaBatida ? '↻ Regenerar' : '✦ Gerar sugestão'}</button>
     </div>

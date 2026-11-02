@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=8"></script>
+<script src="theme.js?v=9"></script>
 <style>
 .hoje-head { display: grid; grid-template-columns: 1fr auto auto auto; gap: 12px; margin-bottom: 20px; }
 .hoje-head .stat-card { background: #fff; border: 1px solid #E0E0E0; padding: 18px 20px; min-width: 140px; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); }
@@ -387,6 +387,16 @@ html[data-theme="dark"] .sit-chip { background: rgba(250,240,238,.10); color: va
   <div id="planList" class="blk-list" style="margin-top:14px"></div>
 </div>
 
+<div class="section-box" id="tarefasBox">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+    <div>
+      <h2 id="tarefasTitulo">Afazeres <i>do dia</i></h2>
+      <div class="help">Sua lista de tarefas do dia, separada das sessões de estudo: anota o que precisa sair do papel (ler, resolver, revisar, entregar…) e marca ao concluir. Ela segue o dia selecionado na semana acima; o que ficou pendente em dias anteriores aparece em "hoje" pra você trazer pra frente. A mesma lista fica na tela inicial do app.</div>
+    </div>
+  </div>
+  <div id="tarefasList"></div>
+</div>
+
 <div class="section-box" id="atvBox">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
     <div>
@@ -595,9 +605,10 @@ html[data-theme="dark"] .sit-chip { background: rgba(250,240,238,.10); color: va
           <div id="mConteudoHint" style="display:none;font-size:11px;color:#7D6B77;margin-top:6px">Cadastre conteúdos e tópicos em <a href="disciplinas.html" style="color:var(--cobalt);font-weight:600">Disciplinas</a> pra escolher aqui sem digitar.</div>
         </div>
       </div>
+      <div class="mfield"><label>Data</label><input type="date" id="mData" onchange="atualizarManualPreview()"></div>
       <div class="mfield row2">
-        <div><label>Data</label><input type="date" id="mData" onchange="atualizarManualPreview()"></div>
-        <div><label>Horário de início</label><input type="time" id="mIni" step="300" oninput="atualizarManualPreview()"></div>
+        <div><label>Horário de início</label><input type="time" id="mIni" step="60" oninput="mHorarioInput('ini')"></div>
+        <div><label>Horário de término</label><input type="time" id="mFim" step="60" oninput="mHorarioInput('fim')"></div>
       </div>
       <div class="mfield"><label>Tempo planejado de estudo</label>
         <div class="opt-grid c5" id="mDurBtns">
@@ -609,7 +620,7 @@ html[data-theme="dark"] .sit-chip { background: rgba(250,240,238,.10); color: va
         </div>
         <div class="dur-custom" style="margin-top:8px"><input type="number" id="mDurCustom" min="5" max="720" step="5" placeholder="outro valor, em minutos (ex: 100)" oninput="onManualDurCustom()"></div>
       </div>
-      <div class="live-preview" id="mPreview">Informe o horário de início e o tempo planejado.</div>
+      <div class="live-preview" id="mPreview">Informe o horário de início e o tempo planejado (ou o horário de término).</div>
       <div class="mactions">
         <button type="button" class="mbtn-cancel" onclick="fecharManual()">Cancelar</button>
         <button type="submit" class="mbtn-save">Salvar</button>
@@ -711,7 +722,12 @@ html[data-theme="dark"] .sit-chip { background: rgba(250,240,238,.10); color: va
         </div>
         <div class="dur-custom" style="margin-top:8px"><input type="number" id="rgMin" min="0" max="720" step="5" placeholder="outro valor, em minutos (ex: 100)" oninput="rgMinInput()"><span class="ma-unid">min</span></div>
       </div>
-      <button type="button" class="rg-toggle" id="rgDetToggle" onclick="rgToggleDetalhes()">+ Detalhes opcionais — atividade, quantidade, conteúdo, horário…</button>
+      <div class="mfield row2" style="margin-bottom:6px">
+        <div><label>Horário de início (opcional)</label><input type="time" id="rgIni" step="60" oninput="rgHorarioInput('ini')"></div>
+        <div><label>Horário de término (opcional)</label><input type="time" id="rgFim" step="60" oninput="rgHorarioInput('fim')"></div>
+      </div>
+      <div class="rg-hint" style="margin:0 0 14px">Anote quando começou e quando terminou (ex: 14:00 → 16:30): o tempo estudado é calculado sozinho, e você ainda pode ajustá-lo se fez pausas.</div>
+      <button type="button" class="rg-toggle" id="rgDetToggle" onclick="rgToggleDetalhes()">+ Detalhes opcionais — atividade, quantidade, conteúdo, reserva…</button>
       <div id="rgDetalhes" style="display:none">
         <div class="mfield"><label>Atividade / etapa</label><select id="rgMaterial" onchange="rgMaterialChange()"></select></div>
         <div id="rgNovoWrap" style="display:none">
@@ -739,9 +755,9 @@ html[data-theme="dark"] .sit-chip { background: rgba(250,240,238,.10); color: va
           </div>
         </div>
         <div class="mfield"><label>Anotações (opcional)</label><input type="text" id="rgNotas" maxlength="200" placeholder="ex: faltou revisar o tratamento"></div>
-        <div class="mfield row2">
-          <div><label>Tempo reservado (opcional)</label><input type="number" id="rgPlanMin" min="0" max="720" step="5" placeholder="= tempo estudado" oninput="rgAtualizar()"></div>
-          <div><label>Horário de início (opcional)</label><input type="time" id="rgIni" step="300"></div>
+        <div class="mfield">
+          <label>Tempo reservado (opcional)</label>
+          <div class="ma-qtd-row"><input type="number" id="rgPlanMin" min="0" max="720" step="5" placeholder="= tempo estudado" oninput="rgPlanInput()"><span class="ma-unid">min</span></div>
         </div>
         <div class="mfield row2">
           <div><label>Sessão encerrada?</label><select id="rgFeito" onchange="rgAtualizar()"><option value="sim">Sim</option><option value="nao">Não — continuo depois</option></select></div>
@@ -1972,6 +1988,8 @@ function abrirManual(pre) {
   mMontarMateriais(pre.materialId || null);
   document.getElementById('mData').value = pre.data || todayKey();
   document.getElementById('mIni').value = pre.ini || horaAgoraArredondada();
+  document.getElementById('mFim').value = '';
+  mFimAuto = true;
   document.getElementById('mDurCustom').value = '';
   setManualDur(pre.dur || 60);
   document.getElementById('manualModal').classList.add('open');
@@ -1986,10 +2004,35 @@ function mDiscChange() {
   mMontarMateriais(null);
   if (outra) setTimeout(() => document.getElementById('mDiscOutra').focus(), 30);
 }
-function setManualDur(min, viaCustom) {
+// Início, término e tempo planejado andam juntos: o término é preenchido
+// sozinho (início + tempo) até a aluna digitar um — daí vale o que ela digitou
+// e o tempo planejado passa a ser término − início.
+let mFimAuto = true;
+function mSyncFim() {
+  const fimEl = document.getElementById('mFim');
+  if (!mFimAuto && fimEl.value) return;
+  const iniMin = hhmmToMin(document.getElementById('mIni').value);
+  if (isNaN(iniMin) || !(manualDur > 0) || iniMin + manualDur > 24 * 60) { fimEl.value = ''; mFimAuto = true; return; }
+  fimEl.value = minToHHMM(iniMin + manualDur);
+  mFimAuto = true;
+}
+function mHorarioInput(qual) {
+  const fimEl = document.getElementById('mFim');
+  if (qual === 'fim') mFimAuto = !fimEl.value;
+  const iniMin = hhmmToMin(document.getElementById('mIni').value), fimMin = hhmmToMin(fimEl.value);
+  if (!mFimAuto && !isNaN(iniMin) && !isNaN(fimMin)) {
+    if (fimMin > iniMin) setManualDur(fimMin - iniMin, false, true);
+    else atualizarManualPreview();
+    return;
+  }
+  mSyncFim();
+  atualizarManualPreview();
+}
+function setManualDur(min, viaCustom, viaHorario) {
   manualDur = min;
   document.querySelectorAll('#mDurBtns .opt-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.min) === min));
   if (!viaCustom) document.getElementById('mDurCustom').value = MANUAL_DUR_OPTS.includes(min) ? '' : min;
+  if (!viaHorario) mSyncFim();
   atualizarManualPreview();
 }
 function onManualDurCustom() {
@@ -2004,9 +2047,15 @@ function atualizarManualPreview() {
   const btnIniciar = document.getElementById('mSalvarIniciar');
   if (btnIniciar) btnIniciar.style.display = (dataStr === todayKey()) ? '' : 'none';
   const iniMin = hhmmToMin(document.getElementById('mIni').value);
+  const fimDigitado = hhmmToMin(document.getElementById('mFim').value);
+  if (!isNaN(iniMin) && !isNaN(fimDigitado) && fimDigitado <= iniMin) {
+    box.classList.remove('on');
+    box.innerHTML = '<span style="color:var(--rose)">O horário de término precisa ser depois do início.</span>';
+    return;
+  }
   if (isNaN(iniMin) || !(manualDur > 0)) {
     box.classList.remove('on');
-    box.textContent = 'Informe o horário de início e o tempo planejado.';
+    box.textContent = 'Informe o horário de início e o tempo planejado (ou o horário de término).';
     return;
   }
   const fimMin = iniMin + manualDur;
@@ -2057,7 +2106,9 @@ function salvarManual(iniciar) {
   if (!dt) { alert('Informe a data da sessão.'); return; }
   const iniMin = hhmmToMin(document.getElementById('mIni').value);
   if (isNaN(iniMin)) { alert('Informe o horário de início.'); return; }
-  if (!(manualDur > 0)) { alert('Informe o tempo planejado de estudo.'); return; }
+  const fimDigitado = hhmmToMin(document.getElementById('mFim').value);
+  if (!isNaN(fimDigitado) && fimDigitado <= iniMin) { alert('O horário de término precisa ser depois do início.'); document.getElementById('mFim').focus(); return; }
+  if (!(manualDur > 0)) { alert('Informe o tempo planejado de estudo ou o horário de término.'); return; }
   const fimMin = iniMin + manualDur;
   if (fimMin > 24 * 60) { alert('A sessão passaria da meia-noite — reduza o tempo ou ajuste o início.'); return; }
   const ini = minToHHMM(iniMin), fim = minToHHMM(fimMin);
@@ -2382,6 +2433,7 @@ function render() {
 
   renderSemanaStrip(coll);
   renderAtividades(coll);
+  renderTarefas(yyyy, ehHoje, selDate);
 }
 
 // ===== Diário: dia selecionado + faixa da semana ==============================
@@ -2496,16 +2548,48 @@ const RG_DUR_OPTS = [30, 45, 60, 90, 120];
 
 function rgDiscList() { return loadDisc().filter(d => d.status === 'em-curso' || !d.status); }
 function rgDiscAtual() { const v = rgEl('rgDisc').value; return v === '__outra__' ? null : (v || null); }
-function rgSetMin(min, viaInput) {
+function rgSetMin(min, viaInput, viaHorario) {
   const v = Math.max(0, parseInt(min) || 0);
   document.querySelectorAll('#rgDurBtns .opt-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.min) === v));
   if (!viaInput) rgEl('rgMin').value = v > 0 ? v : '';
+  if (!viaHorario) rgSyncFim();
   rgAtualizar();
 }
 function rgMinInput() { rgSetMin(rgEl('rgMin').value, true); }
+function rgPlanInput() { rgSyncFim(); rgAtualizar(); }
+// Horário de início/término da sessão. O término é preenchido sozinho
+// (início + tempo) até a aluna digitar um; aí vale o que ela digitou e o tempo
+// estudado passa a ser término − início (ajustável depois, se houve pausas).
+let rgFimAuto = true;
+function rgSlotMin() {
+  const min = Math.max(0, parseInt(rgEl('rgMin').value) || 0);
+  const plan = parseInt(rgEl('rgPlanMin').value);
+  return Math.max(min, (!isNaN(plan) && plan > 0) ? plan : 0);
+}
+function rgSyncFim() {
+  const fimEl = rgEl('rgFim');
+  if (!fimEl) return;
+  if (!rgFimAuto && fimEl.value) return;
+  const iniMin = hhmmToMin(rgEl('rgIni').value), slot = rgSlotMin();
+  if (isNaN(iniMin) || slot <= 0 || iniMin + slot > 24 * 60) { fimEl.value = ''; rgFimAuto = true; return; }
+  fimEl.value = minToHHMM(iniMin + slot);
+  rgFimAuto = true;
+}
+function rgHorarioInput(qual) {
+  const fimEl = rgEl('rgFim');
+  if (qual === 'fim') rgFimAuto = !fimEl.value;
+  const iniMin = hhmmToMin(rgEl('rgIni').value), fimMin = hhmmToMin(fimEl.value);
+  if (!rgFimAuto && !isNaN(iniMin) && !isNaN(fimMin)) {
+    if (fimMin > iniMin) rgSetMin(fimMin - iniMin, false, true);
+    else rgAtualizar();
+    return;
+  }
+  rgSyncFim();
+  rgAtualizar();
+}
 function rgSetDetalhes(on) {
   rgEl('rgDetalhes').style.display = on ? '' : 'none';
-  rgEl('rgDetToggle').textContent = on ? '− Ocultar detalhes' : '+ Detalhes opcionais — atividade, quantidade, conteúdo, horário…';
+  rgEl('rgDetToggle').textContent = on ? '− Ocultar detalhes' : '+ Detalhes opcionais — atividade, quantidade, conteúdo, reserva…';
 }
 function rgToggleDetalhes() { rgSetDetalhes(rgEl('rgDetalhes').style.display === 'none'); }
 function rgDiscChange() {
@@ -2605,12 +2689,15 @@ function abrirRegistro(opts) {
   else if (avulsa) sel.value = '__outra__';
   rgEl('rgDiscOutra').value = avulsa || '';
   rgEl('rgDiscOutraWrap').style.display = sel.value === '__outra__' ? '' : 'none';
-  // data e tempo
+  // data, horário e tempo (horário antes do tempo: rgSetMin sincroniza o término)
   rgEl('rgData').value = (bloco && blocoDate(wk, bloco)) || opts.data || todayKey();
+  rgEl('rgPlanMin').value = bloco ? (getPlannedMin(bloco) || '') : '';
+  const temHorario = !!(bloco && !bloco.horaEstimada && bloco.ini);
+  rgFimAuto = !(bloco && bloco.horarioManual);
+  rgEl('rgIni').value = temHorario ? bloco.ini : (opts.ini || '');
+  rgEl('rgFim').value = (temHorario && bloco.fim) ? bloco.fim : (opts.fim || '');
   const min = bloco ? (getStudiedMin(bloco) || opts.minutos || 0) : (opts.minutos || 0);
   rgSetMin(min);
-  rgEl('rgPlanMin').value = bloco ? (getPlannedMin(bloco) || '') : '';
-  rgEl('rgIni').value = (bloco && !bloco.horaEstimada && bloco.ini) ? bloco.ini : '';
   rgEl('rgFeito').value = (rgCtx.modo === 'concluir' || !bloco || bloco.feito) ? 'sim' : 'nao';
   const feed = bloco ? loadHist().find(r => r && r.blocoId === bloco.id && !r.parentId) : null;
   rgEl('rgRevisar').value = (feed && feed.revisar) ? 'sim' : 'nao';
@@ -2643,6 +2730,13 @@ function rgAtualizar() {
   if (min > 0) partes.push(`<b>${fmtHrange(min)}</b>`);
   const planMin = parseInt(rgEl('rgPlanMin').value);
   if (planMin > 0 && planMin !== min) partes.push(`de ${fmtHrange(planMin)} reservados`);
+  const iniH = hhmmToMin(rgEl('rgIni').value), fimH = hhmmToMin(rgEl('rgFim').value);
+  let horarioErro = false;
+  if (!isNaN(iniH) && !isNaN(fimH)) {
+    if (fimH > iniH) partes.push(`${minToHHMM(iniH)}–${minToHHMM(fimH)}`);
+    else { partes.push('<span style="color:var(--rose)">o término precisa ser depois do início</span>'); horarioErro = true; }
+  } else if (!isNaN(iniH)) partes.push(`a partir das ${minToHHMM(iniH)}`);
+  else if (!isNaN(fimH)) partes.push(`até as ${minToHHMM(fimH)}`);
   const v = rgEl('rgMaterial').value;
   const m = (v && v !== '__novo__') ? MAT.get(v) : null;
   const qtd = parseFloat(rgEl('rgQtd').value);
@@ -2668,9 +2762,9 @@ function rgAtualizar() {
     temAvanco = true;
   }
   if (rgEl('rgFeito').value === 'nao') partes.push('<i>sessão fica em aberto</i>');
-  const ok = min > 0 || temAvanco;
+  const ok = (min > 0 || temAvanco) && !horarioErro;
   box.classList.toggle('on', ok);
-  box.innerHTML = ok ? partes.join(' · ') : 'Informe a matéria, a data e o tempo estudado (ou, pelo menos, o avanço na atividade).';
+  box.innerHTML = (ok || horarioErro) ? partes.join(' · ') : 'Informe a matéria, a data e o tempo estudado (ou, pelo menos, o avanço na atividade).';
 }
 
 function salvarRegistro() {
@@ -2696,7 +2790,9 @@ function salvarRegistro() {
   const revisar = rgEl('rgRevisar').value === 'sim';
   const notas = (rgEl('rgNotas').value || '').trim();
   const cont = rgHier.ler();
-  const iniStr = rgEl('rgIni').value;
+  const iniStr = rgEl('rgIni').value, fimStr = rgEl('rgFim').value;
+  const iniH = hhmmToMin(iniStr), fimH = hhmmToMin(fimStr);
+  if (!isNaN(iniH) && !isNaN(fimH) && fimH <= iniH) { alert('O horário de término precisa ser depois do início.'); rgEl('rgFim').focus(); return; }
   // atividade / etapa
   const matSel = rgEl('rgMaterial').value;
   let material = null, novoMaterial = null;
@@ -2781,8 +2877,12 @@ function salvarRegistro() {
   if (criarBloco) {
     const minutosPlan = planMin != null ? planMin : (bloco ? (getPlannedMin(bloco) || min) : min);
     const slot = Math.max(minutosPlan, min, 5);
-    let iniMin, fimMin, horaEstimada = false;
-    if (iniStr && !isNaN(hhmmToMin(iniStr))) { iniMin = hhmmToMin(iniStr); fimMin = Math.min(24 * 60, iniMin + slot); }
+    let iniMin, fimMin, horaEstimada = false, horarioManual = false;
+    // Início e término digitados valem como estão; só início → término = início + reserva;
+    // só término → início = término − reserva.
+    if (!isNaN(iniH) && !isNaN(fimH) && !rgFimAuto) { iniMin = iniH; fimMin = fimH; horarioManual = true; }
+    else if (!isNaN(iniH)) { iniMin = iniH; fimMin = Math.min(24 * 60, iniMin + slot); }
+    else if (!isNaN(fimH)) { fimMin = fimH; iniMin = Math.max(0, fimMin - slot); horarioManual = true; }
     else if (bloco && bloco.ini && !bloco.horaEstimada && blocoDate(wkOld, bloco) === dataKey) { iniMin = hhmmToMin(bloco.ini); fimMin = Math.min(24 * 60, iniMin + slot); }
     else if (dataKey === todayKey()) { const n = nowCuiaba(); fimMin = n.getHours() * 60 + n.getMinutes(); iniMin = Math.max(0, fimMin - slot); horaEstimada = true; }
     else { fimMin = Math.min(24 * 60 - 1, 19 * 60 + slot); iniMin = Math.max(0, fimMin - slot); horaEstimada = true; }
@@ -2794,6 +2894,7 @@ function salvarRegistro() {
     });
     if (discId) delete novo.matNome; else novo.matNome = matNome;
     if (horaEstimada) novo.horaEstimada = true; else delete novo.horaEstimada;
+    if (horarioManual) novo.horarioManual = true; else delete novo.horarioManual;
     if (notas) novo.notas = notas; else delete novo.notas;
     if (material) {
       const e2 = MAT.logPorBloco(novo.id).find(x => x.material.id === material.id);
@@ -3020,6 +3121,21 @@ function estFonteLbl(est) {
   return est.fonte === 'manual' ? 'sua estimativa'
     : est.fonte === 'ritmo' ? (est.provisoria ? 'pelo ritmo · provisório' : 'pelo seu ritmo')
     : est.fonte === 'proporcao' ? 'tempo × avanço · provisório' : '';
+}
+
+// ===== Afazeres do dia (motor e widget em theme.js: TrackerMedTarefas) =======
+// Segue o dia selecionado na faixa da semana; o widget se redesenha sozinho
+// após cada ação, quando outra aba mexe na lista e quando a nuvem sincroniza.
+function renderTarefas(dataKey, ehHoje, selDate) {
+  const el = document.getElementById('tarefasList');
+  const tit = document.getElementById('tarefasTitulo');
+  if (!el) return;
+  if (tit) tit.innerHTML = ehHoje
+    ? 'Afazeres <i>do dia</i>'
+    : `Afazeres · <i>${String(selDate.getDate()).padStart(2, '0')}/${String(selDate.getMonth() + 1).padStart(2, '0')}</i>`;
+  const T = window.TrackerMedTarefas;
+  if (!T || !T.render) { el.innerHTML = '<div class="empty-state">Atualize a página (Ctrl+F5 / recarregar) pra carregar a lista de afazeres.</div>'; return; }
+  T.render(el, dataKey, {});
 }
 
 function renderAtividades(coll) {

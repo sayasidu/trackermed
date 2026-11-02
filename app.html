@@ -444,6 +444,12 @@ function renderHome() {
       </div>
     </div>
 
+    <div class="card lg" id="homeTarefas">
+      <div class="card-title">Afazeres <i>de hoje</i></div>
+      <div class="card-sub" style="margin-bottom:12px">Anote o que precisa fazer hoje e toque pra marcar como feito. É a mesma lista do Histórico.</div>
+      <div id="homeTarefasList"></div>
+    </div>
+
     <div class="card quote">
       <div class="mark">“</div>
       <div class="tx">${esc(fraseDoDia())}</div>
@@ -463,6 +469,17 @@ function renderHome() {
         </a>`).join('')}
     </div>
     <div class="foot">v0.1 · pessoal</div>`;
+  renderTarefasHome();
+}
+// Lista de afazeres de hoje — motor e widget compartilhados em theme.js
+// (TrackerMedTarefas), os mesmos do Histórico. O widget se redesenha sozinho
+// após cada toque e quando a nuvem traz dados novos.
+function renderTarefasHome() {
+  const el = document.getElementById('homeTarefasList');
+  if (!el) return;
+  const T = window.TrackerMedTarefas;
+  if (!T || !T.render) { el.innerHTML = '<div class="card-sub">Recarregue o app pra carregar a lista de afazeres.</div>'; return; }
+  T.render(el, todayKey(), { compact: true });
 }
 
 function renderDash() {
