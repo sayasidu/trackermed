@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=8"></script>
+<script src="theme.js?v=10"></script>
 <style>
 /* ---- Period switch --------------------------------------------------- */
 .period-switch { display: inline-flex; gap: 4px; padding: 4px; background: var(--surface-soft); border: 1px solid var(--line); border-radius: 999px; margin-top: 28px; }
@@ -250,7 +250,10 @@
   .vel-cards, .rit-stats { grid-template-columns: 1fr 1fr; }
   .rit-charts { grid-template-columns: 1fr; }
 }
+/* Colunas de grid não podem crescer além da tela por causa do conteúdo. */
+.grid2 > *, .kpi-row > *, .bar-item, .bar-item .bar-top { min-width: 0; }
 @media (max-width: 560px) {
+  .bar-item .bar-top { flex-wrap: wrap; gap: 2px 10px; }
   .kpi-row { grid-template-columns: 1fr; }
   .reg-stats { grid-template-columns: 1fr 1fr; }
 }
@@ -265,7 +268,7 @@
 <a href="revisoes.html" class="nav-item">Revisões</a>
 <a href="historico.html" class="nav-item">Histórico</a>
 <a href="graficos.html" class="nav-item active">Gráficos</a>
-<a href="dashboard.html" class="nav-item">Estatísticas</a>
+<a href="dashboard.html" class="nav-item">Dashboard</a>
 <a href="simulados.html" class="nav-item">Simulados</a>
 <a href="cortex-simulados.html" class="nav-item">Córtex</a>
 <div class="sidebar-foot">v0.2 · feito com ♥ pra você</div>

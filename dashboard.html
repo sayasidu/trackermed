@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=8"></script>
+<script src="theme.js?v=10"></script>
 <style>
 .greet-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-bottom: 36px; align-items: start; }
 .greet .kicker-sm { font-size: 11px; letter-spacing: 0.2em; color: var(--muted); font-weight: 700; text-transform: uppercase; }
@@ -240,6 +240,15 @@
   .greet-row, .col2 { grid-template-columns: 1fr; }
   .kpi-row, .quick-links, .geral-stats { grid-template-columns: 1fr 1fr; }
   .resumo-grid, .laudo-cols { grid-template-columns: 1fr; }
+}
+/* Colunas de grid não podem crescer além da tela por causa do conteúdo. */
+.greet-row > *, .col2 > *, .kpi-row > *, .quick-links > * { min-width: 0; }
+@media (max-width: 1180px) { .quick-links { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) {
+  /* Nome em cima, barra + % embaixo: o nome da matéria não espreme a barra. */
+  .disc-row, .simcont-row { flex-wrap: wrap; gap: 6px 10px; }
+  .disc-row .nm, .simcont-row .nm { flex: 1 1 100%; min-width: 0; overflow-wrap: anywhere; }
+  .box { padding: 20px 18px; }
 }
 </style></head><body>
 <div class="app">

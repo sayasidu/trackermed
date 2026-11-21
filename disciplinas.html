@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=8"></script>
+<script src="theme.js?v=10"></script>
 <style>
 .disc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; }
 .disc-card { background: var(--card); border: 1px solid var(--line); padding: 22px; display: flex; flex-direction: column; gap: 10px; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); position: relative; cursor: pointer; }
@@ -142,6 +142,24 @@
   .modal-backdrop.open .modal-box{ animation: modalIn .28s var(--ease) both; }
   @keyframes modalIn{ from{opacity:0;transform:translateY(12px) scale(.98)} to{opacity:1;transform:none} }
 }
+
+/* Os botões ✎ × ficam no canto do cartão: as etiquetas descem pra não ficar por baixo deles. */
+.disc-card .head > div:last-child { margin-top: 30px; flex-shrink: 0; }
+.disc-card .cont-line, .disc-card .prova-line { gap: 12px; }
+.disc-card .cont-line b, .disc-card .prova-line b { white-space: nowrap; flex-shrink: 0; }
+.top-stats { margin-bottom: 10px; }
+
+/* ---- Telas menores ---------------------------------------------------- */
+.disc-card { min-width: 0; }
+.disc-card h3 { overflow-wrap: anywhere; }
+@media (max-width: 1180px) { .disc-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 680px) {
+  .disc-grid { grid-template-columns: 1fr; }
+  .top-stats { text-align: left; }
+  .dyn-row { grid-template-columns: 1fr 1fr 1fr 28px; }
+  .dyn-row-prova { grid-template-columns: minmax(0, 1fr) 130px 28px; }
+}
+@media (max-width: 480px) { .mfield.row2 { grid-template-columns: 1fr; } }
 </style></head><body>
 <div class="app">
 <aside class="sidebar">
@@ -153,7 +171,7 @@
 <a href="revisoes.html" class="nav-item">Revisões</a>
 <a href="historico.html" class="nav-item">Histórico</a>
 <a href="graficos.html" class="nav-item">Gráficos</a>
-<a href="dashboard.html" class="nav-item">Estatísticas</a>
+<a href="dashboard.html" class="nav-item">Dashboard</a>
 <a href="simulados.html" class="nav-item">Simulados</a>
 <a href="cortex-simulados.html" class="nav-item">Córtex</a>
 <div class="sidebar-foot">v0.2 · feito com ♥ pra você</div>

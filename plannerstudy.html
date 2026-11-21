@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
-<script src="theme.js?v=9"></script>
+<script src="theme.js?v=10"></script>
 <style>
 .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
 .stat-card { background: #fff; border: 1px solid #E0E0E0; padding: 18px 20px; border-radius: 12px; box-shadow: var(--sh-1); transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease); }
@@ -246,7 +246,7 @@
 
 /* Layout com histórico lateral */
 .planner-wrap { display: grid; grid-template-columns: minmax(0,1fr) 280px; gap: 20px; align-items: start; }
-@media (max-width: 1180px) { .planner-wrap { grid-template-columns: 1fr; } }
+@media (max-width: 1180px) { .planner-wrap { grid-template-columns: minmax(0, 1fr); } }
 
 /* Botão principal de gerar sugestão */
 .gerar-card { background: var(--ink); color: var(--paper); padding: 22px 26px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; gap: 20px; border-left: 4px solid var(--acid); flex-wrap: wrap; border-radius: 12px; box-shadow: var(--sh-2); }
@@ -431,6 +431,20 @@
   .cal-cell .cc-act { font-size: 9px; }
   .cw-head .cw-num { font-size: 16px; }
 }
+
+/* ---- Telas menores ---------------------------------------------------- */
+@media (max-width: 720px) {
+  .stat-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { min-width: 0; }
+  .stat-card .val { font-size: 34px; }
+  /* A grade semanal tem 7 colunas: em vez de espremer, rola de lado dentro da própria caixa. */
+  #gradeContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+  #gradeContainer .grade { min-width: 640px; }
+  .periodo-row .pf, .periodo-row input { min-width: 0; }
+  .prio-breakdown .pb-row { grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px 10px; }
+  .prio-breakdown .pb-row > :first-child { grid-column: 1 / -1; }
+}
+@media (max-width: 400px) { .periodo-row { grid-template-columns: 1fr; } }
 </style></head><body>
 <div class="app">
 <aside class="sidebar">
@@ -442,7 +456,7 @@
 <a href="revisoes.html" class="nav-item">Revisões</a>
 <a href="historico.html" class="nav-item">Histórico</a>
 <a href="graficos.html" class="nav-item">Gráficos</a>
-<a href="dashboard.html" class="nav-item">Estatísticas</a>
+<a href="dashboard.html" class="nav-item">Dashboard</a>
 <a href="simulados.html" class="nav-item">Simulados</a>
 <a href="cortex-simulados.html" class="nav-item">Córtex</a>
 <div class="sidebar-foot">v0.2 · feito com ♥ pra você</div>

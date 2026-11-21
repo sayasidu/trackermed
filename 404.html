@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<meta name="theme-color" content="#2B0F26" />
+<link rel="icon" type="image/png" href="/favicon.png">
+<title>Página não encontrada · TrackerMed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- O GitHub Pages mostra esta página pra qualquer endereço que não existe no
+     site. Ela é autossuficiente (estilo embutido, links absolutos) porque pode
+     ser servida a partir de qualquer caminho. -->
+<script>
+  // Mesmo tema do resto do site (chave do theme.js), aplicado antes de pintar.
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('trackermed.theme.v1'); } catch (e) {}
+    if (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
+    if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  })();
+</script>
+<style>
+  :root {
+    --ink: #2B0F26; --paper: #FAF0EE; --cobalt: #C2255C; --acid: #FFB8D2;
+    --bg: #FAF0EE; --surface: #FFFFFF; --text: #2B0F26; --text-soft: #56304A; --text-mute: #7E6577; --border: #EFDBDD;
+    --grad-brand: linear-gradient(120deg, #C2255C 0%, #E14C8C 46%, #7C5CFC 100%);
+    --sh-1: 0 1px 2px rgba(43,15,38,.05), 0 3px 10px rgba(43,15,38,.05);
+    --sh-glow: 0 8px 26px rgba(194,37,92,.34);
+    --ease: cubic-bezier(.22,.61,.36,1);
+  }
+  [data-theme="dark"] {
+    --bg: #1F0E1E; --surface: #33182F; --text: #F6EDF1; --text-soft: #DCC8D6; --text-mute: #A88BA0; --border: rgba(246,237,241,0.12);
+    --sh-1: 0 1px 2px rgba(0,0,0,.45), 0 3px 12px rgba(0,0,0,.45);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { min-height: 100%; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter Tight', -apple-system, sans-serif; font-size: 15px; line-height: 1.55;
+    display: flex; flex-direction: column; min-height: 100vh; }
+  a { color: inherit; text-decoration: none; }
+  .top { padding: 22px 24px; border-bottom: 1px solid var(--border); }
+  .logo { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; letter-spacing: -0.04em; display: inline-flex; align-items: center; }
+  .logo em { color: var(--cobalt); font-style: italic; }
+  .logo::after { content: '♥'; margin-left: 7px; color: var(--acid); font-size: 14px; line-height: 1; }
+  main { flex: 1; display: flex; align-items: center; padding: 48px 24px 64px; }
+  .wrap { width: 100%; max-width: 620px; margin: 0 auto; }
+  .kicker { font-size: 11px; letter-spacing: 0.2em; color: var(--text-mute); font-weight: 600; text-transform: uppercase; }
+  .code { font-family: 'Fraunces', serif; font-style: italic; font-weight: 500; font-size: clamp(88px, 26vw, 148px); line-height: .95; letter-spacing: -0.05em;
+    background-image: var(--grad-brand); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; margin: 10px 0 6px -4px; }
+  h1 { font-family: 'Fraunces', serif; font-size: clamp(30px, 7vw, 42px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.08; }
+  h1 i { color: var(--cobalt); }
+  .lede { color: var(--text-soft); font-size: 16px; margin-top: 14px; max-width: 520px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 20px; border-radius: 10px; font-size: 14px; font-weight: 600;
+    transition: transform .22s var(--ease), box-shadow .22s var(--ease), border-color .2s var(--ease), color .2s var(--ease); }
+  .btn.primary { background-image: var(--grad-brand); color: #fff; box-shadow: var(--sh-glow); }
+  .btn.ghost { background: var(--surface); border: 1px solid var(--border); color: var(--text); box-shadow: var(--sh-1); }
+  .btn:hover { transform: translateY(-2px); }
+  .btn.ghost:hover { border-color: var(--cobalt); color: var(--cobalt); }
+  .btn:focus-visible, .links a:focus-visible { outline: 2px solid var(--cobalt); outline-offset: 3px; }
+  .links { margin-top: 36px; padding-top: 22px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 14px; color: var(--text-soft); }
+  .links span { flex-basis: 100%; }
+  .links a { font-weight: 600; }
+  .links a:hover { color: var(--cobalt); }
+  @media (max-width: 480px) {
+    main { padding: 32px 18px 48px; align-items: flex-start; }
+    .actions .btn { flex: 1 1 100%; }
+  }
+</style>
+</head>
+<body>
+<header class="top"><a class="logo" href="/" aria-label="TrackerMed — página inicial">Tracker<em>Med</em></a></header>
+<main>
+  <div class="wrap">
+    <div class="kicker">Erro 404</div>
+    <div class="code" aria-hidden="true">404</div>
+    <h1>Essa página <i>não existe</i>.</h1>
+    <p class="lede">O endereço pode ter mudado ou a página foi removida do site. Seus dados de estudo continuam salvos — é só voltar por um dos caminhos abaixo.</p>
+    <div class="actions">
+      <a class="btn primary" href="/">Ir pra página inicial →</a>
+      <a class="btn ghost" href="/dashboard.html">Abrir o dashboard</a>
+    </div>
+    <nav class="links" aria-label="Atalhos">
+      <span class="kicker">Ou vá direto para</span>
+      <a href="/planos.html">Planos</a>
+      <a href="/disciplinas.html">Disciplinas</a>
+      <a href="/plannerstudy.html">Planejamento</a>
+      <a href="/revisoes.html">Revisões</a>
+      <a href="/historico.html">Histórico</a>
+      <a href="/graficos.html">Gráficos</a>
+      <a href="/simulados.html">Simulados</a>
+    </nav>
+  </div>
+</main>
+</body>
+</html>
