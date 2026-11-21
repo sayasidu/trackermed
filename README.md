@@ -169,28 +169,20 @@ service cloud.firestore {
 Ao publicar mudanças no site, subir a versão em `sw.js` (`VERSION`) para o cache
 offline trocar.
 
-## Plantão OSCE (`PlantaoOSCE.html`)
+## Celular, tablet e página 404
 
-Jogo de treino para OSCE: cada ficha vira uma porta, a IA faz a banca e o
-paciente, e no fim sai a folha de correção pelo checklist da ficha.
+Todas as páginas do painel cabem na largura da tela, do celular estreito
+(320px) ao desktop, sem rolagem lateral. As regras comuns ficam no bloco
+`@media (max-width: 900px)` do `app.css` (menu vira faixa rolável que já abre
+na página atual, topo da página quebra em linhas); o que é específico de cada
+tela fica no bloco "Telas menores" do `<style>` da própria página. A grade
+semanal do Planejamento, por ter 7 colunas, rola de lado dentro da própria
+caixa em vez de espremer.
 
-O jogo nasceu como artifact do Claude e o arquivo aqui é a mesma página. Dentro
-do Claude, a IA, a voz e o microfone vêm do próprio Claude. Aberto pelo site,
-quem fornece essas três coisas é o `osce-runtime.js`:
-
-- **IA** — API da Anthropic com a chave da própria pessoa (botão de chave no
-  topo). A chave fica só no `localStorage` do navegador (`osce.apikey`), não
-  entra na sincronização e só é enviada para `api.anthropic.com`. O uso é
-  cobrado na conta da API, separada da assinatura do Claude.
-- **Voz** — `speechSynthesis` do navegador, em português.
-- **Microfone** — `SpeechRecognition` do navegador (Chrome, Edge e Safari; no
-  Firefox o jogo cai para digitação).
-
-Arquivos: `PlantaoOSCE.html` (a página), `osce-runtime.js` (a ponte acima),
-`osce-sdk.mjs` (SDK oficial da Anthropic empacotado, carregado só quando a IA é
-usada) e `img/` (cenário, personagens e expressões). Ao atualizar a página a
-partir do artifact, manter a linha `<script src="osce-runtime.js"></script>`
-logo antes do script principal.
+`404.html` é a página que o GitHub Pages mostra pra qualquer endereço que não
+existe — no visual do site, com atalhos de volta. É autossuficiente (estilo
+embutido e links absolutos) porque pode ser servida a partir de qualquer
+caminho.
 
 ## Proposta de design do app
 

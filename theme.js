@@ -305,9 +305,21 @@
   }
   window.TrackerMedReset = { run: resetRun, keys: resetKeys };
 
+  // No celular o menu é uma faixa horizontal rolável: leva a rolagem até a
+  // página atual, pra ela não ficar escondida fora da tela.
+  function revealActiveNav() {
+    var sidebar = document.querySelector('.sidebar');
+    var ativo = sidebar && sidebar.querySelector('.nav-item.active');
+    if (!ativo || sidebar.scrollWidth <= sidebar.clientWidth) return;
+    var rs = sidebar.getBoundingClientRect(), ra = ativo.getBoundingClientRect();
+    var alvo = sidebar.scrollLeft + (ra.left - rs.left) - (sidebar.clientWidth - ra.width) / 2;
+    sidebar.scrollLeft = Math.max(0, alvo);
+  }
+
   function renderSidebarExtras() {
     renderContextIndicator();
     renderResetButton();
+    revealActiveNav();
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', renderSidebarExtras);

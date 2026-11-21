@@ -119,6 +119,30 @@ tr:hover td { background: var(--row-hover); }
   .sidebar-foot { display: none; }
   .main { padding: 24px 20px 48px; }
   h1.page-title { font-size: 40px; }
+
+  /* Menu vira uma faixa rolável: sem barra de rolagem à mostra, itens
+     centralizados na altura e o indicador de planos ativos compacto ao fim. */
+  .sidebar { align-items: center; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .sidebar::-webkit-scrollbar { display: none; }
+  .sidebar .nav-item { white-space: nowrap; padding: 9px 13px; border-radius: 999px; }
+  .sidebar .nav-item.active::after { display: none; }
+  .sidebar .ctx-indicator { margin: 0 0 0 6px !important; padding: 0 !important; border: 0 !important;
+    background: transparent !important; flex: 0 0 auto; display: flex; align-items: center; gap: 6px; }
+  .sidebar .ctx-indicator > div:first-child { display: none !important; }
+  .sidebar .ctx-indicator > div { margin-top: 0 !important; min-width: 170px; max-width: 220px; }
+
+  /* Topo da página: quebra em linhas em vez de empurrar a tela pro lado. */
+  .topbar { flex-wrap: wrap; gap: 12px 16px; padding-bottom: 18px; margin-bottom: 28px; }
+  .topbar-right { flex-wrap: wrap; gap: 8px 10px; min-width: 0; }
+  .crumb, .pill, .theme-toggle, .topbar .btn { white-space: nowrap; }
+  .section-head { flex-wrap: wrap; gap: 10px 16px; }
+}
+@media (max-width: 480px) {
+  .main { padding: 20px 16px 44px; }
+  h1.page-title { font-size: 34px; }
+  .page-lede { font-size: 15px; }
+  .section-title { font-size: 24px; }
+  .card { padding: 18px; }
 }
 
 /* ===== Dark mode tweaks for shared inline patterns across pages ===== */

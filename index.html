@@ -266,6 +266,17 @@
     .nav-links { display: none; }
   }
   @media (max-width: 560px) {
+    .nav-cta { padding: 9px 12px; font-size: 12px; white-space: nowrap; }
+    .nav-right { gap: 8px; }
+    .nav-right .theme-toggle { padding: 7px 9px; }
+    .nav-right .theme-toggle .lbl { display: none; }
+  }
+  /* Celular bem estreito: o botão do topo encurta pra caber ao lado da logo. */
+  @media (max-width: 380px) {
+    .nav-cta { font-size: 0; }
+    .nav-cta::after { content: 'Abrir →'; font-size: 12px; }
+  }
+  @media (max-width: 560px) {
     .quick-grid { grid-template-columns: 1fr; }
     .perf-grid { grid-template-columns: 1fr; }
     .access-row { flex-direction: column; }
@@ -277,7 +288,7 @@
     .pr-data b { display: inline; font-size: 14px; margin-right: 6px; }
   }
 </style>
-<script src="theme.js?v=8"></script>
+<script src="theme.js?v=10"></script>
 </head>
 <body>
 <div class="aurora" aria-hidden="true"><i></i></div>
